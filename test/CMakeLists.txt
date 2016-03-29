@@ -1,0 +1,6 @@
+file(GLOB sources "*.hpp" "*.cpp")
+file(GLOB_RECURSE headers "../warpcoil/*.hpp")
+set(allSources ${sources} ${headers})
+set(formatted ${formatted} ${allSources} PARENT_SCOPE)
+add_executable(tests ${allSources})
+target_link_libraries(tests ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CONAN_LIBS})
