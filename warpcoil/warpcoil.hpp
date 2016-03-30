@@ -2,6 +2,7 @@
 
 #include <silicium/variant.hpp>
 #include <map>
+#include <vector>
 
 namespace warpcoil
 {
