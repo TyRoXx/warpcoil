@@ -12,7 +12,7 @@ install:
 build_script:
   - cmd: mkdir build
   - cmd: cd build
-  - cmd: conan install --build silicium --build ventura ..
+  - cmd: conan install .. --build silicium --build ventura
   - cmd: cmake ../ -G "Visual Studio 14 2015 Win64"
   - cmd: cmake --build . --config Release
 
