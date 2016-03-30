@@ -189,7 +189,7 @@ namespace warpcoil
 	}
 }
 
-BOOST_AUTO_TEST_CASE(cpp)
+BOOST_AUTO_TEST_CASE(test_generate_function_definition)
 {
 	using namespace warpcoil;
 	types::tuple parameters;
@@ -219,10 +219,11 @@ BOOST_AUTO_TEST_CASE(test_generate_interface)
 	std::string code;
 	auto code_writer = Si::make_container_sink(code);
 	generate_interface(code_writer, Si::make_c_str_range("binary_integer_function"), definition);
-	BOOST_CHECK_EQUAL("struct binary_integer_function\n"
-	                  "{\n"
-	                  "    virtual ~binary_integer_function() {}\n"
-	                  "    virtual ::std::uint64_t evaluate(::std::tuple<::std::uint64_t, ::std::uint64_t> argument) = 0;\n"
-	                  "};\n",
-	                  code);
+	BOOST_CHECK_EQUAL(
+	    "struct binary_integer_function\n"
+	    "{\n"
+	    "    virtual ~binary_integer_function() {}\n"
+	    "    virtual ::std::uint64_t evaluate(::std::tuple<::std::uint64_t, ::std::uint64_t> argument) = 0;\n"
+	    "};\n",
+	    code);
 }
