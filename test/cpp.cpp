@@ -16,11 +16,11 @@ BOOST_AUTO_TEST_CASE(test_generate_function_definition)
 	parameters.elements.emplace_back(Si::make_unique<types::tuple>());
 	std::string code;
 	auto code_writer = Si::make_container_sink(code);
-	generate_function_definition(code_writer, types::integer(),
-	                             Si::make_c_str_range("func"),
-	                             Si::to_unique(std::move(parameters)),
-	                             expressions::closure{expressions::expression{
-	                                 Si::make_unique<expressions::tuple>()}});
+	cpp::generate_function_definition(
+	    code_writer, types::integer(), Si::make_c_str_range("func"),
+	    Si::to_unique(std::move(parameters)),
+	    expressions::closure{
+	        expressions::expression{Si::make_unique<expressions::tuple>()}});
 	BOOST_CHECK_EQUAL("::std::uint64_t func(::std::tuple<::std::uint64_t, "
 	                  "::std::tuple<>> argument)\n"
 	                  "{\n"
@@ -42,9 +42,9 @@ BOOST_AUTO_TEST_CASE(test_generate_interface)
 	                                   Si::to_unique(std::move(parameters))}));
 	std::string code;
 	auto code_writer = Si::make_container_sink(code);
-	generate_interface(code_writer,
-	                   Si::make_c_str_range("binary_integer_function"),
-	                   definition);
+	cpp::generate_interface(code_writer,
+	                        Si::make_c_str_range("binary_integer_function"),
+	                        definition);
 	BOOST_CHECK_EQUAL("struct binary_integer_function\n"
 	                  "{\n"
 	                  "    virtual ~binary_integer_function() {}\n"

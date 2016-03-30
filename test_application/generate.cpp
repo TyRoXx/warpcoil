@@ -24,9 +24,9 @@ int main(int argc, char **argv)
 	                        "#include <cstdint>\n"
 	                        "#include <tuple>\n"
 	                        "\n");
-	generate_interface(code_writer,
-	                   Si::make_c_str_range("binary_integer_function"),
-	                   definition);
+	cpp::generate_interface(code_writer,
+	                        Si::make_c_str_range("binary_integer_function"),
+	                        definition);
 	return warpcoil::update_generated_file(
 	           argv[1], Si::make_contiguous_range(code), std::cerr)
 	           ? 0
