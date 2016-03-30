@@ -30,13 +30,20 @@ namespace warpcoil
 				        << '\n';
 				    return false;
 			    }
-
 			    return true;
 			},
-		    [&](boost::system::error_code const error)
+		    [&](boost::system::error_code error)
 		    {
 			    log << "Could not read " << file_name << "\n" << error << '\n';
-			    return false;
+			    error = ventura::write_file(ventura::safe_c_str(file_name),
+			                                new_content);
+			    if (!!error)
+			    {
+				    log << "Could not open " << file_name << "\n" << error
+				        << '\n';
+				    return false;
+			    }
+			    return true;
 			},
 		    [&](ventura::read_file_problem const problem)
 		    {
