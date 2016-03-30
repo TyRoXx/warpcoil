@@ -2,6 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <silicium/sink/ptr_sink.hpp>
 #include <silicium/sink/ostream_sink.hpp>
+#include <silicium/sink/iterator_sink.hpp>
 #include <silicium/sink/append.hpp>
 #include <silicium/make_unique.hpp>
 #include <boost/lexical_cast.hpp>
@@ -164,6 +165,28 @@ namespace warpcoil
 		Si::append(code, ";\n");
 		Si::append(code, "}\n");
 	}
+
+	template <class CharSink>
+	void generate_interface(CharSink &&code, Si::memory_range name, types::interface_definition const &definition)
+	{
+		Si::append(code, "struct ");
+		Si::append(code, name);
+		Si::append(code, "\n{\n");
+		Si::append(code, "    virtual ~");
+		Si::append(code, name);
+		Si::append(code, "() {}\n");
+		for (auto const &entry : definition.methods)
+		{
+			Si::append(code, "    virtual ");
+			generate_type(code, entry.second.result);
+			Si::append(code, " ");
+			Si::append(code, entry.first);
+			Si::append(code, "(");
+			generate_type(code, entry.second.parameter);
+			Si::append(code, " argument) = 0;\n");
+		}
+		Si::append(code, "};\n");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(cpp)
@@ -172,7 +195,34 @@ BOOST_AUTO_TEST_CASE(cpp)
 	types::tuple parameters;
 	parameters.elements.emplace_back(types::integer());
 	parameters.elements.emplace_back(Si::make_unique<types::tuple>());
-	generate_function_definition(Si::ostream_ref_sink(std::cout), types::integer(), Si::make_c_str_range("func"),
+	std::string code;
+	auto code_writer = Si::make_container_sink(code);
+	generate_function_definition(code_writer, types::integer(), Si::make_c_str_range("func"),
 	                             Si::to_unique(std::move(parameters)),
 	                             expressions::closure{expressions::expression{Si::make_unique<expressions::tuple>()}});
+	BOOST_CHECK_EQUAL("::std::uint64_t func(::std::tuple<::std::uint64_t, ::std::tuple<>> argument)\n"
+	                  "{\n"
+	                  "    return ::std::make_tuple();\n"
+	                  "}\n",
+	                  code);
+}
+
+BOOST_AUTO_TEST_CASE(test_generate_interface)
+{
+	using namespace warpcoil;
+	types::interface_definition definition;
+	types::tuple parameters;
+	parameters.elements.emplace_back(types::integer());
+	parameters.elements.emplace_back(types::integer());
+	definition.methods.insert(std::make_pair(
+	    "evaluate", types::interface_definition::method{types::integer(), Si::to_unique(std::move(parameters))}));
+	std::string code;
+	auto code_writer = Si::make_container_sink(code);
+	generate_interface(code_writer, Si::make_c_str_range("binary_integer_function"), definition);
+	BOOST_CHECK_EQUAL("struct binary_integer_function\n"
+	                  "{\n"
+	                  "    virtual ~binary_integer_function() {}\n"
+	                  "    virtual ::std::uint64_t evaluate(::std::tuple<::std::uint64_t, ::std::uint64_t> argument) = 0;\n"
+	                  "};\n",
+	                  code);
 }

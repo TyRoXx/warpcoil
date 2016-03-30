@@ -98,5 +98,16 @@ namespace warpcoil
 			type superset;
 			values::closure is_inside;
 		};
+
+		struct interface_definition
+		{
+			struct method
+			{
+				type result;
+				type parameter;
+			};
+
+			std::map<expressions::identifier, method> methods;
+		};
 	}
 }
