@@ -14,14 +14,21 @@ int main(int argc, char **argv)
 	types::tuple parameters;
 	parameters.elements.emplace_back(types::integer());
 	parameters.elements.emplace_back(types::integer());
-	definition.methods.insert(std::make_pair(
-	    "evaluate", types::interface_definition::method{types::integer(), Si::to_unique(std::move(parameters))}));
+	definition.methods.insert(
+	    std::make_pair("evaluate", types::interface_definition::method{
+	                                   types::integer(),
+	                                   Si::to_unique(std::move(parameters))}));
 	std::vector<char> code;
 	auto code_writer = Si::make_container_sink(code);
 	Si::append(code_writer, "#pragma once\n"
 	                        "#include <cstdint>\n"
 	                        "#include <tuple>\n"
 	                        "\n");
-	generate_interface(code_writer, Si::make_c_str_range("binary_integer_function"), definition);
-	return warpcoil::update_generated_file(argv[1], Si::make_contiguous_range(code), std::cerr) ? 0 : 1;
+	generate_interface(code_writer,
+	                   Si::make_c_str_range("binary_integer_function"),
+	                   definition);
+	return warpcoil::update_generated_file(
+	           argv[1], Si::make_contiguous_range(code), std::cerr)
+	           ? 0
+	           : 1;
 }

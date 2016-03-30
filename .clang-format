@@ -20,7 +20,7 @@ BreakConstructorInitializersBeforeComma: true
 BreakBeforeBraces: Allman
 BinPackParameters: true
 BinPackArguments: true
-ColumnLimit:     120
+ColumnLimit:     80
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 4
 DerivePointerAlignment: false
