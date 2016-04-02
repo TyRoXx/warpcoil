@@ -138,7 +138,7 @@ add_definitions("-DSILICIUM_NO_DEPRECATED")
 
 include_directories(".")
 
-file(GLOB generateSources "test_application/generate.cpp")
+file(GLOB generateSources "test_interfaces/generate.cpp")
 set(formatted ${formatted} ${generateSources})
 add_executable(test_app_generate ${generateSources})
 target_link_libraries(test_app_generate ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CONAN_LIBS})
@@ -147,7 +147,6 @@ add_custom_target(generatedHeaderTarget COMMAND $<TARGET_FILE:test_app_generate>
 
 add_subdirectory("test")
 add_subdirectory("examples")
-add_subdirectory("test_application")
 
 find_program(WARPCOIL_CLANG_FORMAT NAMES clang-format clang-format-3.7 clang-format-3.8 PATHS "C:/Program Files/LLVM/bin")
 add_custom_target(clang-format COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${formatted} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
