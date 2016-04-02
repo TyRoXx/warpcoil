@@ -39,14 +39,46 @@ namespace warpcoil
 			return comma_separator<CharSink>(out);
 		}
 
-		template <class CharSink>
-		void generate_type(CharSink &&code, types::type const &root)
+		struct indentation_level
 		{
-			return Si::visit<void>(
+			explicit indentation_level(std::size_t amount = 0)
+			    : m_amount(amount)
+			{
+			}
+
+			indentation_level deeper() const
+			{
+				return indentation_level(m_amount + 1);
+			}
+
+			template <class CharSink>
+			void render(CharSink &&sink) const
+			{
+				for (std::size_t i = 0; i < m_amount; ++i)
+				{
+					Si::append(sink, "    ");
+				}
+			}
+
+		private:
+			std::size_t m_amount;
+		};
+
+		enum class type_emptiness
+		{
+			empty,
+			non_empty
+		};
+
+		template <class CharSink>
+		type_emptiness generate_type(CharSink &&code, types::type const &root)
+		{
+			return Si::visit<type_emptiness>(
 			    root,
 			    [&code](types::integer)
 			    {
 				    Si::append(code, "::std::uint64_t");
+				    return type_emptiness::non_empty;
 				},
 			    [&code](std::unique_ptr<types::variant> const &root)
 			    {
@@ -58,6 +90,8 @@ namespace warpcoil
 					    generate_type(code, element);
 				    }
 				    Si::append(code, ">");
+				    return root->elements.empty() ? type_emptiness::empty
+				                                  : type_emptiness::non_empty;
 				},
 			    [&code](std::unique_ptr<types::tuple> const &root)
 			    {
@@ -69,11 +103,13 @@ namespace warpcoil
 					    generate_type(code, element);
 				    }
 				    Si::append(code, ">");
+				    return root->elements.empty() ? type_emptiness::empty
+				                                  : type_emptiness::non_empty;
 				},
 			    [&code](std::unique_ptr<types::subset> const &root)
 			    {
 				    Si::append(code, "/*subset of*/");
-				    generate_type(code, root->superset);
+				    return generate_type(code, root->superset);
 				});
 		}
 
@@ -154,26 +190,262 @@ namespace warpcoil
 		}
 
 		template <class CharSink>
-		void generate_interface(CharSink &&code, Si::memory_range name,
+		void generate_interface(CharSink &&code, indentation_level indentation,
+		                        Si::memory_range name,
 		                        types::interface_definition const &definition)
 		{
 			Si::append(code, "struct ");
 			Si::append(code, name);
-			Si::append(code, "\n{\n");
-			Si::append(code, "    virtual ~");
-			Si::append(code, name);
-			Si::append(code, "() {}\n");
-			for (auto const &entry : definition.methods)
+			Si::append(code, "\n");
+			indentation.render(code);
+			Si::append(code, "{\n");
 			{
-				Si::append(code, "    virtual ");
-				generate_type(code, entry.second.result);
-				Si::append(code, " ");
-				Si::append(code, entry.first);
-				Si::append(code, "(");
-				generate_type(code, entry.second.parameter);
-				Si::append(code, " argument) = 0;\n");
+				indentation_level const in_class = indentation.deeper();
+				in_class.render(code);
+				Si::append(code, "virtual ~");
+				Si::append(code, name);
+				Si::append(code, "() {}\n");
+				for (auto const &entry : definition.methods)
+				{
+					in_class.render(code);
+					Si::append(code, "virtual ");
+					generate_type(code, entry.second.result);
+					Si::append(code, " ");
+					Si::append(code, entry.first);
+					Si::append(code, "(");
+					switch (generate_type(code, entry.second.parameter))
+					{
+					case type_emptiness::empty:
+						break;
+
+					case type_emptiness::non_empty:
+						Si::append(code, " argument");
+						break;
+					}
+					Si::append(code, ") = 0;\n");
+				}
 			}
+			indentation.render(code);
 			Si::append(code, "};\n\n");
+		}
+
+		template <class CharSink>
+		void generate_value_serialization(CharSink &&code,
+		                                  indentation_level indentation,
+		                                  Si::memory_range sink,
+		                                  Si::memory_range value,
+		                                  types::type const &type)
+		{
+			return Si::visit<void>(
+			    type,
+			    [&code, sink, value, indentation](types::integer)
+			    {
+				    indentation.render(code);
+				    {
+					    indentation_level const block = indentation.deeper();
+					    Si::append(code, "{\n");
+					    block.render(code);
+					    Si::append(code,
+					               "std::array<std::uint8_t, 8> bytes = {{\n");
+					    {
+						    indentation_level const list = block.deeper();
+						    for (std::size_t i = 0; i < 8; ++i)
+						    {
+							    list.render(code);
+							    Si::append(code, "static_cast<std::uint8_t>(");
+							    Si::append(code, value);
+							    Si::append(code, " >> ");
+							    Si::append(code,
+							               boost::lexical_cast<std::string>(
+							                   (7 - i) * 8));
+							    Si::append(code, "),\n");
+						    }
+					    }
+					    block.render(code);
+					    Si::append(code, "}};\n");
+					    block.render(code);
+					    Si::append(code, "Si::append(");
+					    Si::append(code, sink);
+					    Si::append(code,
+					               ", Si::make_contiguous_range(bytes));\n");
+				    }
+				    indentation.render(code);
+				    Si::append(code, "}\n");
+				},
+			    [&code](std::unique_ptr<types::variant> const &)
+			    {
+				    throw std::logic_error("to do");
+				},
+			    [&code, sink, value,
+			     indentation](std::unique_ptr<types::tuple> const &root)
+			    {
+				    std::size_t element_index = 0;
+				    for (types::type const &element : root->elements)
+				    {
+					    std::string element_name =
+					        "std::get<" +
+					        boost::lexical_cast<std::string>(element_index) +
+					        ">(";
+					    element_name.insert(element_name.end(), value.begin(),
+					                        value.end());
+					    element_name += ")";
+					    generate_value_serialization(
+					        code, indentation, sink,
+					        Si::make_contiguous_range(element_name), element);
+					    ++element_index;
+				    }
+				},
+			    [&code](std::unique_ptr<types::subset> const &)
+			    {
+				    throw std::logic_error("to do");
+				});
+		}
+
+		template <class CharSink>
+		void generate_value_deserialization(CharSink &&code,
+		                                    indentation_level indentation,
+		                                    Si::memory_range source,
+		                                    types::type const &type)
+		{
+			return Si::visit<void>(
+			    type,
+			    [&code, source, indentation](types::integer)
+			    {
+				    Si::append(code, "[&] {\n");
+				    {
+					    indentation_level const in_lambda =
+					        indentation.deeper();
+					    in_lambda.render(code);
+					    Si::append(code, "std::uint64_t result = 0;\n");
+					    for (std::size_t i = 0; i < 8; ++i)
+					    {
+						    in_lambda.render(code);
+						    Si::append(code,
+						               "result <<= 8; result |= Si::get(");
+						    Si::append(code, source);
+						    Si::append(code, ").or_throw([]{ throw "
+						                     "std::runtime_error(\"unexpected "
+						                     "end of the response\"); });\n");
+					    }
+					    in_lambda.render(code);
+					    Si::append(code, "return result;\n");
+				    }
+				    indentation.render(code);
+				    Si::append(code, "}()");
+				},
+			    [&code](std::unique_ptr<types::variant> const &)
+			    {
+				    throw std::logic_error("to do");
+				},
+			    [&code, source, &type,
+			     indentation](std::unique_ptr<types::tuple> const &root)
+			    {
+				    Si::append(code, "[&] {\n");
+				    indentation_level const in_lambda = indentation.deeper();
+				    in_lambda.render(code);
+				    generate_type(code, type);
+				    Si::append(code, " result;\n");
+				    for (std::size_t i = 0; i < root->elements.size(); ++i)
+				    {
+					    in_lambda.render(code);
+					    Si::append(code, "std::get<");
+					    Si::append(code, boost::lexical_cast<std::string>(i));
+					    Si::append(code, ">(result) = ");
+					    generate_value_deserialization(code, in_lambda, source,
+					                                   root->elements[i]);
+					    Si::append(code, ";\n");
+				    }
+				    in_lambda.render(code);
+				    Si::append(code, "return result; }()");
+				},
+			    [&code](std::unique_ptr<types::subset> const &)
+			    {
+				    throw std::logic_error("to do");
+				});
+		}
+
+		template <class CharSink>
+		void generate_serialization_client(
+		    CharSink &&code, indentation_level indentation,
+		    Si::memory_range name,
+		    types::interface_definition const &definition)
+		{
+			Si::append(code, "struct ");
+			Si::append(code, name);
+			Si::append(code, "_client : ");
+			Si::append(code, name);
+			Si::append(code, "\n");
+			indentation.render(code);
+			Si::append(code, "{\n");
+			{
+				indentation_level const in_class = indentation.deeper();
+				in_class.render(code);
+				Si::append(code, "explicit ");
+				Si::append(code, name);
+				Si::append(code, "_client(Si::Sink<std::uint8_t, "
+				                 "Si::success>::interface &requests, "
+				                 "Si::Source<std::uint8_t>::interface "
+				                 "&responses)\n");
+				in_class.deeper().render(code);
+				Si::append(code,
+				           ": requests(requests), responses(responses) {}\n");
+				for (auto const &entry : definition.methods)
+				{
+					in_class.render(code);
+					generate_type(code, entry.second.result);
+					Si::append(code, " ");
+					Si::append(code, entry.first);
+					Si::append(code, "(");
+					switch (generate_type(code, entry.second.parameter))
+					{
+					case type_emptiness::empty:
+						break;
+
+					case type_emptiness::non_empty:
+						Si::append(code, " argument");
+						break;
+					}
+					Si::append(code, ") override\n");
+					in_class.render(code);
+					Si::append(code, "{\n");
+					{
+						indentation_level const in_method = in_class.deeper();
+						generate_value_serialization(
+						    code, in_method, Si::make_c_str_range("requests"),
+						    Si::make_c_str_range("argument"),
+						    entry.second.parameter);
+						in_method.render(code);
+						Si::append(code, "return ");
+						generate_value_deserialization(
+						    code, in_method, Si::make_c_str_range("responses"),
+						    entry.second.result);
+						Si::append(code, ";\n");
+					}
+					in_class.render(code);
+					Si::append(code, "}\n");
+				}
+				indentation.render(code);
+				Si::append(code, "private:\n");
+
+				in_class.render(code);
+				Si::append(code, "Si::Sink<std::uint8_t, "
+				                 "Si::success>::interface &requests;\n");
+				in_class.render(code);
+				Si::append(code,
+				           "Si::Source<std::uint8_t>::interface &responses;\n");
+			}
+			indentation.render(code);
+			Si::append(code, "};\n\n");
+		}
+
+		template <class CharSink>
+		void generate_serializable_interface(
+		    CharSink &&code, indentation_level indentation,
+		    Si::memory_range name,
+		    types::interface_definition const &definition)
+		{
+			generate_interface(code, indentation, name, definition);
+			generate_serialization_client(code, indentation, name, definition);
 		}
 	}
 }

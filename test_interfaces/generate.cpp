@@ -15,7 +15,10 @@ int main(int argc, char **argv)
 	Si::append(code_writer, "#pragma once\n"
 	                        "#include <cstdint>\n"
 	                        "#include <tuple>\n"
+	                        "#include <silicium/source/source.hpp>\n"
+	                        "#include <silicium/sink/append.hpp>\n"
 	                        "\n");
+	cpp::indentation_level const top_level;
 	{
 		types::interface_definition definition;
 		types::tuple parameters;
@@ -25,9 +28,9 @@ int main(int argc, char **argv)
 		    "evaluate",
 		    types::interface_definition::method{
 		        types::integer(), Si::to_unique(std::move(parameters))}));
-		cpp::generate_interface(code_writer,
-		                        Si::make_c_str_range("binary_integer_function"),
-		                        definition);
+		cpp::generate_serializable_interface(
+		    code_writer, top_level,
+		    Si::make_c_str_range("binary_integer_function"), definition);
 	}
 	{
 		types::interface_definition definition;
@@ -53,8 +56,9 @@ int main(int argc, char **argv)
 			    types::interface_definition::method{
 			        types::integer(), Si::to_unique(std::move(parameters))}));
 		}
-		cpp::generate_interface(
-		    code_writer, Si::make_c_str_range("test_interface"), definition);
+		cpp::generate_serializable_interface(
+		    code_writer, top_level, Si::make_c_str_range("test_interface"),
+		    definition);
 	}
 	return warpcoil::update_generated_file(
 	           argv[1], Si::make_contiguous_range(code), std::cerr)
