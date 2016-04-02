@@ -77,12 +77,12 @@ namespace warpcoil
 			    root,
 			    [&code](types::integer)
 			    {
-				    Si::append(code, "::std::uint64_t");
+				    Si::append(code, "std::uint64_t");
 				    return type_emptiness::non_empty;
 				},
 			    [&code](std::unique_ptr<types::variant> const &root)
 			    {
-				    Si::append(code, "::Si::variant<");
+				    Si::append(code, "Si::variant<");
 				    auto comma = make_comma_separator(Si::ref_sink(code));
 				    for (types::type const &element : root->elements)
 				    {
@@ -95,7 +95,7 @@ namespace warpcoil
 				},
 			    [&code](std::unique_ptr<types::tuple> const &root)
 			    {
-				    Si::append(code, "::std::tuple<");
+				    Si::append(code, "std::tuple<");
 				    auto comma = make_comma_separator(Si::ref_sink(code));
 				    for (types::type const &element : root->elements)
 				    {
@@ -128,7 +128,7 @@ namespace warpcoil
 				},
 			    [&code](std::unique_ptr<values::tuple> const &root)
 			    {
-				    Si::append(code, "::std::make_tuple(");
+				    Si::append(code, "std::make_tuple(");
 				    auto comma = make_comma_separator(Si::ref_sink(code));
 				    for (values::value const &element : root->elements)
 				    {
@@ -154,7 +154,7 @@ namespace warpcoil
 				},
 			    [&code](std::unique_ptr<expressions::tuple> const &root)
 			    {
-				    Si::append(code, "::std::make_tuple(");
+				    Si::append(code, "std::make_tuple(");
 				    auto comma = make_comma_separator(Si::ref_sink(code));
 				    for (expressions::expression const &element :
 				         root->elements)
@@ -180,7 +180,7 @@ namespace warpcoil
 				},
 			    [&code](std::unique_ptr<expressions::tuple_element> const &root)
 			    {
-				    Si::append(code, "::std::get<");
+				    Si::append(code, "std::get<");
 				    Si::append(code,
 				               boost::lexical_cast<std::string>(root->element));
 				    Si::append(code, ">(");
