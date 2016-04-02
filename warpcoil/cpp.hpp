@@ -194,7 +194,7 @@ namespace warpcoil
 				generate_type(code, entry.second.parameter);
 				Si::append(code, " argument) = 0;\n");
 			}
-			Si::append(code, "};\n");
+			Si::append(code, "};\n\n");
 		}
 	}
 }

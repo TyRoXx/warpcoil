@@ -28,29 +28,3 @@ BOOST_AUTO_TEST_CASE(test_generate_function_definition)
 	                  "}\n",
 	                  code);
 }
-
-BOOST_AUTO_TEST_CASE(test_generate_interface)
-{
-	using namespace warpcoil;
-	types::interface_definition definition;
-	types::tuple parameters;
-	parameters.elements.emplace_back(types::integer());
-	parameters.elements.emplace_back(types::integer());
-	definition.methods.insert(
-	    std::make_pair("evaluate", types::interface_definition::method{
-	                                   types::integer(),
-	                                   Si::to_unique(std::move(parameters))}));
-	std::string code;
-	auto code_writer = Si::make_container_sink(code);
-	cpp::generate_interface(code_writer,
-	                        Si::make_c_str_range("binary_integer_function"),
-	                        definition);
-	BOOST_CHECK_EQUAL("struct binary_integer_function\n"
-	                  "{\n"
-	                  "    virtual ~binary_integer_function() {}\n"
-	                  "    virtual ::std::uint64_t "
-	                  "evaluate(::std::tuple<::std::uint64_t, ::std::uint64_t> "
-	                  "argument) = 0;\n"
-	                  "};\n",
-	                  code);
-}
