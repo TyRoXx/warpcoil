@@ -241,36 +241,11 @@ namespace warpcoil
 			    [&code, sink, value, indentation](types::integer)
 			    {
 				    indentation.render(code);
-				    {
-					    indentation_level const block = indentation.deeper();
-					    Si::append(code, "{\n");
-					    block.render(code);
-					    Si::append(code,
-					               "std::array<std::uint8_t, 8> bytes = {{\n");
-					    {
-						    indentation_level const list = block.deeper();
-						    for (std::size_t i = 0; i < 8; ++i)
-						    {
-							    list.render(code);
-							    Si::append(code, "static_cast<std::uint8_t>(");
-							    Si::append(code, value);
-							    Si::append(code, " >> ");
-							    Si::append(code,
-							               boost::lexical_cast<std::string>(
-							                   (7 - i) * 8));
-							    Si::append(code, "),\n");
-						    }
-					    }
-					    block.render(code);
-					    Si::append(code, "}};\n");
-					    block.render(code);
-					    Si::append(code, "Si::append(");
-					    Si::append(code, sink);
-					    Si::append(code,
-					               ", Si::make_contiguous_range(bytes));\n");
-				    }
-				    indentation.render(code);
-				    Si::append(code, "}\n");
+				    Si::append(code, "warpcoil::cpp::write_integer(");
+				    Si::append(code, sink);
+				    Si::append(code, ", ");
+				    Si::append(code, value);
+				    Si::append(code, ");\n");
 				},
 			    [&code](std::unique_ptr<types::variant> const &)
 			    {
