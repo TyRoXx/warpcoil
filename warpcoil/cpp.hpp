@@ -298,22 +298,28 @@ namespace warpcoil
 			     indentation](std::unique_ptr<types::tuple> const &root)
 			    {
 				    Si::append(code, "[&] {\n");
-				    indentation_level const in_lambda = indentation.deeper();
-				    in_lambda.render(code);
-				    generate_type(code, type);
-				    Si::append(code, " result;\n");
-				    for (std::size_t i = 0; i < root->elements.size(); ++i)
 				    {
+					    indentation_level const in_lambda =
+					        indentation.deeper();
 					    in_lambda.render(code);
-					    Si::append(code, "std::get<");
-					    Si::append(code, boost::lexical_cast<std::string>(i));
-					    Si::append(code, ">(result) = ");
-					    generate_value_deserialization(code, in_lambda, source,
-					                                   root->elements[i]);
-					    Si::append(code, ";\n");
+					    generate_type(code, type);
+					    Si::append(code, " result;\n");
+					    for (std::size_t i = 0; i < root->elements.size(); ++i)
+					    {
+						    in_lambda.render(code);
+						    Si::append(code, "std::get<");
+						    Si::append(code,
+						               boost::lexical_cast<std::string>(i));
+						    Si::append(code, ">(result) = ");
+						    generate_value_deserialization(
+						        code, in_lambda, source, root->elements[i]);
+						    Si::append(code, ";\n");
+					    }
+					    in_lambda.render(code);
+					    Si::append(code, "return result;\n");
 				    }
-				    in_lambda.render(code);
-				    Si::append(code, "return result; }()");
+				    indentation.render(code);
+				    Si::append(code, "}()");
 				},
 			    [&code](std::unique_ptr<types::subset> const &)
 			    {
