@@ -154,27 +154,6 @@ namespace warpcoil
 		}
 
 		template <class CharSink>
-		void generate_function_definition(CharSink &&code,
-		                                  types::type const &result,
-		                                  Si::memory_range name,
-		                                  types::type const &parameter,
-		                                  expressions::closure const &function)
-		{
-			generate_type(code, result);
-			Si::append(code, " ");
-			Si::append(code, name);
-			Si::append(code, "(");
-			generate_type(code, parameter);
-			Si::append(code, " argument");
-			Si::append(code, ")\n");
-			Si::append(code, "{\n");
-			Si::append(code, "    return ");
-			generate_expression(code, function.result);
-			Si::append(code, ";\n");
-			Si::append(code, "}\n");
-		}
-
-		template <class CharSink>
 		void generate_interface(CharSink &&code, Si::memory_range name,
 		                        types::interface_definition const &definition)
 		{
