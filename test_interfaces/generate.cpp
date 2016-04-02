@@ -13,10 +13,11 @@ int main(int argc, char **argv)
 	std::vector<char> code;
 	auto code_writer = Si::make_container_sink(code);
 	Si::append(code_writer, "#pragma once\n"
-	                        "#include <cstdint>\n"
-	                        "#include <tuple>\n"
+	                        "#include <warpcoil/cpp_helpers.hpp>\n"
 	                        "#include <silicium/source/source.hpp>\n"
 	                        "#include <silicium/sink/append.hpp>\n"
+	                        "#include <cstdint>\n"
+	                        "#include <tuple>\n"
 	                        "\n");
 	cpp::indentation_level const top_level;
 	{

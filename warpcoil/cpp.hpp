@@ -309,29 +309,11 @@ namespace warpcoil
 		{
 			return Si::visit<void>(
 			    type,
-			    [&code, source, indentation](types::integer)
+			    [&code, source](types::integer)
 			    {
-				    Si::append(code, "[&] {\n");
-				    {
-					    indentation_level const in_lambda =
-					        indentation.deeper();
-					    in_lambda.render(code);
-					    Si::append(code, "std::uint64_t result = 0;\n");
-					    for (std::size_t i = 0; i < 8; ++i)
-					    {
-						    in_lambda.render(code);
-						    Si::append(code,
-						               "result <<= 8; result |= Si::get(");
-						    Si::append(code, source);
-						    Si::append(code, ").or_throw([]{ throw "
-						                     "std::runtime_error(\"unexpected "
-						                     "end of the response\"); });\n");
-					    }
-					    in_lambda.render(code);
-					    Si::append(code, "return result;\n");
-				    }
-				    indentation.render(code);
-				    Si::append(code, "}()");
+				    Si::append(code, "warpcoil::cpp::read_integer(");
+				    Si::append(code, source);
+				    Si::append(code, ")");
 				},
 			    [&code](std::unique_ptr<types::variant> const &)
 			    {
