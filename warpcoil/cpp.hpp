@@ -351,7 +351,7 @@ namespace warpcoil
 				                 "&responses)\n");
 				in_class.deeper().render(code);
 				Si::append(code,
-				           ": requests(requests), responses(responses) {}\n");
+				           ": requests(requests), responses(responses) {}\n\n");
 				for (auto const &entry : definition.methods)
 				{
 					in_class.render(code);
@@ -385,7 +385,7 @@ namespace warpcoil
 						Si::append(code, ";\n");
 					}
 					in_class.render(code);
-					Si::append(code, "}\n");
+					Si::append(code, "}\n\n");
 				}
 				indentation.render(code);
 				Si::append(code, "private:\n");
