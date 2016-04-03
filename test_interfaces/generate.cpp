@@ -16,6 +16,7 @@ int main(int argc, char **argv)
 	                        "#include <warpcoil/cpp_helpers.hpp>\n"
 	                        "#include <silicium/source/source.hpp>\n"
 	                        "#include <silicium/sink/append.hpp>\n"
+	                        "#include <silicium/variant.hpp>\n"
 	                        "#include <cstdint>\n"
 	                        "#include <tuple>\n"
 	                        "\n");
