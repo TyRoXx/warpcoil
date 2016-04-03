@@ -373,6 +373,25 @@ namespace warpcoil
 					Si::append(code, "{\n");
 					{
 						indentation_level const in_method = in_class.deeper();
+						in_method.render(code);
+						Si::append(code, "Si::append(requests, ");
+						if (entry.first.size() > 255u)
+						{
+							// TODO: avoid this check with a better type for the
+							// name
+							throw std::invalid_argument("A method name cannot "
+							                            "be longer than 255 "
+							                            "bytes");
+						}
+						Si::append(code, boost::lexical_cast<std::string>(
+						                     entry.first.size()));
+						Si::append(code, "u);\n");
+						in_method.render(code);
+						Si::append(code, "Si::append(requests, "
+						                 "Si::make_c_str_range(reinterpret_"
+						                 "cast<std::uint8_t const *>(\"");
+						Si::append(code, entry.first);
+						Si::append(code, "\")));\n");
 						generate_value_serialization(
 						    code, in_method, Si::make_c_str_range("requests"),
 						    Si::make_c_str_range("argument"),

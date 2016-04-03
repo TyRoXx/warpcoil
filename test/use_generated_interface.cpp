@@ -70,8 +70,9 @@ BOOST_AUTO_TEST_CASE(serialization_client)
 	test_interface_client t(request_writer, response_reader);
 	BOOST_CHECK_EQUAL(0x1122334455667788ULL,
 	                  t.two_parameters(std::make_tuple(4, 5)));
-	std::array<std::uint8_t, 16> const expected_request = {
-	    {0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 5}};
+	std::array<std::uint8_t, 1 + 14 + (2 * 8)> const expected_request = {
+	    {14, 't', 'w', 'o', '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r',
+	     's', 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 5}};
 	BOOST_CHECK_EQUAL_COLLECTIONS(expected_request.begin(),
 	                              expected_request.end(), request.begin(),
 	                              request.end());
