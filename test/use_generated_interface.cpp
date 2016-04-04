@@ -37,6 +37,13 @@ struct impl_test_interface : test_interface
 	{
 		return std::get<0>(argument) * std::get<1>(argument);
 	}
+
+	virtual std::vector<std::uint64_t>
+	vectors(std::vector<std::uint64_t> argument) override
+	{
+		std::reverse(argument.begin(), argument.end());
+		return argument;
+	}
 };
 
 BOOST_AUTO_TEST_CASE(no_result_no_parameter)
@@ -95,4 +102,26 @@ BOOST_AUTO_TEST_CASE(serialization_server)
 	BOOST_CHECK_EQUAL_COLLECTIONS(expected_response.begin(),
 	                              expected_response.end(), response.begin(),
 	                              response.end());
+}
+
+BOOST_AUTO_TEST_CASE(test_vector)
+{
+	std::vector<std::uint8_t> request;
+	auto request_writer = Si::Sink<std::uint8_t, Si::success>::erase(
+	    Si::make_container_sink(request));
+	std::array<std::uint8_t, 24> const response = {{0, 0, 0, 0, 0, 0, 0, 2, 0,
+	                                                0, 0, 0, 0, 0, 0, 3, 0, 0,
+	                                                0, 0, 0, 0, 0, 4}};
+	auto response_reader =
+	    Si::Source<std::uint8_t>::erase(Si::make_container_source(response));
+	test_interface_client t(request_writer, response_reader);
+	BOOST_CHECK((std::vector<std::uint64_t>{3, 4}) ==
+	            t.vectors(std::vector<std::uint64_t>{4, 3}));
+	std::array<std::uint8_t, 1 + 7 + 24> const expected_request = {
+	    {7, 'v', 'e', 'c', 't', 'o', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+	     0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 3}};
+	BOOST_CHECK_EQUAL_COLLECTIONS(expected_request.begin(),
+	                              expected_request.end(), request.begin(),
+	                              request.end());
+	BOOST_CHECK_EQUAL(Si::none, Si::get(response_reader));
 }

@@ -58,6 +58,10 @@ int main(int argc, char **argv)
 			    types::interface_definition::method{
 			        types::integer(), Si::to_unique(std::move(parameters))}));
 		}
+		definition.methods.insert(std::make_pair(
+		    "vectors", types::interface_definition::method{
+		                   Si::to_unique(types::vector{types::integer()}),
+		                   Si::to_unique(types::vector{types::integer()})}));
 		cpp::generate_serializable_interface(
 		    code_writer, top_level, Si::make_c_str_range("test_interface"),
 		    definition);

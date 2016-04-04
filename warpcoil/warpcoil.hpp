@@ -83,10 +83,11 @@ namespace warpcoil
 		struct variant;
 		struct tuple;
 		struct subset;
+		struct vector;
 
 		typedef Si::variant<integer, std::unique_ptr<variant>,
-		                    std::unique_ptr<tuple>,
-		                    std::unique_ptr<subset>> type;
+		                    std::unique_ptr<tuple>, std::unique_ptr<subset>,
+		                    std::unique_ptr<vector>> type;
 
 		struct variant
 		{
@@ -102,6 +103,11 @@ namespace warpcoil
 		{
 			type superset;
 			values::closure is_inside;
+		};
+
+		struct vector
+		{
+			type element;
 		};
 
 		struct interface_definition

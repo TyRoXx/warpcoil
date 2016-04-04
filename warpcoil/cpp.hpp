@@ -110,6 +110,13 @@ namespace warpcoil
 			    {
 				    Si::append(code, "/*subset of*/");
 				    return generate_type(code, root->superset);
+				},
+			    [&code](std::unique_ptr<types::vector> const &root)
+			    {
+				    Si::append(code, "std::vector<");
+				    generate_type(code, root->element);
+				    Si::append(code, ">");
+				    return type_emptiness::non_empty;
 				});
 		}
 
@@ -273,6 +280,31 @@ namespace warpcoil
 			    [&code](std::unique_ptr<types::subset> const &)
 			    {
 				    throw std::logic_error("to do");
+				},
+			    [&code, sink, value,
+			     indentation](std::unique_ptr<types::vector> const &root)
+			    {
+				    {
+					    std::string size(value.begin(), value.end());
+					    size += ".size()";
+					    generate_value_serialization(
+					        code, indentation, sink,
+					        Si::make_contiguous_range(size), types::integer());
+				    }
+				    indentation.render(code);
+				    Si::append(code, "for (auto const &element : ");
+				    Si::append(code, value);
+				    Si::append(code, ")\n");
+				    indentation.render(code);
+				    Si::append(code, "{\n");
+				    {
+					    indentation_level const in_for = indentation.deeper();
+					    generate_value_serialization(
+					        code, in_for, sink, Si::make_c_str_range("element"),
+					        root->element);
+				    }
+				    indentation.render(code);
+				    Si::append(code, "}\n");
 				});
 		}
 
@@ -324,6 +356,31 @@ namespace warpcoil
 			    [&code](std::unique_ptr<types::subset> const &)
 			    {
 				    throw std::logic_error("to do");
+				},
+			    [&code, source, indentation,
+			     &type](std::unique_ptr<types::vector> const &root)
+			    {
+				    Si::append(code, "[&] {\n");
+				    {
+					    indentation_level const in_lambda =
+					        indentation.deeper();
+					    in_lambda.render(code);
+					    generate_type(code, type);
+					    Si::append(code, " result(");
+					    generate_value_deserialization(code, in_lambda, source,
+					                                   types::integer());
+					    Si::append(code, ");\n");
+					    in_lambda.render(code);
+					    Si::append(code,
+					               "for (auto &element : result) { element = ");
+					    generate_value_deserialization(code, in_lambda, source,
+					                                   root->element);
+					    Si::append(code, "; }\n");
+					    in_lambda.render(code);
+					    Si::append(code, "return result;\n");
+				    }
+				    indentation.render(code);
+				    Si::append(code, "}()");
 				});
 		}
 
@@ -454,6 +511,12 @@ namespace warpcoil
 			    [&code](std::unique_ptr<types::subset> const &)
 			    {
 				    throw std::logic_error("to do");
+				},
+			    [&code](std::unique_ptr<types::vector> const &parsed)
+			    {
+				    Si::append(code, "warpcoil::cpp::vector_parser<");
+				    generate_parser_type(code, parsed->element);
+				    Si::append(code, ">");
 				});
 		}
 
