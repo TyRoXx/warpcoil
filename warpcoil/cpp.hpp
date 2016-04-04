@@ -557,12 +557,6 @@ namespace warpcoil
 				indentation.render(code);
 				Si::append(code, "private:\n");
 
-				in_class.render(code);
-				Si::append(code, "struct parsing_method_name_length {};\n");
-				in_class.render(code);
-				Si::append(code, "struct parsing_method_name { std::string "
-				                 "name; std::size_t "
-				                 "expected_length; };\n\n");
 				for (auto const &entry : definition.methods)
 				{
 					in_class.render(code);
@@ -587,8 +581,10 @@ namespace warpcoil
 				Si::append(code, "Si::Sink<std::uint8_t, "
 				                 "Si::success>::interface &responses;\n");
 				in_class.render(code);
-				Si::append(code, "Si::variant<parsing_method_name_length, "
-				                 "parsing_method_name");
+				Si::append(
+				    code,
+				    "Si::variant<warpcoil::cpp::parsing_method_name_length, "
+				    "warpcoil::cpp::parsing_method_name");
 				for (auto const &entry : definition.methods)
 				{
 					Si::append(code, ", parsing_arguments_of_");
@@ -606,14 +602,17 @@ namespace warpcoil
 					{
 						indentation_level const in_visit = in_method.deeper();
 						in_visit.render(code);
-						Si::append(
-						    code, "  [this, value](parsing_method_name_length) "
-						          "{ parser_state = parsing_method_name{\"\", "
-						          "value}; }\n");
+						Si::append(code,
+						           "  [this, "
+						           "value](warpcoil::cpp::parsing_method_name_"
+						           "length) "
+						           "{ parser_state = "
+						           "warpcoil::cpp::parsing_method_name{\"\", "
+						           "value}; }\n");
 						in_visit.render(code);
-						Si::append(
-						    code,
-						    ", [this, value](parsing_method_name &parsing)\n");
+						Si::append(code, ", [this, "
+						                 "value](warpcoil::cpp::parsing_method_"
+						                 "name &parsing)\n");
 						in_visit.render(code);
 						Si::append(code, "{\n");
 						{
@@ -716,9 +715,11 @@ namespace warpcoil
 										break;
 									}
 									in_if.render(code);
-									Si::append(code, "parser_state = "
-									                 "parsing_method_name_"
-									                 "length();\n");
+									Si::append(
+									    code,
+									    "parser_state = "
+									    "warpcoil::cpp::parsing_method_name_"
+									    "length();\n");
 								}
 								in_lambda.render(code);
 								Si::append(code, "}\n");

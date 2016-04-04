@@ -214,5 +214,15 @@ namespace warpcoil
 			Si::variant<integer_parser, parsing_element> step;
 			result_type result;
 		};
+
+		struct parsing_method_name_length
+		{
+		};
+
+		struct parsing_method_name
+		{
+			std::string name;
+			std::size_t expected_length;
+		};
 	}
 }
