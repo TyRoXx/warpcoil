@@ -28,9 +28,7 @@ namespace warpcoil
 					for (auto const &entry : definition.methods)
 					{
 						in_class.render(code);
-						Si::append(code, "virtual ");
-						generate_type(code, entry.second.result);
-						Si::append(code, " ");
+						Si::append(code, "virtual void ");
 						Si::append(code, entry.first);
 						Si::append(code, "(");
 						switch (generate_type(code, entry.second.parameter))
@@ -42,7 +40,11 @@ namespace warpcoil
 							Si::append(code, " argument");
 							break;
 						}
-						Si::append(code, ") = 0;\n");
+						Si::append(
+						    code,
+						    ", std::function<void(boost::system::error_code, ");
+						generate_type(code, entry.second.result);
+						Si::append(code, ")> on_result) = 0;\n");
 					}
 				}
 				indentation.render(code);
@@ -78,8 +80,7 @@ namespace warpcoil
 					for (auto const &entry : definition.methods)
 					{
 						in_class.render(code);
-						generate_type(code, entry.second.result);
-						Si::append(code, " ");
+						Si::append(code, "void ");
 						Si::append(code, entry.first);
 						Si::append(code, "(");
 						switch (generate_type(code, entry.second.parameter))
@@ -91,7 +92,11 @@ namespace warpcoil
 							Si::append(code, " argument");
 							break;
 						}
-						Si::append(code, ") override\n");
+						Si::append(
+						    code,
+						    ", std::function<void(boost::system::error_code, ");
+						generate_type(code, entry.second.result);
+						Si::append(code, ")> on_result) override\n");
 						in_class.render(code);
 						Si::append(code, "{\n");
 						{
@@ -124,12 +129,14 @@ namespace warpcoil
 							    Si::make_c_str_range("argument"),
 							    entry.second.parameter);
 							in_method.render(code);
-							Si::append(code, "return ");
+							Si::append(
+							    code,
+							    "on_result(boost::system::error_code(), ");
 							generate_value_deserialization(
 							    code, in_method,
 							    Si::make_c_str_range("responses"),
 							    entry.second.result);
-							Si::append(code, ";\n");
+							Si::append(code, ");\n");
 						}
 						in_class.render(code);
 						Si::append(code, "}\n\n");
