@@ -6,7 +6,7 @@ namespace warpcoil
 {
 	namespace cpp
 	{
-		namespace sync
+		namespace async
 		{
 			template <class CharSink>
 			void
@@ -14,7 +14,7 @@ namespace warpcoil
 			                   Si::memory_range name,
 			                   types::interface_definition const &definition)
 			{
-				Si::append(code, "struct ");
+				Si::append(code, "struct async_");
 				Si::append(code, name);
 				Si::append(code, "\n");
 				indentation.render(code);
@@ -22,7 +22,7 @@ namespace warpcoil
 				{
 					indentation_level const in_class = indentation.deeper();
 					in_class.render(code);
-					Si::append(code, "virtual ~");
+					Si::append(code, "virtual ~async_");
 					Si::append(code, name);
 					Si::append(code, "() {}\n");
 					for (auto const &entry : definition.methods)
@@ -55,9 +55,9 @@ namespace warpcoil
 			    Si::memory_range name,
 			    types::interface_definition const &definition)
 			{
-				Si::append(code, "struct ");
+				Si::append(code, "struct async_");
 				Si::append(code, name);
-				Si::append(code, "_client : ");
+				Si::append(code, "_client : async_");
 				Si::append(code, name);
 				Si::append(code, "\n");
 				indentation.render(code);
@@ -65,7 +65,7 @@ namespace warpcoil
 				{
 					indentation_level const in_class = indentation.deeper();
 					in_class.render(code);
-					Si::append(code, "explicit ");
+					Si::append(code, "explicit async_");
 					Si::append(code, name);
 					Si::append(code, "_client(Si::Sink<std::uint8_t, "
 					                 "Si::success>::interface &requests, "
@@ -155,7 +155,7 @@ namespace warpcoil
 			    Si::memory_range name,
 			    types::interface_definition const &definition)
 			{
-				Si::append(code, "struct ");
+				Si::append(code, "struct async_");
 				Si::append(code, name);
 				Si::append(
 				    code,
@@ -166,9 +166,9 @@ namespace warpcoil
 				{
 					indentation_level const in_class = indentation.deeper();
 					in_class.render(code);
-					Si::append(code, "explicit ");
+					Si::append(code, "explicit async_");
 					Si::append(code, name);
-					Si::append(code, "_server(");
+					Si::append(code, "_server(async_");
 					Si::append(code, name);
 					Si::append(code, " &handler, Si::Sink<std::uint8_t, "
 					                 "Si::success>::interface &responses)\n");
@@ -206,6 +206,7 @@ namespace warpcoil
 					}
 
 					in_class.render(code);
+					Si::append(code, "async_");
 					Si::append(code, name);
 					Si::append(code, " &handler;\n");
 					in_class.render(code);
