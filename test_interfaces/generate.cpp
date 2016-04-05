@@ -1,4 +1,4 @@
-#include <warpcoil/cpp/generate.hpp>
+#include <warpcoil/cpp/generate/synchronous.hpp>
 #include <warpcoil/update_generated_file.hpp>
 #include <silicium/sink/iterator_sink.hpp>
 
