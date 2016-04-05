@@ -1,4 +1,4 @@
-#include <warpcoil/cpp.hpp>
+#include <warpcoil/cpp/generate.hpp>
 #include <warpcoil/update_generated_file.hpp>
 #include <silicium/sink/iterator_sink.hpp>
 
@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	std::vector<char> code;
 	auto code_writer = Si::make_container_sink(code);
 	Si::append(code_writer, "#pragma once\n"
-	                        "#include <warpcoil/cpp_helpers.hpp>\n"
+	                        "#include <warpcoil/cpp/helpers.hpp>\n"
 	                        "#include <silicium/source/source.hpp>\n"
 	                        "#include <silicium/sink/append.hpp>\n"
 	                        "#include <silicium/variant.hpp>\n"
