@@ -15,8 +15,10 @@ int main(int argc, char **argv)
 	Si::append(code_writer, "#pragma once\n"
 	                        "#include <warpcoil/cpp/helpers.hpp>\n"
 	                        "#include <silicium/source/source.hpp>\n"
+	                        "#include <silicium/sink/iterator_sink.hpp>\n"
 	                        "#include <silicium/sink/append.hpp>\n"
 	                        "#include <silicium/variant.hpp>\n"
+	                        "#include <boost/asio/write.hpp>\n"
 	                        "#include <cstdint>\n"
 	                        "#include <tuple>\n"
 	                        "\n");

@@ -57,7 +57,8 @@ namespace warpcoil
 			    Si::memory_range name,
 			    types::interface_definition const &definition)
 			{
-				Si::append(code, "struct async_");
+				Si::append(code, "template <class AsyncWriteStream, class "
+				                 "AsyncReadStream>\nstruct async_");
 				Si::append(code, name);
 				Si::append(code, "_client : async_");
 				Si::append(code, name);
@@ -69,9 +70,8 @@ namespace warpcoil
 					in_class.render(code);
 					Si::append(code, "explicit async_");
 					Si::append(code, name);
-					Si::append(code, "_client(Si::Sink<std::uint8_t, "
-					                 "Si::success>::interface &requests, "
-					                 "Si::Source<std::uint8_t>::interface "
+					Si::append(code, "_client(AsyncWriteStream &requests, "
+					                 "AsyncReadStream "
 					                 "&responses)\n");
 					in_class.deeper().render(code);
 					Si::append(
@@ -103,7 +103,13 @@ namespace warpcoil
 							indentation_level const in_method =
 							    in_class.deeper();
 							in_method.render(code);
-							Si::append(code, "Si::append(requests, ");
+							Si::append(code, "auto request_writer = "
+							                 "Si::Sink<std::uint8_t, "
+							                 "Si::success>::erase(Si::make_"
+							                 "container_sink(request_buffer));"
+							                 "\n");
+							in_method.render(code);
+							Si::append(code, "Si::append(request_writer, ");
 							if (entry.first.size() > 255u)
 							{
 								// TODO: avoid this check with a better type for
@@ -118,25 +124,56 @@ namespace warpcoil
 							                     entry.first.size()));
 							Si::append(code, "u);\n");
 							in_method.render(code);
-							Si::append(code, "Si::append(requests, "
+							Si::append(code, "Si::append(request_writer, "
 							                 "Si::make_c_str_range(reinterpret_"
 							                 "cast<std::uint8_t const *>(\"");
 							Si::append(code, entry.first);
 							Si::append(code, "\")));\n");
 							generate_value_serialization(
 							    code, in_method,
-							    Si::make_c_str_range("requests"),
+							    Si::make_c_str_range("request_writer"),
 							    Si::make_c_str_range("argument"),
 							    entry.second.parameter);
 							in_method.render(code);
-							Si::append(
-							    code,
-							    "on_result(boost::system::error_code(), ");
-							generate_value_deserialization(
-							    code, in_method,
-							    Si::make_c_str_range("responses"),
-							    entry.second.result);
-							Si::append(code, ");\n");
+							Si::append(code, "boost::asio::async_write("
+							                 "requests, "
+							                 "boost::asio::buffer(request_"
+							                 "buffer), [this, "
+							                 "on_result](boost::system::error_"
+							                 "code ec, std::size_t)\n");
+							in_method.render(code);
+							Si::append(code, "{\n");
+							{
+								indentation_level const in_written =
+								    in_method.deeper();
+								in_written.render(code);
+								Si::append(code, "if (!!ec) { on_result(ec, "
+								                 "{}); return; }\n");
+								in_written.render(code);
+								Si::append(code, "responses.async_read_some("
+								                 "boost::asio::buffer(response_"
+								                 "buffer), [this, "
+								                 "on_result](boost::system::"
+								                 "error_code ec, std::size_t "
+								                 "read)\n");
+								in_written.render(code);
+								Si::append(code, "{\n");
+								{
+									indentation_level const in_read =
+									    in_written.deeper();
+									in_read.render(code);
+									Si::append(code, "if (!!ec) { "
+									                 "on_result(ec, {}); "
+									                 "return; }\n");
+									in_read.render(code);
+									Si::append(code,
+									           "on_result(ec, /*TODO*/ {});\n");
+								}
+								in_written.render(code);
+								Si::append(code, "});\n");
+							}
+							in_method.render(code);
+							Si::append(code, "});\n");
 						}
 						in_class.render(code);
 						Si::append(code, "}\n\n");
@@ -145,12 +182,16 @@ namespace warpcoil
 					Si::append(code, "private:\n");
 
 					in_class.render(code);
-					Si::append(code, "Si::Sink<std::uint8_t, "
-					                 "Si::success>::interface &requests;\n");
+					Si::append(code,
+					           "std::vector<std::uint8_t> request_buffer;\n");
+					in_class.render(code);
+					Si::append(code, "AsyncWriteStream &requests;\n");
 					in_class.render(code);
 					Si::append(
 					    code,
-					    "Si::Source<std::uint8_t>::interface &responses;\n");
+					    "std::array<std::uint8_t, 512> response_buffer;\n");
+					in_class.render(code);
+					Si::append(code, "AsyncReadStream&responses;\n");
 				}
 				indentation.render(code);
 				Si::append(code, "};\n\n");
