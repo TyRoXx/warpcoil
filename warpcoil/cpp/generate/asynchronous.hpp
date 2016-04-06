@@ -24,22 +24,59 @@ namespace warpcoil
 					in_class.render(code);
 					Si::append(code, "virtual ~async_");
 					Si::append(code, name);
-					Si::append(code, "() {}\n");
+					Si::append(code, "() {}\n\n");
 					for (auto const &entry : definition.methods)
 					{
 						in_class.render(code);
-						Si::append(code, "virtual void ");
+						Si::append(code, "template <class CompletionToken>\n");
+						in_class.render(code);
+						Si::append(code, "auto ");
 						Si::append(code, entry.first);
 						Si::append(code, "(");
-						switch (generate_type(code, entry.second.parameter))
+						generate_type(code, entry.second.parameter);
+						Si::append(code,
+						           " argument, CompletionToken &&token)\n");
+						in_class.render(code);
+						Si::append(code, "{\n");
 						{
-						case type_emptiness::empty:
-							break;
-
-						case type_emptiness::non_empty:
-							Si::append(code, " argument");
-							break;
+							indentation_level const in_method =
+							    in_class.deeper();
+							in_method.render(code);
+							Si::append(code, "using handler_type = typename "
+							                 "boost::asio::handler_type<"
+							                 "decltype(token), "
+							                 "void(boost::system::error_code,"
+							                 " ");
+							generate_type(code, entry.second.result);
+							Si::append(code, ")>::type;\n");
+							in_method.render(code);
+							Si::append(code, "handler_type "
+							                 "handler(std::forward<"
+							                 "CompletionToken>(token));\n");
+							in_method.render(code);
+							Si::append(code, "boost::asio::async_result<"
+							                 "handler_type> "
+							                 "result(handler);\n");
+							in_method.render(code);
+							Si::append(code, "type_erased_");
+							Si::append(code, entry.first);
+							Si::append(code,
+							           "(std::move(argument), handler);\n");
+							in_method.render(code);
+							Si::append(code, "return result.get();\n");
 						}
+						in_class.render(code);
+						Si::append(code, "}\n\n");
+					}
+					indentation.render(code);
+					Si::append(code, "protected:\n");
+					for (auto const &entry : definition.methods)
+					{
+						in_class.render(code);
+						Si::append(code, "virtual void type_erased_");
+						Si::append(code, entry.first);
+						Si::append(code, "(");
+						generate_parameters(code, entry.second.parameter);
 						Si::append(
 						    code,
 						    ", std::function<void(boost::system::error_code, ");
@@ -77,10 +114,12 @@ namespace warpcoil
 					Si::append(code, ": requests(requests), "
 					                 "responses(responses), "
 					                 "response_buffer_used(0) {}\n\n");
+					indentation.render(code);
+					Si::append(code, "private:\n");
 					for (auto const &entry : definition.methods)
 					{
 						in_class.render(code);
-						Si::append(code, "void ");
+						Si::append(code, "void type_erased_");
 						Si::append(code, entry.first);
 						Si::append(code, "(");
 						generate_parameters(code, entry.second.parameter);
@@ -277,8 +316,6 @@ namespace warpcoil
 						in_class.render(code);
 						Si::append(code, "}\n\n");
 					}
-					indentation.render(code);
-					Si::append(code, "private:\n");
 
 					in_class.render(code);
 					Si::append(code,
