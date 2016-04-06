@@ -33,15 +33,7 @@ namespace warpcoil
 						Si::append(code, " ");
 						Si::append(code, entry.first);
 						Si::append(code, "(");
-						switch (generate_type(code, entry.second.parameter))
-						{
-						case type_emptiness::empty:
-							break;
-
-						case type_emptiness::non_empty:
-							Si::append(code, " argument");
-							break;
-						}
+						generate_parameters(code, entry.second.parameter);
 						Si::append(code, ") = 0;\n");
 					}
 				}
@@ -82,15 +74,7 @@ namespace warpcoil
 						Si::append(code, " ");
 						Si::append(code, entry.first);
 						Si::append(code, "(");
-						switch (generate_type(code, entry.second.parameter))
-						{
-						case type_emptiness::empty:
-							break;
-
-						case type_emptiness::non_empty:
-							Si::append(code, " argument");
-							break;
-						}
+						generate_parameters(code, entry.second.parameter);
 						Si::append(code, ") override\n");
 						in_class.render(code);
 						Si::append(code, "{\n");

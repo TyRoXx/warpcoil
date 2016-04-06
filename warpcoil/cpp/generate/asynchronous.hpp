@@ -83,15 +83,7 @@ namespace warpcoil
 						Si::append(code, "void ");
 						Si::append(code, entry.first);
 						Si::append(code, "(");
-						switch (generate_type(code, entry.second.parameter))
-						{
-						case type_emptiness::empty:
-							break;
-
-						case type_emptiness::non_empty:
-							Si::append(code, " argument");
-							break;
-						}
+						generate_parameters(code, entry.second.parameter);
 						Si::append(
 						    code,
 						    ", std::function<void(boost::system::error_code, ");
