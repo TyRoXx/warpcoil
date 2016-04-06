@@ -74,9 +74,9 @@ namespace warpcoil
 					                 "AsyncReadStream "
 					                 "&responses)\n");
 					in_class.deeper().render(code);
-					Si::append(
-					    code,
-					    ": requests(requests), responses(responses) {}\n\n");
+					Si::append(code, ": requests(requests), "
+					                 "responses(responses), "
+					                 "response_buffer_used(0) {}\n\n");
 					for (auto const &entry : definition.methods)
 					{
 						in_class.render(code);
@@ -95,7 +95,8 @@ namespace warpcoil
 						Si::append(
 						    code,
 						    ", std::function<void(boost::system::error_code, ");
-						generate_type(code, entry.second.result);
+						type_emptiness const result_emptiness =
+						    generate_type(code, entry.second.result);
 						Si::append(code, ")> on_result) override\n");
 						in_class.render(code);
 						Si::append(code, "{\n");
@@ -147,30 +148,136 @@ namespace warpcoil
 								indentation_level const in_written =
 								    in_method.deeper();
 								in_written.render(code);
-								Si::append(code, "if (!!ec) { on_result(ec, "
-								                 "{}); return; }\n");
-								in_written.render(code);
-								Si::append(code, "responses.async_read_some("
-								                 "boost::asio::buffer(response_"
-								                 "buffer), [this, "
-								                 "on_result](boost::system::"
-								                 "error_code ec, std::size_t "
-								                 "read)\n");
-								in_written.render(code);
-								Si::append(code, "{\n");
+								switch (result_emptiness)
 								{
-									indentation_level const in_read =
-									    in_written.deeper();
-									in_read.render(code);
-									Si::append(code, "if (!!ec) { "
-									                 "on_result(ec, {}); "
-									                 "return; }\n");
-									in_read.render(code);
+								case type_emptiness::non_empty:
+								{
 									Si::append(code,
-									           "on_result(ec, /*TODO*/ {});\n");
+									           "if (!!ec) { on_result(ec, "
+									           "{}); return; }\n");
+									in_written.render(code);
+									Si::append(code, "struct read_state\n");
+									in_written.render(code);
+									Si::append(code, "{\n");
+									{
+										indentation_level const in_struct =
+										    in_written.deeper();
+										in_struct.render(code);
+										Si::append(code, "std::function<void()>"
+										                 " begin_parse;\n");
+										in_struct.render(code);
+										generate_parser_type(
+										    code, entry.second.result);
+										Si::append(code, " parser;\n");
+									}
+									in_written.render(code);
+									Si::append(code, "};\n");
+									in_written.render(code);
+									Si::append(code,
+									           "auto state = "
+									           "std::make_shared<read_state>("
+									           ");\n");
+									in_written.render(code);
+									Si::append(code,
+									           "state->begin_parse = [this, "
+									           "state, on_result]()\n");
+									in_written.render(code);
+									Si::append(code, "{\n");
+									{
+										indentation_level const in_begin =
+										    in_written.deeper();
+										in_begin.render(code);
+										Si::append(
+										    code,
+										    "for (std::size_t i = 0; i < "
+										    "response_buffer_used; ++i)\n");
+										in_begin.render(code);
+										Si::append(code, "{\n");
+										{
+											indentation_level const in_loop =
+											    in_begin.deeper();
+											in_loop.render(code);
+											Si::append(code,
+											           "if (auto *response = "
+											           "state->parser.parse_"
+											           "byte(response_buffer["
+											           "i]))\n");
+											in_loop.render(code);
+											Si::append(code, "{\n");
+											{
+												indentation_level const in_if =
+												    in_loop.deeper();
+												in_if.render(code);
+												Si::append(
+												    code,
+												    "std::copy(response_"
+												    "buffer.begin() + i + 1, "
+												    "response_buffer.begin() "
+												    "+ response_buffer_used, "
+												    "response_buffer.begin())"
+												    ";\n");
+												in_if.render(code);
+												Si::append(code,
+												           "response_buffer_"
+												           "used -= 1 + "
+												           "i;\n");
+												in_if.render(code);
+												Si::append(code,
+												           "on_result(boost::"
+												           "system::error_"
+												           "code(), "
+												           "std::move(*"
+												           "response));\n");
+												in_if.render(code);
+												Si::append(code, "return;\n");
+											}
+											in_loop.render(code);
+											Si::append(code, "}\n");
+										}
+										in_begin.render(code);
+										Si::append(code, "}\n");
+
+										in_begin.render(code);
+										Si::append(
+										    code,
+										    "responses.async_read_some("
+										    "boost::asio::buffer(response_"
+										    "buffer), [this, state, "
+										    "on_result](boost::system::"
+										    "error_code ec, std::size_t "
+										    "read)\n");
+										in_begin.render(code);
+										Si::append(code, "{\n");
+										{
+											indentation_level const in_read =
+											    in_begin.deeper();
+											in_read.render(code);
+											Si::append(code,
+											           "if (!!ec) { "
+											           "on_result(ec, {}); "
+											           "return; }\n");
+											in_read.render(code);
+											Si::append(code, "response_buffer_"
+											                 "used = read;\n");
+											in_read.render(code);
+											Si::append(
+											    code,
+											    "state->begin_parse();\n");
+										}
+										in_begin.render(code);
+										Si::append(code, "});\n");
+									}
+									in_written.render(code);
+									Si::append(code, "};\n");
+									in_written.render(code);
+									Si::append(code, "state->begin_parse();\n");
+									break;
 								}
-								in_written.render(code);
-								Si::append(code, "});\n");
+
+								case type_emptiness::empty:
+									Si::append(code, "on_result(ec, {});\n");
+									break;
+								}
 							}
 							in_method.render(code);
 							Si::append(code, "});\n");
@@ -191,7 +298,9 @@ namespace warpcoil
 					    code,
 					    "std::array<std::uint8_t, 512> response_buffer;\n");
 					in_class.render(code);
-					Si::append(code, "AsyncReadStream&responses;\n");
+					Si::append(code, "std::size_t response_buffer_used;\n");
+					in_class.render(code);
+					Si::append(code, "AsyncReadStream &responses;\n");
 				}
 				indentation.render(code);
 				Si::append(code, "};\n\n");
