@@ -327,9 +327,9 @@ namespace warpcoil
 					    code,
 					    "std::array<std::uint8_t, 512> response_buffer;\n");
 					in_class.render(code);
-					Si::append(code, "std::size_t response_buffer_used;\n");
-					in_class.render(code);
 					Si::append(code, "AsyncReadStream &responses;\n");
+					in_class.render(code);
+					Si::append(code, "std::size_t response_buffer_used;\n");
 				}
 				indentation.render(code);
 				Si::append(code, "};\n\n");

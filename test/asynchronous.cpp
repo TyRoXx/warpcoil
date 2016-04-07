@@ -98,6 +98,7 @@ BOOST_AUTO_TEST_CASE(async_client_with_asio_spawn)
 		        {
 			        std::tuple<> result =
 			            client.no_result_no_parameter(std::tuple<>(), yield);
+					Si::ignore_unused_variable_warning(result);
 					BOOST_REQUIRE(!ok2);
 			        ok2 = true;
 			    });
