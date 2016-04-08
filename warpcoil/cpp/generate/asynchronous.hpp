@@ -434,6 +434,12 @@ namespace warpcoil
 					    "std::array<std::uint8_t, 512> request_buffer;\n");
 					in_class.render(code);
 					Si::append(code, "std::size_t request_buffer_used;\n");
+					in_class.render(code);
+					Si::append(code, "Si::variant<");
+					generate_parser_type(
+					    code, Si::to_unique(types::vector{
+					              types::integer(0, 255), types::integer()}));
+					Si::append(code, "> parser;\n");
 				}
 				indentation.render(code);
 				Si::append(code, "};\n\n");

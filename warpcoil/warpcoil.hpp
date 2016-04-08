@@ -78,6 +78,20 @@ namespace warpcoil
 	{
 		struct integer
 		{
+			std::uint64_t minimum;
+			std::uint64_t maximum;
+
+			integer()
+			    : minimum(0)
+			    , maximum((std::numeric_limits<std::uint64_t>::max)())
+			{
+			}
+
+			integer(std::uint64_t minimum, std::uint64_t maximum)
+			    : minimum(minimum)
+			    , maximum(maximum)
+			{
+			}
 		};
 
 		struct variant;
@@ -107,6 +121,7 @@ namespace warpcoil
 
 		struct vector
 		{
+			integer length;
 			type element;
 		};
 

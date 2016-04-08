@@ -11,9 +11,28 @@ namespace warpcoil
 		{
 			return Si::visit<void>(
 			    parsed,
-			    [&code](types::integer)
+			    [&code](types::integer const parsed)
 			    {
-				    Si::append(code, "warpcoil::cpp::integer_parser");
+				    Si::memory_range bits;
+				    if (parsed.maximum <= 0xffu)
+				    {
+					    bits = Si::make_c_str_range("8");
+				    }
+				    else if (parsed.maximum <= 0xffffu)
+				    {
+					    bits = Si::make_c_str_range("16");
+				    }
+				    else if (parsed.maximum <= 0xffffffffu)
+				    {
+					    bits = Si::make_c_str_range("32");
+				    }
+				    else
+				    {
+					    bits = Si::make_c_str_range("64");
+				    }
+				    Si::append(code, "warpcoil::cpp::integer_parser<std::uint");
+				    Si::append(code, bits);
+				    Si::append(code, "_t>");
 				},
 			    [&code](std::unique_ptr<types::variant> const &)
 			    {
@@ -44,6 +63,8 @@ namespace warpcoil
 			    [&code](std::unique_ptr<types::vector> const &parsed)
 			    {
 				    Si::append(code, "warpcoil::cpp::vector_parser<");
+				    generate_parser_type(code, parsed->length);
+				    Si::append(code, ", ");
 				    generate_parser_type(code, parsed->element);
 				    Si::append(code, ">");
 				});

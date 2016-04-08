@@ -143,17 +143,18 @@ namespace warpcoil
 			}
 		};
 
+		template <class Unsigned>
 		struct integer_parser
 		{
-			typedef std::uint64_t result_type;
+			typedef Unsigned result_type;
 
 			result_type const *parse_byte(std::uint8_t const input)
 			{
-				assert(bytes_received < 8u);
-				result <<= 8u;
+				assert(bytes_received < sizeof(result_type));
+				result <<= 8;
 				result |= input;
 				++bytes_received;
-				if (bytes_received == 8)
+				if (bytes_received == sizeof(result_type))
 				{
 					return &result;
 				}
@@ -165,7 +166,7 @@ namespace warpcoil
 			std::size_t bytes_received = 0;
 		};
 
-		template <class Element>
+		template <class Length, class Element>
 		struct vector_parser
 		{
 			typedef std::vector<typename Element::result_type> result_type;
@@ -174,9 +175,9 @@ namespace warpcoil
 			{
 				return Si::visit<result_type *>(
 				    step,
-				    [this, input](integer_parser &parser) -> result_type *
+				    [this, input](Length &parser) -> result_type *
 				    {
-					    if (std::uint64_t const *length =
+					    if (typename Length::result_type const *length =
 					            parser.parse_byte(input))
 					    {
 						    result.resize(*length);
@@ -211,7 +212,7 @@ namespace warpcoil
 				std::size_t current_index;
 			};
 
-			Si::variant<integer_parser, parsing_element> step;
+			Si::variant<Length, parsing_element> step;
 			result_type result;
 		};
 
