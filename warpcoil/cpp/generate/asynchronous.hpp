@@ -336,6 +336,110 @@ namespace warpcoil
 			}
 
 			template <class CharSink>
+			void generate_serialization_server(CharSink &&code,
+			                                   indentation_level indentation,
+			                                   Si::memory_range name)
+			{
+				Si::append(code, "template <class AsyncReadStream>\n");
+				indentation.render(code);
+				Si::append(code, "struct async_");
+				Si::append(code, name);
+				Si::append(code, "_server");
+				Si::append(code, "\n");
+				indentation.render(code);
+				Si::append(code, "{\n");
+				{
+					indentation_level const in_class = indentation.deeper();
+					in_class.render(code);
+					Si::append(code, "explicit async_");
+					Si::append(code, name);
+					Si::append(code, "_server(async_");
+					Si::append(code, name);
+					Si::append(code, " &handler, AsyncReadStream &requests)\n");
+					in_class.deeper().render(code);
+					Si::append(code, ": handler(handler), requests(requests), "
+					                 "request_buffer_used(0) {}\n\n");
+
+					in_class.render(code);
+					Si::append(code, "template <class AsyncWriteStream, class "
+					                 "CompletionToken>\n");
+					in_class.render(code);
+					Si::append(code, "auto serve_one_request(AsyncWriteStream "
+					                 "&response, CompletionToken &&token)\n");
+					in_class.render(code);
+					Si::append(code, "{\n");
+					{
+						indentation_level const in_method = in_class.deeper();
+						in_method.render(code);
+						Si::append(code,
+						           "using handler_type = typename "
+						           "boost::asio::handler_type<"
+						           "decltype(token), "
+						           "void(boost::system::error_code)>::type;\n");
+						in_method.render(code);
+						Si::append(code, "handler_type "
+						                 "handler(std::forward<"
+						                 "CompletionToken>(token));\n");
+						in_method.render(code);
+						Si::append(code, "boost::asio::async_result<"
+						                 "handler_type> "
+						                 "result(handler);\n");
+						in_method.render(code);
+						Si::append(code,
+						           "requests.async_read_some("
+						           "boost::asio::buffer(request_"
+						           "buffer), [this, handler](boost::system::"
+						           "error_code ec, std::size_t "
+						           "read)\n");
+						in_method.render(code);
+						Si::append(code, "{\n");
+						{
+							indentation_level const in_read =
+							    in_method.deeper();
+							in_read.render(code);
+							Si::append(code, "if (!!ec) { "
+							                 "handler(ec); "
+							                 "return; }\n");
+							in_read.render(code);
+							Si::append(code, "request_buffer_"
+							                 "used = read;\n");
+						}
+						in_method.render(code);
+						Si::append(code, "});\n");
+						in_method.render(code);
+						Si::append(code, "return result.get();\n");
+					}
+					in_class.render(code);
+					Si::append(code, "}\n\n");
+
+					in_class.render(code);
+					Si::append(code, "void cancel_request()\n");
+					in_class.render(code);
+					Si::append(code, "{\n");
+					in_class.render(code);
+					Si::append(code, "}\n\n");
+
+					indentation.render(code);
+					Si::append(code, "private:\n");
+
+					in_class.render(code);
+					Si::append(code, "async_");
+					Si::append(code, name);
+					Si::append(code, " &handler;\n");
+					in_class.render(code);
+					Si::append(code, "AsyncReadStream &requests;\n");
+					in_class.render(code);
+					Si::append(
+					    code,
+					    "std::array<std::uint8_t, 512> request_buffer;\n");
+					in_class.render(code);
+					Si::append(code, "std::size_t request_buffer_used;\n");
+				}
+				indentation.render(code);
+				Si::append(code, "};\n\n");
+			}
+
+			template <class CharSink>
 			void generate_serializable_interface(
 			    CharSink &&code, indentation_level indentation,
 			    Si::memory_range name,
@@ -344,6 +448,7 @@ namespace warpcoil
 				generate_interface(code, indentation, name, definition);
 				generate_serialization_client(code, indentation, name,
 				                              definition);
+				generate_serialization_server(code, indentation, name);
 			}
 		}
 	}
