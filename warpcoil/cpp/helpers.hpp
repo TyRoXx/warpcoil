@@ -10,35 +10,27 @@ namespace warpcoil
 {
 	namespace cpp
 	{
-		inline std::uint64_t
-		read_integer(Si::Source<std::uint8_t>::interface &from)
+		inline std::uint64_t read_integer(Si::Source<std::uint8_t>::interface &from)
 		{
 			std::uint64_t result = 0;
 			for (std::size_t i = 0; i < 8; ++i)
 			{
 				result <<= 8;
-				result |= Si::get(from).or_throw(
-				    []
-				    {
-					    throw std::runtime_error(
-					        "unexpected end of the response");
-					});
+				result |= Si::get(from).or_throw([]
+				                                 {
+					                                 throw std::runtime_error("unexpected end of the response");
+					                             });
 			}
 			return result;
 		}
 
-		inline void write_integer(Si::Sink<std::uint8_t>::interface &to,
-		                          std::uint64_t const value)
+		inline void write_integer(Si::Sink<std::uint8_t>::interface &to, std::uint64_t const value)
 		{
 			std::array<std::uint8_t, 8> const bytes = {{
-			    static_cast<std::uint8_t>(value >> 56),
-			    static_cast<std::uint8_t>(value >> 48),
-			    static_cast<std::uint8_t>(value >> 40),
-			    static_cast<std::uint8_t>(value >> 32),
-			    static_cast<std::uint8_t>(value >> 24),
-			    static_cast<std::uint8_t>(value >> 16),
-			    static_cast<std::uint8_t>(value >> 8),
-			    static_cast<std::uint8_t>(value >> 0),
+			    static_cast<std::uint8_t>(value >> 56), static_cast<std::uint8_t>(value >> 48),
+			    static_cast<std::uint8_t>(value >> 40), static_cast<std::uint8_t>(value >> 32),
+			    static_cast<std::uint8_t>(value >> 24), static_cast<std::uint8_t>(value >> 16),
+			    static_cast<std::uint8_t>(value >> 8), static_cast<std::uint8_t>(value >> 0),
 			}};
 			Si::append(to, Si::make_contiguous_range(bytes));
 		}
@@ -50,8 +42,7 @@ namespace warpcoil
 
 			result_type *parse_byte(std::uint8_t const input)
 			{
-				switch (
-				    Si::apply_visitor(visitor{this, input}, current_element))
+				switch (Si::apply_visitor(visitor{this, input}, current_element))
 				{
 				case parse_result::complete:
 					return &result;
@@ -74,14 +65,12 @@ namespace warpcoil
 			{
 				Parser parser;
 
-				parse_result operator()(tuple_parser &parent,
-				                        std::uint8_t const input)
+				parse_result operator()(tuple_parser &parent, std::uint8_t const input)
 				{
 					if (auto *parsed = parser.parse_byte(input))
 					{
 						std::get<I>(parent.result) = std::move(*parsed);
-						return parent.go_to_next_state(
-						    std::integral_constant<std::size_t, I>());
+						return parent.go_to_next_state(std::integral_constant<std::size_t, I>());
 					}
 					return parse_result::incomplete;
 				}
@@ -102,17 +91,14 @@ namespace warpcoil
 			};
 
 			template <std::size_t CurrentElement>
-			parse_result go_to_next_state(
-			    std::integral_constant<std::size_t, CurrentElement>)
+			parse_result go_to_next_state(std::integral_constant<std::size_t, CurrentElement>)
 			{
-				current_element = typename boost::mpl::at<
-				    typename decltype(current_element)::element_types,
-				    boost::mpl::int_<CurrentElement + 1>>::type();
+				current_element = typename boost::mpl::at<typename decltype(current_element)::element_types,
+				                                          boost::mpl::int_<CurrentElement + 1>>::type();
 				return parse_result::incomplete;
 			}
 
-			parse_result go_to_next_state(
-			    std::integral_constant<std::size_t, sizeof...(T)-1>)
+			parse_result go_to_next_state(std::integral_constant<std::size_t, sizeof...(T)-1>)
 			{
 				return parse_result::complete;
 			}
@@ -126,9 +112,8 @@ namespace warpcoil
 				typedef Si::variant<indexed<I, T>...> type;
 			};
 
-			typename make_current_element<
-			    typename ranges::v3::make_integer_sequence<sizeof...(
-			        T)>::type>::type current_element;
+			typename make_current_element<typename ranges::v3::make_integer_sequence<sizeof...(T)>::type>::type
+			    current_element;
 			result_type result;
 		};
 
@@ -173,36 +158,34 @@ namespace warpcoil
 
 			result_type *parse_byte(std::uint8_t const input)
 			{
-				return Si::visit<result_type *>(
-				    step,
-				    [this, input](Length &parser) -> result_type *
-				    {
-					    if (typename Length::result_type const *length =
-					            parser.parse_byte(input))
-					    {
-						    result.resize(*length);
-						    if (result.empty())
-						    {
-							    return &result;
-						    }
-						    step = parsing_element{{}, 0};
-					    }
-					    return nullptr;
-					},
-				    [this, input](parsing_element &parsing) -> result_type *
-				    {
-					    if (auto *element = parsing.parser.parse_byte(input))
-					    {
-						    result[parsing.current_index] = std::move(*element);
-						    if (parsing.current_index == (result.size() - 1))
-						    {
-							    return &result;
-						    }
-						    step =
-						        parsing_element{{}, parsing.current_index + 1};
-					    }
-					    return nullptr;
-					});
+				return Si::visit<result_type *>(step,
+				                                [this, input](Length &parser) -> result_type *
+				                                {
+					                                if (typename Length::result_type const *length =
+					                                        parser.parse_byte(input))
+					                                {
+						                                result.resize(*length);
+						                                if (result.empty())
+						                                {
+							                                return &result;
+						                                }
+						                                step = parsing_element{{}, 0};
+					                                }
+					                                return nullptr;
+					                            },
+				                                [this, input](parsing_element &parsing) -> result_type *
+				                                {
+					                                if (auto *element = parsing.parser.parse_byte(input))
+					                                {
+						                                result[parsing.current_index] = std::move(*element);
+						                                if (parsing.current_index == (result.size() - 1))
+						                                {
+							                                return &result;
+						                                }
+						                                step = parsing_element{{}, parsing.current_index + 1};
+					                                }
+					                                return nullptr;
+					                            });
 			}
 
 		private:

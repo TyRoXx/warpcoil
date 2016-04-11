@@ -9,10 +9,8 @@ namespace warpcoil
 		namespace sync
 		{
 			template <class CharSink>
-			void
-			generate_interface(CharSink &&code, indentation_level indentation,
-			                   Si::memory_range name,
-			                   types::interface_definition const &definition)
+			void generate_interface(CharSink &&code, indentation_level indentation, Si::memory_range name,
+			                        types::interface_definition const &definition)
 			{
 				Si::append(code, "struct ");
 				Si::append(code, name);
@@ -42,10 +40,8 @@ namespace warpcoil
 			}
 
 			template <class CharSink>
-			void generate_serialization_client(
-			    CharSink &&code, indentation_level indentation,
-			    Si::memory_range name,
-			    types::interface_definition const &definition)
+			void generate_serialization_client(CharSink &&code, indentation_level indentation, Si::memory_range name,
+			                                   types::interface_definition const &definition)
 			{
 				Si::append(code, "struct ");
 				Si::append(code, name);
@@ -64,9 +60,7 @@ namespace warpcoil
 					                 "Si::Source<std::uint8_t>::interface "
 					                 "&responses)\n");
 					in_class.deeper().render(code);
-					Si::append(
-					    code,
-					    ": requests(requests), responses(responses) {}\n\n");
+					Si::append(code, ": requests(requests), responses(responses) {}\n\n");
 					for (auto const &entry : definition.methods)
 					{
 						in_class.render(code);
@@ -79,8 +73,7 @@ namespace warpcoil
 						in_class.render(code);
 						Si::append(code, "{\n");
 						{
-							indentation_level const in_method =
-							    in_class.deeper();
+							indentation_level const in_method = in_class.deeper();
 							in_method.render(code);
 							Si::append(code, "Si::append(requests, ");
 							if (entry.first.size() > 255u)
@@ -88,13 +81,11 @@ namespace warpcoil
 								// TODO: avoid this check with a better type for
 								// the
 								// name
-								throw std::invalid_argument(
-								    "A method name cannot "
-								    "be longer than 255 "
-								    "bytes");
+								throw std::invalid_argument("A method name cannot "
+								                            "be longer than 255 "
+								                            "bytes");
 							}
-							Si::append(code, boost::lexical_cast<std::string>(
-							                     entry.first.size()));
+							Si::append(code, boost::lexical_cast<std::string>(entry.first.size()));
 							Si::append(code, "u);\n");
 							in_method.render(code);
 							Si::append(code, "Si::append(requests, "
@@ -102,17 +93,12 @@ namespace warpcoil
 							                 "cast<std::uint8_t const *>(\"");
 							Si::append(code, entry.first);
 							Si::append(code, "\")));\n");
-							generate_value_serialization(
-							    code, in_method,
-							    Si::make_c_str_range("requests"),
-							    Si::make_c_str_range("argument"),
-							    entry.second.parameter);
+							generate_value_serialization(code, in_method, Si::make_c_str_range("requests"),
+							                             Si::make_c_str_range("argument"), entry.second.parameter);
 							in_method.render(code);
 							Si::append(code, "return ");
-							generate_value_deserialization(
-							    code, in_method,
-							    Si::make_c_str_range("responses"),
-							    entry.second.result);
+							generate_value_deserialization(code, in_method, Si::make_c_str_range("responses"),
+							                               entry.second.result);
 							Si::append(code, ";\n");
 						}
 						in_class.render(code);
@@ -125,25 +111,19 @@ namespace warpcoil
 					Si::append(code, "Si::Sink<std::uint8_t, "
 					                 "Si::success>::interface &requests;\n");
 					in_class.render(code);
-					Si::append(
-					    code,
-					    "Si::Source<std::uint8_t>::interface &responses;\n");
+					Si::append(code, "Si::Source<std::uint8_t>::interface &responses;\n");
 				}
 				indentation.render(code);
 				Si::append(code, "};\n\n");
 			}
 
 			template <class CharSink>
-			void generate_serialization_server(
-			    CharSink &&code, indentation_level indentation,
-			    Si::memory_range name,
-			    types::interface_definition const &definition)
+			void generate_serialization_server(CharSink &&code, indentation_level indentation, Si::memory_range name,
+			                                   types::interface_definition const &definition)
 			{
 				Si::append(code, "struct ");
 				Si::append(code, name);
-				Si::append(
-				    code,
-				    "_server : Si::Sink<std::uint8_t, Si::success>::interface");
+				Si::append(code, "_server : Si::Sink<std::uint8_t, Si::success>::interface");
 				Si::append(code, "\n");
 				indentation.render(code);
 				Si::append(code, "{\n");
@@ -157,17 +137,13 @@ namespace warpcoil
 					Si::append(code, " &handler, Si::Sink<std::uint8_t, "
 					                 "Si::success>::interface &responses)\n");
 					in_class.deeper().render(code);
-					Si::append(
-					    code,
-					    ": handler(handler), responses(responses) {}\n\n");
+					Si::append(code, ": handler(handler), responses(responses) {}\n\n");
 
 					in_class.render(code);
-					Si::append(
-					    code,
-					    "error_type "
-					    "append(Si::iterator_range<element_type const *> data"
-					    ") override { for (std::uint8_t element : data) { "
-					    "parse_byte(element); } return {}; }\n");
+					Si::append(code, "error_type "
+					                 "append(Si::iterator_range<element_type const *> data"
+					                 ") override { for (std::uint8_t element : data) { "
+					                 "parse_byte(element); } return {}; }\n");
 
 					indentation.render(code);
 					Si::append(code, "private:\n");
@@ -180,8 +156,7 @@ namespace warpcoil
 						Si::append(code, "\n");
 						in_class.render(code);
 						Si::append(code, "{\n");
-						indentation_level const in_parsing_class =
-						    in_class.deeper();
+						indentation_level const in_parsing_class = in_class.deeper();
 						in_parsing_class.render(code);
 						generate_parser_type(code, entry.second.parameter);
 						Si::append(code, " parser;\n");
@@ -206,8 +181,7 @@ namespace warpcoil
 					}
 					Si::append(code, "> parser_state;\n\n");
 					in_class.render(code);
-					Si::append(code,
-					           "void parse_byte(std::uint8_t const value)\n");
+					Si::append(code, "void parse_byte(std::uint8_t const value)\n");
 					in_class.render(code);
 					Si::append(code, "{\n");
 					{
@@ -215,38 +189,31 @@ namespace warpcoil
 						in_method.render(code);
 						Si::append(code, "Si::visit<void>(parser_state,\n");
 						{
-							indentation_level const in_visit =
-							    in_method.deeper();
+							indentation_level const in_visit = in_method.deeper();
 							in_visit.render(code);
-							Si::append(
-							    code,
-							    "  [this, "
-							    "value](warpcoil::cpp::parsing_method_name_"
-							    "length) "
-							    "{ parser_state = "
-							    "warpcoil::cpp::parsing_method_name{\"\", "
-							    "value}; }\n");
+							Si::append(code, "  [this, "
+							                 "value](warpcoil::cpp::parsing_method_name_"
+							                 "length) "
+							                 "{ parser_state = "
+							                 "warpcoil::cpp::parsing_method_name{\"\", "
+							                 "value}; }\n");
 							in_visit.render(code);
-							Si::append(code,
-							           ", [this, "
-							           "value](warpcoil::cpp::parsing_method_"
-							           "name &parsing)\n");
+							Si::append(code, ", [this, "
+							                 "value](warpcoil::cpp::parsing_method_"
+							                 "name &parsing)\n");
 							in_visit.render(code);
 							Si::append(code, "{\n");
 							{
-								indentation_level const in_lambda =
-								    in_visit.deeper();
+								indentation_level const in_lambda = in_visit.deeper();
 								in_lambda.render(code);
-								Si::append(code,
-								           "parsing.name.push_back(value);\n");
+								Si::append(code, "parsing.name.push_back(value);\n");
 								in_lambda.render(code);
 								Si::append(code, "if (parsing.name.size() == "
 								                 "parsing.expected_length)\n");
 								in_lambda.render(code);
 								Si::append(code, "{\n");
 								{
-									indentation_level const block =
-									    in_lambda.deeper();
+									indentation_level const block = in_lambda.deeper();
 									bool first = true;
 									for (auto const &entry : definition.methods)
 									{
@@ -259,20 +226,17 @@ namespace warpcoil
 										{
 											Si::append(code, "else ");
 										}
-										Si::append(code,
-										           "if (parsing.name == \"");
+										Si::append(code, "if (parsing.name == \"");
 										Si::append(code, entry.first);
 										Si::append(code, "\")\n");
 										block.render(code);
 										Si::append(code, "{\n");
 										{
-											indentation_level const in_if =
-											    block.deeper();
+											indentation_level const in_if = block.deeper();
 											in_if.render(code);
-											Si::append(code,
-											           "parser_state = "
-											           "parsing_arguments_"
-											           "of_");
+											Si::append(code, "parser_state = "
+											                 "parsing_arguments_"
+											                 "of_");
 											Si::append(code, entry.first);
 											Si::append(code, "();\n");
 										}
@@ -280,11 +244,10 @@ namespace warpcoil
 										Si::append(code, "}\n");
 									}
 									block.render(code);
-									Si::append(code,
-									           "else { throw "
-									           "std::logic_error(\"to do: "
-									           "handle unknown method "
-									           "name\"); }\n");
+									Si::append(code, "else { throw "
+									                 "std::logic_error(\"to do: "
+									                 "handle unknown method "
+									                 "name\"); }\n");
 								}
 								in_lambda.render(code);
 								Si::append(code, "}\n");
@@ -294,39 +257,30 @@ namespace warpcoil
 							for (auto const &entry : definition.methods)
 							{
 								in_visit.render(code);
-								Si::append(
-								    code,
-								    ", [this, value](parsing_arguments_of_");
+								Si::append(code, ", [this, value](parsing_arguments_of_");
 								Si::append(code, entry.first);
 								Si::append(code, " &parsing)\n");
 								in_visit.render(code);
 								Si::append(code, "{\n");
 								{
-									indentation_level const in_lambda =
-									    in_visit.deeper();
+									indentation_level const in_lambda = in_visit.deeper();
 									in_lambda.render(code);
-									Si::append(code,
-									           "if (auto *argument = "
-									           "parsing.parser.parse_byte("
-									           "value))\n");
+									Si::append(code, "if (auto *argument = "
+									                 "parsing.parser.parse_byte("
+									                 "value))\n");
 									in_lambda.render(code);
 									Si::append(code, "{\n");
 									{
-										indentation_level const in_if =
-										    in_lambda.deeper();
+										indentation_level const in_if = in_lambda.deeper();
 										in_if.render(code);
 										type_emptiness const result_emptiness =
-										    generate_type(code,
-										                  entry.second.result);
+										    generate_type(code, entry.second.result);
 										Si::append(code, " result = handler.");
 										Si::append(code, entry.first);
-										Si::append(code,
-										           "(std::move(*argument));\n");
-										generate_value_serialization(
-										    code, in_if,
-										    Si::make_c_str_range("responses"),
-										    Si::make_c_str_range("result"),
-										    entry.second.result);
+										Si::append(code, "(std::move(*argument));\n");
+										generate_value_serialization(code, in_if, Si::make_c_str_range("responses"),
+										                             Si::make_c_str_range("result"),
+										                             entry.second.result);
 										switch (result_emptiness)
 										{
 										case type_emptiness::empty:
@@ -361,16 +315,12 @@ namespace warpcoil
 			}
 
 			template <class CharSink>
-			void generate_serializable_interface(
-			    CharSink &&code, indentation_level indentation,
-			    Si::memory_range name,
-			    types::interface_definition const &definition)
+			void generate_serializable_interface(CharSink &&code, indentation_level indentation, Si::memory_range name,
+			                                     types::interface_definition const &definition)
 			{
 				generate_interface(code, indentation, name, definition);
-				generate_serialization_client(code, indentation, name,
-				                              definition);
-				generate_serialization_server(code, indentation, name,
-				                              definition);
+				generate_serialization_client(code, indentation, name, definition);
+				generate_serialization_server(code, indentation, name, definition);
 			}
 		}
 	}
