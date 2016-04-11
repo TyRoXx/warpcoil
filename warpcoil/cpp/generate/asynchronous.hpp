@@ -293,7 +293,8 @@ namespace warpcoil
 			}
 
 			template <class CharSink>
-			void generate_serialization_server(CharSink &&code, indentation_level indentation, Si::memory_range name)
+			void generate_serialization_server(CharSink &&code, indentation_level indentation, Si::memory_range name,
+			                                   types::interface_definition const &definition)
 			{
 				Si::append(code, "template <class AsyncReadStream, class AsyncWriteStream>\n");
 				indentation.render(code);
@@ -339,25 +340,7 @@ namespace warpcoil
 						                 "handler_type> "
 						                 "result(handler);\n");
 						in_method.render(code);
-						Si::append(code, "requests.async_read_some("
-						                 "boost::asio::buffer(request_"
-						                 "buffer), [this, handler](boost::system::"
-						                 "error_code ec, std::size_t "
-						                 "read)\n");
-						in_method.render(code);
-						Si::append(code, "{\n");
-						{
-							indentation_level const in_read = in_method.deeper();
-							in_read.render(code);
-							Si::append(code, "if (!!ec) { "
-							                 "handler(ec); "
-							                 "return; }\n");
-							in_read.render(code);
-							Si::append(code, "request_buffer_"
-							                 "used = read;\n");
-						}
-						in_method.render(code);
-						Si::append(code, "});\n");
+						Si::append(code, "begin_receive();\n");
 						in_method.render(code);
 						Si::append(code, "return result.get();\n");
 					}
@@ -374,6 +357,22 @@ namespace warpcoil
 					indentation.render(code);
 					Si::append(code, "private:\n");
 
+					for (auto const &entry : definition.methods)
+					{
+						in_class.render(code);
+						Si::append(code, "struct parsing_arguments_of_");
+						Si::append(code, entry.first);
+						Si::append(code, "\n");
+						in_class.render(code);
+						Si::append(code, "{\n");
+						indentation_level const in_parsing_class = in_class.deeper();
+						in_parsing_class.render(code);
+						generate_parser_type(code, entry.second.parameter);
+						Si::append(code, " parser;\n");
+						in_class.render(code);
+						Si::append(code, "};\n\n");
+					}
+
 					in_class.render(code);
 					Si::append(code, "async_");
 					Si::append(code, name);
@@ -387,9 +386,43 @@ namespace warpcoil
 					in_class.render(code);
 					Si::append(code, "AsyncWriteStream &responses;\n");
 					in_class.render(code);
-					Si::append(code, "Si::variant<");
+					Si::append(code, "typedef ");
 					generate_parser_type(code, Si::to_unique(types::vector{types::integer(0, 255), types::integer()}));
-					Si::append(code, "> parser;\n");
+					Si::append(code, " method_name_parser;\n");
+					in_class.render(code);
+					Si::append(code, "Si::variant<method_name_parser");
+					for (auto const &entry : definition.methods)
+					{
+						Si::append(code, ", parsing_arguments_of_");
+						Si::append(code, entry.first);
+					}
+					Si::append(code, "> parser;\n\n");
+					in_class.render(code);
+					Si::append(code, "void begin_receive()\n");
+					in_class.render(code);
+					Si::append(code, "{\n");
+
+					{
+						indentation_level const in_method = in_class.deeper();
+						in_method.render(code);
+						Si::append(code, "requests.async_read_some("
+						                 "boost::asio::buffer(request_"
+						                 "buffer), [this](boost::system::"
+						                 "error_code ec, std::size_t "
+						                 "read)\n");
+						in_method.render(code);
+						Si::append(code, "{\n");
+						{
+							indentation_level const in_read = in_method.deeper();
+							in_read.render(code);
+							Si::append(code, "request_buffer_"
+							                 "used = read;\n");
+						}
+						in_method.render(code);
+						Si::append(code, "});\n");
+					}
+					in_class.render(code);
+					Si::append(code, "}\n");
 				}
 				indentation.render(code);
 				Si::append(code, "};\n\n");
@@ -401,7 +434,7 @@ namespace warpcoil
 			{
 				generate_interface(code, indentation, name, definition);
 				generate_serialization_client(code, indentation, name, definition);
-				generate_serialization_server(code, indentation, name);
+				generate_serialization_server(code, indentation, name, definition);
 			}
 		}
 	}
