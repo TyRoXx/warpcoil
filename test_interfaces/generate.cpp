@@ -1,6 +1,6 @@
+#include <silicium/sink/iterator_sink.hpp>
 #include <warpcoil/cpp/generate/everything.hpp>
 #include <warpcoil/update_generated_file.hpp>
-#include <silicium/sink/iterator_sink.hpp>
 
 int main(int argc, char **argv)
 {

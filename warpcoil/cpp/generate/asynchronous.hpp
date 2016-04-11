@@ -295,7 +295,7 @@ namespace warpcoil
 			template <class CharSink>
 			void generate_serialization_server(CharSink &&code, indentation_level indentation, Si::memory_range name)
 			{
-				Si::append(code, "template <class AsyncReadStream>\n");
+				Si::append(code, "template <class AsyncReadStream, class AsyncWriteStream>\n");
 				indentation.render(code);
 				Si::append(code, "struct async_");
 				Si::append(code, name);
@@ -310,17 +310,17 @@ namespace warpcoil
 					Si::append(code, name);
 					Si::append(code, "_server(async_");
 					Si::append(code, name);
-					Si::append(code, " &handler, AsyncReadStream &requests)\n");
+					Si::append(code, " &handler, AsyncReadStream &requests, AsyncWriteStream "
+					                 "&responses)\n");
 					in_class.deeper().render(code);
 					Si::append(code, ": handler(handler), requests(requests), "
-					                 "request_buffer_used(0) {}\n\n");
+					                 "request_buffer_used(0), responses(responses) {}\n\n");
 
 					in_class.render(code);
-					Si::append(code, "template <class AsyncWriteStream, class "
+					Si::append(code, "template <class "
 					                 "CompletionToken>\n");
 					in_class.render(code);
-					Si::append(code, "auto serve_one_request(AsyncWriteStream "
-					                 "&response, CompletionToken &&token)\n");
+					Si::append(code, "auto serve_one_request(CompletionToken &&token)\n");
 					in_class.render(code);
 					Si::append(code, "{\n");
 					{
@@ -384,6 +384,8 @@ namespace warpcoil
 					Si::append(code, "std::array<std::uint8_t, 512> request_buffer;\n");
 					in_class.render(code);
 					Si::append(code, "std::size_t request_buffer_used;\n");
+					in_class.render(code);
+					Si::append(code, "AsyncWriteStream &responses;\n");
 					in_class.render(code);
 					Si::append(code, "Si::variant<");
 					generate_parser_type(code, Si::to_unique(types::vector{types::integer(0, 255), types::integer()}));
