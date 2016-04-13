@@ -64,6 +64,20 @@ namespace warpcoil
 			std::size_t m_amount;
 		};
 
+		template <class CharSink, class ContentGenerator>
+		void block(CharSink &&code, indentation_level indentation, ContentGenerator &&content, char const *end)
+		{
+			indentation.render(code);
+			Si::append(code, "{\n");
+			{
+				indentation_level const in_block = indentation.deeper();
+				std::forward<ContentGenerator>(content)(in_block);
+			}
+			indentation.render(code);
+			Si::append(code, "}");
+			Si::append(code, end);
+		}
+
 		enum class type_emptiness
 		{
 			empty,
