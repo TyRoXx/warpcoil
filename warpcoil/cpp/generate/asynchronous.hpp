@@ -351,28 +351,20 @@ namespace warpcoil
 					    block(code, in_class,
 					          [&](indentation_level const in_method) {
 						          in_method.render(code);
-						          append(code, "for (std::size_t i = 0; i < "
-						                       "request_buffer_used; ++i)\n");
+						          append(code, "for (std::size_t i = 0; i < request_buffer_used; ++i)\n");
 						          block(code, in_method,
 						                [&](indentation_level const in_loop) {
 							                in_loop.render(code);
 							                append(code, "if (std::vector<std::uint8_t> const *parsed_name = "
-							                             "name.parse_"
-							                             "byte(request_buffer["
-							                             "i]))\n");
+							                             "name.parse_byte(request_buffer[i]))\n");
 							                block(code, in_loop,
 							                      [&](indentation_level const in_if) {
 								                      in_if.render(code);
-								                      append(code, "std::copy(request_buffer"
-								                                   ".begin() + i + 1, "
-								                                   "request_buffer.begin() "
-								                                   "+ request_buffer_used, "
-								                                   "request_buffer.begin())"
-								                                   ";\n");
+								                      append(code, "std::copy(request_buffer.begin() + i + 1, "
+								                                   "request_buffer.begin() + request_buffer_used, "
+								                                   "request_buffer.begin());\n");
 								                      in_if.render(code);
-								                      append(code, "request_buffer"
-								                                   "_used -= 1 + "
-								                                   "i;\n");
+								                      append(code, "request_buffer_used -= 1 + i;\n");
 
 								                      bool first = true;
 								                      for (auto const &entry : definition.methods)
@@ -400,10 +392,8 @@ namespace warpcoil
 									                            "\n");
 								                      }
 								                      in_if.render(code);
-								                      append(code, "else { throw "
-								                                   "std::logic_error(\"to do: "
-								                                   "handle unknown method "
-								                                   "name\"); }\n");
+								                      append(code, "else { throw std::logic_error(\"to do: handle "
+								                                   "unknown method name\"); }\n");
 
 								                      in_if.render(code);
 								                      append(code, "return;\n");
@@ -413,22 +403,16 @@ namespace warpcoil
 						                "\n");
 
 						          in_method.render(code);
-						          append(code, "responses.async_read_some("
-						                       "boost::asio::buffer(request_buffer"
-						                       "), [this, "
-						                       "handle_result = std::forward<Handler>(handle_result), name = "
-						                       "std::move(name)](boost::system::"
-						                       "error_code ec, std::size_t "
-						                       "read) mutable\n");
+						          append(code,
+						                 "responses.async_read_some(boost::asio::buffer(request_buffer), [this, "
+						                 "handle_result = std::forward<Handler>(handle_result), name = "
+						                 "std::move(name)](boost::system::error_code ec, std::size_t read) mutable\n");
 						          block(code, in_method,
 						                [&](indentation_level const in_read) {
 							                in_read.render(code);
-							                append(code, "if (!!ec) { "
-							                             "handle_result(ec); "
-							                             "return; }\n");
+							                append(code, "if (!!ec) { handle_result(ec); return; }\n");
 							                in_read.render(code);
-							                append(code, "request_buffer_"
-							                             "used = read;\n");
+							                append(code, "request_buffer_used = read;\n");
 							                in_read.render(code);
 							                append(code, "begin_receive_method_name(std::move(name), "
 							                             "std::forward<Handler>(handle_result));\n");
@@ -458,9 +442,7 @@ namespace warpcoil
 							              [&](indentation_level const in_loop) {
 								              in_loop.render(code);
 								              append(code, "if (auto const *parsed_argument = "
-								                           "argument.parse_"
-								                           "byte(request_buffer["
-								                           "i]))\n");
+								                           "argument.parse_byte(request_buffer[i]))\n");
 								              block(code, in_loop,
 								                    [&](indentation_level const in_if) {
 									                    in_if.render(code);
