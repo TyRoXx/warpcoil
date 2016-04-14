@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 	                        "#include <silicium/sink/append.hpp>\n"
 	                        "#include <silicium/variant.hpp>\n"
 	                        "#include <boost/asio/write.hpp>\n"
+	                        "#include <boost/range/algorithm/equal.hpp>\n"
 	                        "#include <cstdint>\n"
 	                        "#include <tuple>\n"
 	                        "\n");

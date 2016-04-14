@@ -280,119 +280,303 @@ namespace warpcoil
 				append(code, name);
 				append(code, "_server");
 				append(code, "\n");
-				block(code, indentation,
-				      [&](indentation_level const in_class) {
-					      in_class.render(code);
-					      append(code, "explicit async_");
-					      append(code, name);
-					      append(code, "_server(async_");
-					      append(code, name);
-					      append(code, " &handler, AsyncReadStream &requests, AsyncWriteStream "
-					                   "&responses)\n");
-					      in_class.deeper().render(code);
-					      append(code, ": handler(handler), requests(requests), "
-					                   "request_buffer_used(0), responses(responses) {}\n\n");
+				block(
+				    code, indentation,
+				    [&](indentation_level const in_class) {
+					    in_class.render(code);
+					    append(code, "explicit async_");
+					    append(code, name);
+					    append(code, "_server(async_");
+					    append(code, name);
+					    append(code, " &implementation, AsyncReadStream &requests, AsyncWriteStream "
+					                 "&responses)\n");
+					    in_class.deeper().render(code);
+					    append(code, ": implementation(implementation), requests(requests), "
+					                 "request_buffer_used(0), responses(responses) {}\n\n");
 
-					      in_class.render(code);
-					      append(code, "template <class "
-					                   "CompletionToken>\n");
-					      in_class.render(code);
-					      append(code, "auto serve_one_request(CompletionToken &&token)\n");
-					      block(code, in_class,
-					            [&](indentation_level const in_method) {
-						            in_method.render(code);
-						            append(code, "using handler_type = typename "
-						                         "boost::asio::handler_type<"
-						                         "decltype(token), "
-						                         "void(boost::system::error_code)>::type;\n");
-						            in_method.render(code);
-						            append(code, "handler_type "
-						                         "handler(std::forward<"
-						                         "CompletionToken>(token));\n");
-						            in_method.render(code);
-						            append(code, "boost::asio::async_result<"
-						                         "handler_type> "
-						                         "result(handler);\n");
-						            in_method.render(code);
-						            append(code, "begin_receive();\n");
-						            in_method.render(code);
-						            append(code, "return result.get();\n");
-						        },
-					            "\n\n");
+					    in_class.render(code);
+					    append(code, "template <class "
+					                 "CompletionToken>\n");
+					    in_class.render(code);
+					    append(code, "auto serve_one_request(CompletionToken &&token)\n");
+					    block(code, in_class,
+					          [&](indentation_level const in_method) {
+						          in_method.render(code);
+						          append(code, "using handler_type = typename "
+						                       "boost::asio::handler_type<"
+						                       "decltype(token), "
+						                       "void(boost::system::error_code)>::type;\n");
+						          in_method.render(code);
+						          append(code, "handler_type "
+						                       "handler(std::forward<"
+						                       "CompletionToken>(token));\n");
+						          in_method.render(code);
+						          append(code, "boost::asio::async_result<"
+						                       "handler_type> "
+						                       "result(handler);\n");
+						          in_method.render(code);
+						          append(code, "begin_receive_method_name({}, std::move(handler));\n");
+						          in_method.render(code);
+						          append(code, "return result.get();\n");
+						      },
+					          "\n\n");
 
-					      in_class.render(code);
-					      append(code, "void cancel_request()\n");
-					      block(code, in_class,
-					            [&](indentation_level const) {
+					    indentation.render(code);
+					    append(code, "private:\n");
 
-						        },
-					            "\n\n");
+					    in_class.render(code);
+					    append(code, "async_");
+					    append(code, name);
+					    append(code, " &implementation;\n");
+					    in_class.render(code);
+					    append(code, "AsyncReadStream &requests;\n");
+					    in_class.render(code);
+					    append(code, "std::array<std::uint8_t, 512> request_buffer;\n");
+					    in_class.render(code);
+					    append(code, "std::size_t request_buffer_used;\n");
+					    in_class.render(code);
+					    append(code, "std::vector<std::uint8_t> response_buffer;\n");
+					    in_class.render(code);
+					    append(code, "AsyncWriteStream &responses;\n");
+					    in_class.render(code);
+					    append(code, "typedef ");
+					    generate_parser_type(
+					        code, Si::to_unique(types::vector{types::integer(0, 255), types::integer(0, 255)}));
+					    append(code, " method_name_parser;\n\n");
+					    in_class.render(code);
+					    append(code, "template <class Handler>\n");
+					    in_class.render(code);
+					    append(code,
+					           "void begin_receive_method_name(method_name_parser name, Handler &&handle_result)\n");
+					    block(code, in_class,
+					          [&](indentation_level const in_method) {
+						          in_method.render(code);
+						          append(code, "for (std::size_t i = 0; i < "
+						                       "request_buffer_used; ++i)\n");
+						          block(code, in_method,
+						                [&](indentation_level const in_loop) {
+							                in_loop.render(code);
+							                append(code, "if (std::vector<std::uint8_t> const *parsed_name = "
+							                             "name.parse_"
+							                             "byte(request_buffer["
+							                             "i]))\n");
+							                block(code, in_loop,
+							                      [&](indentation_level const in_if) {
+								                      in_if.render(code);
+								                      append(code, "std::copy(request_buffer"
+								                                   ".begin() + i + 1, "
+								                                   "request_buffer.begin() "
+								                                   "+ request_buffer_used, "
+								                                   "request_buffer.begin())"
+								                                   ";\n");
+								                      in_if.render(code);
+								                      append(code, "request_buffer"
+								                                   "_used -= 1 + "
+								                                   "i;\n");
 
-					      indentation.render(code);
-					      append(code, "private:\n");
+								                      bool first = true;
+								                      for (auto const &entry : definition.methods)
+								                      {
+									                      in_if.render(code);
+									                      if (first)
+									                      {
+										                      first = false;
+									                      }
+									                      else
+									                      {
+										                      append(code, "else ");
+									                      }
+									                      append(code, "if (boost::range::equal(*parsed_name, "
+									                                   "Si::make_c_str_range(\"");
+									                      append(code, entry.first);
+									                      append(code, "\")))\n");
+									                      block(code, in_if,
+									                            [&](indentation_level const in_here) {
+										                            in_here.render(code);
+										                            append(code, "begin_receive_method_argument_of_");
+										                            append(code, entry.first);
+										                            append(code, "({}, std::move(handle_result));\n");
+										                        },
+									                            "\n");
+								                      }
+								                      in_if.render(code);
+								                      append(code, "else { throw "
+								                                   "std::logic_error(\"to do: "
+								                                   "handle unknown method "
+								                                   "name\"); }\n");
 
-					      for (auto const &entry : definition.methods)
-					      {
-						      in_class.render(code);
-						      append(code, "struct parsing_arguments_of_");
-						      append(code, entry.first);
-						      append(code, "\n");
-						      block(code, in_class,
-						            [&](indentation_level const in_parsing_class) {
-							            in_parsing_class.render(code);
-							            generate_parser_type(code, entry.second.parameter);
-							            append(code, " parser;\n");
-							            in_class.render(code);
-							        },
-						            ";\n\n");
-					      }
+								                      in_if.render(code);
+								                      append(code, "return;\n");
+								                  },
+							                      "\n");
+							            },
+						                "\n");
 
-					      in_class.render(code);
-					      append(code, "async_");
-					      append(code, name);
-					      append(code, " &handler;\n");
-					      in_class.render(code);
-					      append(code, "AsyncReadStream &requests;\n");
-					      in_class.render(code);
-					      append(code, "std::array<std::uint8_t, 512> request_buffer;\n");
-					      in_class.render(code);
-					      append(code, "std::size_t request_buffer_used;\n");
-					      in_class.render(code);
-					      append(code, "AsyncWriteStream &responses;\n");
-					      in_class.render(code);
-					      append(code, "typedef ");
-					      generate_parser_type(code,
-					                           Si::to_unique(types::vector{types::integer(0, 255), types::integer()}));
-					      append(code, " method_name_parser;\n");
-					      in_class.render(code);
-					      append(code, "Si::variant<method_name_parser");
-					      for (auto const &entry : definition.methods)
-					      {
-						      append(code, ", parsing_arguments_of_");
-						      append(code, entry.first);
-					      }
-					      append(code, "> parser;\n\n");
-					      in_class.render(code);
-					      append(code, "void begin_receive()\n");
-					      block(code, in_class,
-					            [&](indentation_level const in_method) {
-						            in_method.render(code);
-						            append(code, "requests.async_read_some("
-						                         "boost::asio::buffer(request_"
-						                         "buffer), [this](boost::system::"
-						                         "error_code ec, std::size_t "
-						                         "read)\n");
-						            block(code, in_method,
-						                  [&](indentation_level const in_read) {
-							                  in_read.render(code);
-							                  append(code, "request_buffer_"
-							                               "used = read;\n");
-							              },
-						                  ");\n");
-						        },
-					            "\n");
-					  },
-				      ";\n\n");
+						          in_method.render(code);
+						          append(code, "responses.async_read_some("
+						                       "boost::asio::buffer(request_buffer"
+						                       "), [this, "
+						                       "handle_result = std::forward<Handler>(handle_result), name = "
+						                       "std::move(name)](boost::system::"
+						                       "error_code ec, std::size_t "
+						                       "read) mutable\n");
+						          block(code, in_method,
+						                [&](indentation_level const in_read) {
+							                in_read.render(code);
+							                append(code, "if (!!ec) { "
+							                             "handle_result(ec); "
+							                             "return; }\n");
+							                in_read.render(code);
+							                append(code, "request_buffer_"
+							                             "used = read;\n");
+							                in_read.render(code);
+							                append(code, "begin_receive_method_name(std::move(name), "
+							                             "std::forward<Handler>(handle_result));\n");
+							            },
+						                ");\n");
+						      },
+					          "\n");
+
+					    for (auto const &entry : definition.methods)
+					    {
+						    append(code, "\n");
+						    in_class.render(code);
+						    append(code, "template <class Handler>\n");
+						    in_class.render(code);
+						    append(code, "void begin_receive_method_argument_of_");
+						    append(code, entry.first);
+						    append(code, "(");
+						    generate_parser_type(code, entry.second.parameter);
+						    append(code, " argument, Handler &&handle_result)\n");
+						    block(
+						        code, in_class,
+						        [&](indentation_level const in_method) {
+							        in_method.render(code);
+							        append(code, "for (std::size_t i = 0; i < "
+							                     "request_buffer_used; ++i)\n");
+							        block(code, in_method,
+							              [&](indentation_level const in_loop) {
+								              in_loop.render(code);
+								              append(code, "if (auto const *parsed_argument = "
+								                           "argument.parse_"
+								                           "byte(request_buffer["
+								                           "i]))\n");
+								              block(code, in_loop,
+								                    [&](indentation_level const in_if) {
+									                    in_if.render(code);
+									                    append(code, "std::copy(request_buffer"
+									                                 ".begin() + i + 1, "
+									                                 "request_buffer.begin() "
+									                                 "+ request_buffer_used, "
+									                                 "request_buffer.begin())"
+									                                 ";\n");
+									                    in_if.render(code);
+									                    append(code, "request_buffer"
+									                                 "_used -= 1 + "
+									                                 "i;\n");
+
+									                    in_if.render(code);
+									                    append(code, "implementation.");
+									                    append(code, entry.first);
+									                    append(code, "(std::move(*parsed_argument), [this, "
+									                                 "handle_result = "
+									                                 "std::forward<Handler>(handle_result)](boost::"
+									                                 "system::error_code ec, ");
+									                    type_emptiness const result_empty =
+									                        generate_type(code, entry.second.result);
+									                    switch (result_empty)
+									                    {
+									                    case type_emptiness::empty:
+										                    break;
+
+									                    case type_emptiness::non_empty:
+										                    append(code, " result");
+										                    break;
+									                    }
+									                    append(code, ") mutable\n");
+									                    block(
+									                        code, in_if,
+									                        [&](indentation_level const in_lambda) {
+										                        switch (result_empty)
+										                        {
+										                        case type_emptiness::empty:
+											                        in_lambda.render(code);
+											                        append(
+											                            code,
+											                            "std::forward<Handler>(handle_result)(ec);\n");
+											                        break;
+
+										                        case type_emptiness::non_empty:
+											                        in_lambda.render(code);
+											                        append(code,
+											                               "if (!!ec) { "
+											                               "std::forward<Handler>(handle_result)(ec); "
+											                               "return; }\n");
+											                        in_lambda.render(code);
+											                        append(code, "response_buffer.clear();\n");
+											                        in_lambda.render(code);
+											                        append(code, "auto response_writer = "
+											                                     "Si::Sink<std::uint8_t, "
+											                                     "Si::success>::erase(Si::make_"
+											                                     "container_sink(response_buffer));"
+											                                     "\n");
+											                        generate_value_serialization(
+											                            code, in_lambda,
+											                            Si::make_c_str_range("response_writer"),
+											                            Si::make_c_str_range("result"),
+											                            entry.second.result);
+											                        in_lambda.render(code);
+											                        append(code, "boost::asio::async_write(responses,"
+											                                     " boost::asio::buffer(response_"
+											                                     "buffer), [this, handle_result = "
+											                                     "std::move(handle_result)](boost::"
+											                                     "system::error_code ec, "
+											                                     "std::size_t) mutable\n");
+											                        block(code, in_lambda,
+											                              [&](indentation_level const in_read) {
+												                              in_read.render(code);
+												                              append(code, "std::forward<Handler>("
+												                                           "handle_result)(ec);\n");
+												                          },
+											                              ");\n");
+											                        break;
+										                        }
+										                    },
+									                        ");\n");
+
+									                    in_if.render(code);
+									                    append(code, "return;\n");
+									                },
+								                    "\n");
+								          },
+							              "\n");
+
+							        in_method.render(code);
+							        append(code,
+							               "responses.async_read_some(boost::asio::buffer(request_buffer"
+							               "), [this, handle_result = std::forward<Handler>(handle_result), argument = "
+							               "std::move(argument)](boost::system::error_code ec, std::size_t read) "
+							               "mutable\n");
+							        block(code, in_method,
+							              [&](indentation_level const in_read) {
+								              in_read.render(code);
+								              append(code, "if (!!ec) { "
+								                           "std::forward<Handler>(handle_result)(ec); "
+								                           "return; }\n");
+								              in_read.render(code);
+								              append(code, "request_buffer_used = read;\n");
+								              in_read.render(code);
+								              append(code, "begin_receive_method_argument_of_");
+								              append(code, entry.first);
+								              append(code,
+								                     "(std::move(argument), std::forward<Handler>(handle_result));\n");
+								          },
+							              ");\n");
+							    },
+						        "\n");
+					    }
+					},
+				    ";\n\n");
 			}
 
 			template <class CharSink>

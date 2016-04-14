@@ -17,29 +17,32 @@ BOOST_AUTO_TEST_CASE(test_binary_integer_function)
 	BOOST_CHECK_EQUAL(3, a.evaluate(std::make_tuple(1, 2)));
 }
 
-struct impl_test_interface : test_interface
+namespace
 {
-	virtual ::std::tuple<> no_result_no_parameter(::std::tuple<> argument) override
+	struct impl_test_interface : test_interface
 	{
-		return argument;
-	}
+		virtual ::std::tuple<> no_result_no_parameter(::std::tuple<> argument) override
+		{
+			return argument;
+		}
 
-	virtual ::std::tuple<::std::uint64_t, ::std::uint64_t> two_results(::std::uint64_t argument) override
-	{
-		return std::make_tuple(argument, argument + 1);
-	}
+		virtual ::std::tuple<::std::uint64_t, ::std::uint64_t> two_results(::std::uint64_t argument) override
+		{
+			return std::make_tuple(argument, argument + 1);
+		}
 
-	virtual ::std::uint64_t two_parameters(::std::tuple<::std::uint64_t, ::std::uint64_t> argument) override
-	{
-		return std::get<0>(argument) * std::get<1>(argument);
-	}
+		virtual ::std::uint64_t two_parameters(::std::tuple<::std::uint64_t, ::std::uint64_t> argument) override
+		{
+			return std::get<0>(argument) * std::get<1>(argument);
+		}
 
-	virtual std::vector<std::uint64_t> vectors(std::vector<std::uint64_t> argument) override
-	{
-		std::reverse(argument.begin(), argument.end());
-		return argument;
-	}
-};
+		virtual std::vector<std::uint64_t> vectors(std::vector<std::uint64_t> argument) override
+		{
+			std::reverse(argument.begin(), argument.end());
+			return argument;
+		}
+	};
+}
 
 BOOST_AUTO_TEST_CASE(no_result_no_parameter)
 {
