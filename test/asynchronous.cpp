@@ -106,7 +106,7 @@ namespace
 		    std::vector<std::uint64_t> argument,
 		    std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
 		{
-			std::sort(argument.begin(), argument.end(), std::greater<>());
+			std::sort(argument.begin(), argument.end(), std::greater<std::uint64_t>());
 			on_result({}, std::move(argument));
 		}
 	};
