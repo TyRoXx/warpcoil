@@ -337,7 +337,7 @@ namespace warpcoil
 					    in_class.render(code);
 					    append(code, "std::vector<std::uint8_t> response_buffer;\n");
 					    in_class.render(code);
-					    append(code, "AsyncWriteStream &responses;\n");
+					    append(code, "AsyncWriteStream &responses;\n\n");
 					    in_class.render(code);
 					    append(code, "typedef ");
 					    generate_parser_type(
