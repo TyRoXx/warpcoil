@@ -525,6 +525,9 @@ namespace warpcoil
 										                        }
 										                    },
 									                        ");\n");
+
+									                    in_if.render(code);
+									                    append(code, "return;\n");
 									                },
 								                    "\n");
 								          },
