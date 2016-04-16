@@ -145,9 +145,7 @@ target_link_libraries(test_app_generate ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_I
 set(generatedHeader ${CMAKE_BINARY_DIR}/generated.hpp)
 if(WARPCOIL_CLANG_FORMAT)
 	add_custom_target(generatedHeaderTarget
-		COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader}
-		COMMAND cp ${CMAKE_SOURCE_DIR}/.clang-format ${CMAKE_BINARY_DIR}/.clang-format
-		COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${generatedHeader}
+		COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
 		DEPENDS test_app_generate)
 else()
 	add_custom_target(generatedHeaderTarget
