@@ -17,7 +17,8 @@ namespace warpcoil
 				append(code, name);
 				append(code, "\n");
 				block(code, indentation,
-				      [&](indentation_level const in_class) {
+				      [&](indentation_level const in_class)
+				      {
 					      in_class.render(code);
 					      append(code, "virtual ~async_");
 					      append(code, name);
@@ -33,7 +34,8 @@ namespace warpcoil
 						      generate_type(code, entry.second.parameter);
 						      append(code, " argument, CompletionToken &&token)\n");
 						      block(code, in_class,
-						            [&](indentation_level const in_method) {
+						            [&](indentation_level const in_method)
+						            {
 							            in_method.render(code);
 							            append(code, "using handler_type = typename "
 							                         "boost::asio::handler_type<"
@@ -88,7 +90,8 @@ namespace warpcoil
 				append(code, name);
 				append(code, "\n");
 				block(code, indentation,
-				      [&](indentation_level const in_class) {
+				      [&](indentation_level const in_class)
+				      {
 					      in_class.render(code);
 					      append(code, "explicit async_");
 					      append(code, name);
@@ -112,7 +115,8 @@ namespace warpcoil
 						      type_emptiness const result_emptiness = generate_type(code, entry.second.result);
 						      append(code, ")> on_result) override\n");
 						      block(code, in_class,
-						            [&](indentation_level const in_method) {
+						            [&](indentation_level const in_method)
+						            {
 							            in_method.render(code);
 							            append(code, "auto request_writer = "
 							                         "Si::Sink<std::uint8_t, "
@@ -149,7 +153,8 @@ namespace warpcoil
 							                         "on_result](boost::system::error_"
 							                         "code ec, std::size_t)\n");
 							            block(code, in_method,
-							                  [&](indentation_level const in_written) {
+							                  [&](indentation_level const in_written)
+							                  {
 								                  in_written.render(code);
 								                  switch (result_emptiness)
 								                  {
@@ -180,19 +185,22 @@ namespace warpcoil
 									                  append(code, "state->begin_parse = [this, "
 									                               "state, on_result]()\n");
 									                  block(code, in_written,
-									                        [&](indentation_level const in_begin) {
+									                        [&](indentation_level const in_begin)
+									                        {
 										                        in_begin.render(code);
 										                        append(code, "for (std::size_t i = 0; i < "
 										                                     "response_buffer_used; ++i)\n");
 										                        block(code, in_begin,
-										                              [&](indentation_level const in_loop) {
+										                              [&](indentation_level const in_loop)
+										                              {
 											                              in_loop.render(code);
 											                              append(code, "if (auto *response = "
 											                                           "state->parser.parse_"
 											                                           "byte(response_buffer["
 											                                           "i]))\n");
 											                              block(code, in_loop,
-											                                    [&](indentation_level const in_if) {
+											                                    [&](indentation_level const in_if)
+											                                    {
 												                                    in_if.render(code);
 												                                    append(code,
 												                                           "std::copy(response_"
@@ -226,7 +234,8 @@ namespace warpcoil
 										                                     "error_code ec, std::size_t "
 										                                     "read)\n");
 										                        block(code, in_begin,
-										                              [&](indentation_level const in_read) {
+										                              [&](indentation_level const in_read)
+										                              {
 											                              in_read.render(code);
 											                              append(code, "if (!!ec) { "
 											                                           "on_result(ec, {}); "
@@ -282,7 +291,8 @@ namespace warpcoil
 				append(code, "\n");
 				block(
 				    code, indentation,
-				    [&](indentation_level const in_class) {
+				    [&](indentation_level const in_class)
+				    {
 					    in_class.render(code);
 					    append(code, "explicit async_");
 					    append(code, name);
@@ -300,7 +310,8 @@ namespace warpcoil
 					    in_class.render(code);
 					    append(code, "auto serve_one_request(CompletionToken &&token)\n");
 					    block(code, in_class,
-					          [&](indentation_level const in_method) {
+					          [&](indentation_level const in_method)
+					          {
 						          in_method.render(code);
 						          append(code, "using handler_type = typename "
 						                       "boost::asio::handler_type<"
@@ -349,16 +360,19 @@ namespace warpcoil
 					    append(code,
 					           "void begin_receive_method_name(method_name_parser name, Handler &&handle_result)\n");
 					    block(code, in_class,
-					          [&](indentation_level const in_method) {
+					          [&](indentation_level const in_method)
+					          {
 						          in_method.render(code);
 						          append(code, "for (std::size_t i = 0; i < request_buffer_used; ++i)\n");
 						          block(code, in_method,
-						                [&](indentation_level const in_loop) {
+						                [&](indentation_level const in_loop)
+						                {
 							                in_loop.render(code);
 							                append(code, "if (std::vector<std::uint8_t> const *parsed_name = "
 							                             "name.parse_byte(request_buffer[i]))\n");
 							                block(code, in_loop,
-							                      [&](indentation_level const in_if) {
+							                      [&](indentation_level const in_if)
+							                      {
 								                      in_if.render(code);
 								                      append(code, "std::copy(request_buffer.begin() + i + 1, "
 								                                   "request_buffer.begin() + request_buffer_used, "
@@ -383,7 +397,8 @@ namespace warpcoil
 									                      append(code, entry.first);
 									                      append(code, "\")))\n");
 									                      block(code, in_if,
-									                            [&](indentation_level const in_here) {
+									                            [&](indentation_level const in_here)
+									                            {
 										                            in_here.render(code);
 										                            append(code, "begin_receive_method_argument_of_");
 										                            append(code, entry.first);
@@ -408,7 +423,8 @@ namespace warpcoil
 						                 "handle_result = std::forward<Handler>(handle_result), name = "
 						                 "std::move(name)](boost::system::error_code ec, std::size_t read) mutable\n");
 						          block(code, in_method,
-						                [&](indentation_level const in_read) {
+						                [&](indentation_level const in_read)
+						                {
 							                in_read.render(code);
 							                append(code, "if (!!ec) { handle_result(ec); return; }\n");
 							                in_read.render(code);
@@ -434,17 +450,20 @@ namespace warpcoil
 						    append(code, " argument, Handler &&handle_result)\n");
 						    block(
 						        code, in_class,
-						        [&](indentation_level const in_method) {
+						        [&](indentation_level const in_method)
+						        {
 							        in_method.render(code);
 							        append(code, "for (std::size_t i = 0; i < "
 							                     "request_buffer_used; ++i)\n");
 							        block(code, in_method,
-							              [&](indentation_level const in_loop) {
+							              [&](indentation_level const in_loop)
+							              {
 								              in_loop.render(code);
 								              append(code, "if (auto const *parsed_argument = "
 								                           "argument.parse_byte(request_buffer[i]))\n");
 								              block(code, in_loop,
-								                    [&](indentation_level const in_if) {
+								                    [&](indentation_level const in_if)
+								                    {
 									                    in_if.render(code);
 									                    append(code, "std::copy(request_buffer"
 									                                 ".begin() + i + 1, "
@@ -478,7 +497,8 @@ namespace warpcoil
 									                    append(code, ") mutable\n");
 									                    block(
 									                        code, in_if,
-									                        [&](indentation_level const in_lambda) {
+									                        [&](indentation_level const in_lambda)
+									                        {
 										                        switch (result_empty)
 										                        {
 										                        case type_emptiness::empty:
@@ -515,7 +535,8 @@ namespace warpcoil
 											                                     "system::error_code ec, "
 											                                     "std::size_t) mutable\n");
 											                        block(code, in_lambda,
-											                              [&](indentation_level const in_read) {
+											                              [&](indentation_level const in_read)
+											                              {
 												                              in_read.render(code);
 												                              append(code, "std::forward<Handler>("
 												                                           "handle_result)(ec);\n");
@@ -540,7 +561,8 @@ namespace warpcoil
 							            "std::move(argument)](boost::system::error_code ec, std::size_t read) "
 							            "mutable\n");
 							        block(code, in_method,
-							              [&](indentation_level const in_read) {
+							              [&](indentation_level const in_read)
+							              {
 								              start_line(code, in_read, "if (!!ec) { "
 								                                        "std::forward<Handler>(handle_result)(ec); "
 								                                        "return; }\n");

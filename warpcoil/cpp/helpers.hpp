@@ -16,7 +16,10 @@ namespace warpcoil
 			for (std::size_t i = 0; i < 8; ++i)
 			{
 				result <<= 8;
-				result |= Si::get(from).or_throw([] { throw std::runtime_error("unexpected end of the response"); });
+				result |= Si::get(from).or_throw([]
+				                                 {
+					                                 throw std::runtime_error("unexpected end of the response");
+					                             });
 			}
 			return result;
 		}
@@ -156,7 +159,8 @@ namespace warpcoil
 			result_type *parse_byte(std::uint8_t const input)
 			{
 				return Si::visit<result_type *>(step,
-				                                [this, input](Length &parser) -> result_type * {
+				                                [this, input](Length &parser) -> result_type *
+				                                {
 					                                if (typename Length::result_type const *length =
 					                                        parser.parse_byte(input))
 					                                {
@@ -169,7 +173,8 @@ namespace warpcoil
 					                                }
 					                                return nullptr;
 					                            },
-				                                [this, input](parsing_element &parsing) -> result_type * {
+				                                [this, input](parsing_element &parsing) -> result_type *
+				                                {
 					                                if (auto *element = parsing.parser.parse_byte(input))
 					                                {
 						                                result[parsing.current_index] = std::move(*element);

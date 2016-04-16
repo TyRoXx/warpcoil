@@ -17,8 +17,7 @@ namespace warpcoil
 		struct tuple_element;
 
 		typedef Si::variant<std::unique_ptr<call>, std::unique_ptr<tuple>, std::unique_ptr<closure>,
-		                    std::unique_ptr<literal>, identifier, std::unique_ptr<tuple_element>>
-		    expression;
+		                    std::unique_ptr<literal>, identifier, std::unique_ptr<tuple_element>> expression;
 
 		struct call
 		{
@@ -98,8 +97,7 @@ namespace warpcoil
 		struct vector;
 
 		typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<subset>,
-		                    std::unique_ptr<vector>>
-		    type;
+		                    std::unique_ptr<vector>> type;
 
 		struct variant
 		{

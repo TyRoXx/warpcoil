@@ -80,19 +80,18 @@ BOOST_AUTO_TEST_CASE(serialization_client_no_result_no_parameter)
 {
 	generic_test_serialization_client(
 	    &test_interface::no_result_no_parameter, std::tuple<>(), std::tuple<>(),
-	    std::array<std::uint8_t, 1 + 22>{{22,  'n', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', '_', 'n',
-	                                      'o', '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r'}},
+	    std::array<std::uint8_t, 1 + 22>{{22, 'n', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', '_', 'n', 'o', '_', 'p', 'a',
+	                                      'r', 'a', 'm', 'e', 't', 'e', 'r'}},
 	    std::array<std::uint8_t, 0>{{}});
 }
 
 BOOST_AUTO_TEST_CASE(serialization_client_two_parameters)
 {
-	generic_test_serialization_client(&test_interface::two_parameters, std::tuple<std::uint64_t, std::uint64_t>(2, 3),
-	                                  std::uint64_t(6),
-	                                  std::array<std::uint8_t, 1 + 14 + (2 * 8)>{
-	                                      {14, 't', 'w', 'o', '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r', 's', 0,
-	                                       0,  0,   0,   0,   0,   0,   2,   0,   0,   0,   0,   0,   0,   0,   3}},
-	                                  std::array<std::uint8_t, 8>{{0, 0, 0, 0, 0, 0, 0, 6}});
+	generic_test_serialization_client(
+	    &test_interface::two_parameters, std::tuple<std::uint64_t, std::uint64_t>(2, 3), std::uint64_t(6),
+	    std::array<std::uint8_t, 1 + 14 + (2 * 8)>{{14, 't', 'w', 'o', '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r',
+	                                                's', 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3}},
+	    std::array<std::uint8_t, 8>{{0, 0, 0, 0, 0, 0, 0, 6}});
 }
 
 BOOST_AUTO_TEST_CASE(serialization_client_two_results)
@@ -108,8 +107,8 @@ BOOST_AUTO_TEST_CASE(serialization_client_vectors)
 {
 	generic_test_serialization_client(
 	    &test_interface::vectors, std::vector<std::uint64_t>{4, 5}, std::vector<std::uint64_t>{5, 4},
-	    std::array<std::uint8_t, 1 + 7 + (3 * 8)>{{7, 'v', 'e', 'c', 't', 'o', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 2,
-	                                               0, 0,   0,   0,   0,   0,   0,   4,   0, 0, 0, 0, 0, 0, 0, 5}},
+	    std::array<std::uint8_t, 1 + 7 + (3 * 8)>{{7, 'v', 'e', 'c', 't', 'o', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
+	                                               0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 5}},
 	    std::array<std::uint8_t, 3 * 8>{{0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 4}});
 }
 
@@ -119,9 +118,9 @@ BOOST_AUTO_TEST_CASE(serialization_server)
 	auto response_writer = Si::Sink<std::uint8_t, Si::success>::erase(Si::make_container_sink(response));
 	impl_test_interface handler;
 	test_interface_server server(handler, response_writer);
-	std::array<std::uint8_t, 1 + 14 + (2 * 8)> const request = {{14,  't', 'w', 'o', '_', 'p', 'a', 'r', 'a', 'm', 'e',
-	                                                             't', 'e', 'r', 's', 0,   0,   0,   0,   0,   0,   0,
-	                                                             4,   0,   0,   0,   0,   0,   0,   0,   5}};
+	std::array<std::uint8_t, 1 + 14 + (2 * 8)> const request = {{14, 't', 'w', 'o', '_', 'p', 'a', 'r', 'a', 'm', 'e',
+	                                                             't', 'e', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0,
+	                                                             0, 0, 0, 5}};
 	Si::append(server, Si::make_contiguous_range(request));
 	std::array<std::uint8_t, 8> const expected_response = {{0, 0, 0, 0, 0, 0, 0, 20}};
 	BOOST_CHECK_EQUAL_COLLECTIONS(expected_response.begin(), expected_response.end(), response.begin(), response.end());
