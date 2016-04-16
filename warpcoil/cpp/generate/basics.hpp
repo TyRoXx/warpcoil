@@ -64,6 +64,14 @@ namespace warpcoil
 			std::size_t m_amount;
 		};
 
+		template <class CharSink, class... Content>
+		void start_line(CharSink &&code, indentation_level indentation, Content const &... content)
+		{
+			indentation.render(code);
+			Si::unit dummy[] = {(Si::append(code, content), Si::unit())...};
+			Si::ignore_unused_variable_warning(dummy);
+		}
+
 		template <class CharSink, class ContentGenerator>
 		void block(CharSink &&code, indentation_level indentation, ContentGenerator &&content, char const *end)
 		{

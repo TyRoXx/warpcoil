@@ -533,22 +533,19 @@ namespace warpcoil
 								          },
 							              "\n");
 
-							        in_method.render(code);
-							        append(code,
-							               "responses.async_read_some(boost::asio::buffer(request_buffer"
-							               "), [this, handle_result = std::forward<Handler>(handle_result), argument = "
-							               "std::move(argument)](boost::system::error_code ec, std::size_t read) "
-							               "mutable\n");
+							        start_line(
+							            code, in_method,
+							            "responses.async_read_some(boost::asio::buffer(request_buffer"
+							            "), [this, handle_result = std::forward<Handler>(handle_result), argument = "
+							            "std::move(argument)](boost::system::error_code ec, std::size_t read) "
+							            "mutable\n");
 							        block(code, in_method,
 							              [&](indentation_level const in_read) {
-								              in_read.render(code);
-								              append(code, "if (!!ec) { "
-								                           "std::forward<Handler>(handle_result)(ec); "
-								                           "return; }\n");
-								              in_read.render(code);
-								              append(code, "request_buffer_used = read;\n");
-								              in_read.render(code);
-								              append(code, "begin_receive_method_argument_of_");
+								              start_line(code, in_read, "if (!!ec) { "
+								                                        "std::forward<Handler>(handle_result)(ec); "
+								                                        "return; }\n");
+								              start_line(code, in_read, "request_buffer_used = read;\n");
+								              start_line(code, in_read, "begin_receive_method_argument_of_");
 								              append(code, entry.first);
 								              append(code,
 								                     "(std::move(argument), std::forward<Handler>(handle_result));\n");
