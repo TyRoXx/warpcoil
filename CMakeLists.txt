@@ -143,7 +143,17 @@ set(formatted ${formatted} ${generateSources})
 add_executable(test_app_generate ${generateSources})
 target_link_libraries(test_app_generate ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CONAN_LIBS})
 set(generatedHeader ${CMAKE_BINARY_DIR}/generated.hpp)
-add_custom_target(generatedHeaderTarget COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader} DEPENDS test_app_generate)
+if(WARPCOIL_CLANG_FORMAT)
+	add_custom_target(generatedHeaderTarget
+		COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader}
+		COMMAND cp ${CMAKE_SOURCE_DIR}/.clang-format ${CMAKE_BINARY_DIR}/.clang-format
+		COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${generatedHeader}
+		DEPENDS test_app_generate)
+else()
+	add_custom_target(generatedHeaderTarget
+		COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader}
+		DEPENDS test_app_generate)
+endif()
 
 add_subdirectory("test")
 add_subdirectory("examples")
