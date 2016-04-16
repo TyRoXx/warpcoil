@@ -133,7 +133,7 @@ namespace warpcoil
 			result_type const *parse_byte(std::uint8_t const input)
 			{
 				assert(bytes_received < sizeof(result_type));
-				result <<= 8;
+				result = static_cast<result_type>(result << 8);
 				result |= input;
 				++bytes_received;
 				if (bytes_received == sizeof(result_type))
