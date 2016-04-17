@@ -92,6 +92,13 @@ namespace
 {
 	struct impl_test_interface : async_test_interface
 	{
+		virtual void type_erased_integer_sizes(
+		    std::tuple<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t> argument,
+		    std::function<void(boost::system::error_code, std::vector<std::uint16_t>)> on_result) override
+		{
+			on_result({}, std::vector<std::uint16_t>{std::get<1>(argument)});
+		}
+
 		virtual void type_erased_no_result_no_parameter(
 		    std::tuple<> argument, std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
 		{

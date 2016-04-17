@@ -86,6 +86,26 @@ namespace warpcoil
 			Si::append(code, end);
 		}
 
+		inline Si::memory_range find_suitable_uint_cpp_type(types::integer range)
+		{
+			if (range.maximum <= 0xffu)
+			{
+				return Si::make_c_str_range("std::uint8_t");
+			}
+			else if (range.maximum <= 0xffffu)
+			{
+				return Si::make_c_str_range("std::uint16_t");
+			}
+			else if (range.maximum <= 0xffffffffu)
+			{
+				return Si::make_c_str_range("std::uint32_t");
+			}
+			else
+			{
+				return Si::make_c_str_range("std::uint64_t");
+			}
+		}
+
 		enum class type_emptiness
 		{
 			empty,
@@ -97,9 +117,9 @@ namespace warpcoil
 		{
 			return Si::visit<type_emptiness>(
 			    root,
-			    [&code](types::integer)
+			    [&code](types::integer range)
 			    {
-				    Si::append(code, "std::uint64_t");
+				    Si::append(code, find_suitable_uint_cpp_type(range));
 				    return type_emptiness::non_empty;
 				},
 			    [&code](std::unique_ptr<types::variant> const &root)
@@ -217,10 +237,12 @@ namespace warpcoil
 		{
 			return Si::visit<void>(
 			    type,
-			    [&code, sink, value, indentation](types::integer)
+			    [&code, sink, value, indentation](types::integer range)
 			    {
 				    indentation.render(code);
-				    Si::append(code, "warpcoil::cpp::write_integer(");
+				    Si::append(code, "warpcoil::cpp::write_integer<");
+				    Si::append(code, find_suitable_uint_cpp_type(range));
+				    Si::append(code, ">(");
 				    Si::append(code, sink);
 				    Si::append(code, ", ");
 				    Si::append(code, value);
@@ -250,10 +272,14 @@ namespace warpcoil
 			    [&code, sink, value, indentation](std::unique_ptr<types::vector> const &root)
 			    {
 				    {
-					    std::string size(value.begin(), value.end());
-					    size += ".size()";
+					    std::string size = "static_cast<";
+					    Si::memory_range const size_type = find_suitable_uint_cpp_type(root->length);
+					    size.append(size_type.begin(), size_type.end());
+					    size += ">(";
+					    size.append(value.begin(), value.end());
+					    size += ".size())";
 					    generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(size),
-					                                 types::integer());
+					                                 root->length);
 				    }
 				    indentation.render(code);
 				    Si::append(code, "for (auto const &element : ");
@@ -276,9 +302,11 @@ namespace warpcoil
 		                                    types::type const &type)
 		{
 			return Si::visit<void>(type,
-			                       [&code, source](types::integer)
+			                       [&code, source](types::integer range)
 			                       {
-				                       Si::append(code, "warpcoil::cpp::read_integer(");
+				                       Si::append(code, "warpcoil::cpp::read_integer<");
+				                       Si::append(code, find_suitable_uint_cpp_type(range));
+				                       Si::append(code, ">(");
 				                       Si::append(code, source);
 				                       Si::append(code, ")");
 				                   },
@@ -322,7 +350,7 @@ namespace warpcoil
 					                       in_lambda.render(code);
 					                       generate_type(code, type);
 					                       Si::append(code, " result(");
-					                       generate_value_deserialization(code, in_lambda, source, types::integer());
+					                       generate_value_deserialization(code, in_lambda, source, root->length);
 					                       Si::append(code, ");\n");
 					                       in_lambda.render(code);
 					                       Si::append(code, "for (auto &element : result) { element = ");

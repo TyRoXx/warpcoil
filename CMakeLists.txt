@@ -156,6 +156,6 @@ else()
 endif()
 
 add_subdirectory("test")
-add_subdirectory("examples")
+add_subdirectory("example")
 
 add_custom_target(clang-format COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${formatted} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

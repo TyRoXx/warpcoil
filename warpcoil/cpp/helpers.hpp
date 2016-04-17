@@ -10,28 +10,31 @@ namespace warpcoil
 {
 	namespace cpp
 	{
-		inline std::uint64_t read_integer(Si::Source<std::uint8_t>::interface &from)
+		template <class Unsigned>
+		Unsigned read_integer(Si::Source<std::uint8_t>::interface &from)
 		{
-			std::uint64_t result = 0;
-			for (std::size_t i = 0; i < 8; ++i)
+			Unsigned result = 0;
+			for (std::size_t i = 0; i < sizeof(result); ++i)
 			{
-				result <<= 8;
-				result |= Si::get(from).or_throw([]
-				                                 {
-					                                 throw std::runtime_error("unexpected end of the response");
-					                             });
+				result = static_cast<std::uint8_t>(result << 8u);
+				result = static_cast<std::uint8_t>(result |
+				                                   Si::get(from).or_throw([]
+				                                                          {
+					                                                          throw std::runtime_error(
+					                                                              "unexpected end of the response");
+					                                                      }));
 			}
 			return result;
 		}
 
-		inline void write_integer(Si::Sink<std::uint8_t>::interface &to, std::uint64_t const value)
+		template <class Unsigned>
+		void write_integer(Si::Sink<std::uint8_t>::interface &to, Unsigned const value)
 		{
-			std::array<std::uint8_t, 8> const bytes = {{
-			    static_cast<std::uint8_t>(value >> 56), static_cast<std::uint8_t>(value >> 48),
-			    static_cast<std::uint8_t>(value >> 40), static_cast<std::uint8_t>(value >> 32),
-			    static_cast<std::uint8_t>(value >> 24), static_cast<std::uint8_t>(value >> 16),
-			    static_cast<std::uint8_t>(value >> 8), static_cast<std::uint8_t>(value >> 0),
-			}};
+			std::array<std::uint8_t, sizeof(value)> bytes;
+			for (std::size_t i = 0; i < sizeof(value); ++i)
+			{
+				bytes[i] = static_cast<std::uint8_t>(value >> ((sizeof(value) - 1 - i) * 8));
+			}
 			Si::append(to, Si::make_contiguous_range(bytes));
 		}
 
@@ -137,7 +140,7 @@ namespace warpcoil
 			{
 				assert(bytes_received < sizeof(result_type));
 				result = static_cast<result_type>(result << 8);
-				result |= input;
+				result = static_cast<result_type>(result | input);
 				++bytes_received;
 				if (bytes_received == sizeof(result_type))
 				{

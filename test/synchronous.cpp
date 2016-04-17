@@ -21,6 +21,12 @@ namespace
 {
 	struct impl_test_interface : test_interface
 	{
+		virtual std::vector<std::uint16_t>
+		integer_sizes(std::tuple<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t> argument) override
+		{
+			return {std::get<1>(argument)};
+		}
+
 		virtual ::std::tuple<> no_result_no_parameter(::std::tuple<> argument) override
 		{
 			return argument;
