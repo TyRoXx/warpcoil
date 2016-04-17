@@ -202,6 +202,51 @@ namespace warpcoil
 			result_type result;
 		};
 
+		template <class Length>
+		struct utf8_parser
+		{
+			typedef std::string result_type;
+
+			result_type *parse_byte(std::uint8_t const input)
+			{
+				return Si::visit<result_type *>(step,
+				                                [this, input](Length &parser) -> result_type *
+				                                {
+					                                if (typename Length::result_type const *length =
+					                                        parser.parse_byte(input))
+					                                {
+						                                result.resize(*length);
+						                                if (result.empty())
+						                                {
+							                                return &result;
+						                                }
+						                                step = parsing_element{0};
+					                                }
+					                                return nullptr;
+					                            },
+				                                [this, input](parsing_element &parsing) -> result_type *
+				                                {
+					                                // TODO: verify UTF-8
+					                                result[parsing.current_index] = input;
+					                                if (parsing.current_index == (result.size() - 1))
+					                                {
+						                                return &result;
+					                                }
+					                                step = parsing_element{parsing.current_index + 1};
+					                                return nullptr;
+					                            });
+			}
+
+		private:
+			struct parsing_element
+			{
+				std::size_t current_index;
+			};
+
+			Si::variant<Length, parsing_element> step;
+			result_type result;
+		};
+
 		struct parsing_method_name_length
 		{
 		};

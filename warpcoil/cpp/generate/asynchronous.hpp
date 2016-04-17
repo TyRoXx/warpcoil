@@ -118,6 +118,8 @@ namespace warpcoil
 						            [&](indentation_level const in_method)
 						            {
 							            in_method.render(code);
+							            append(code, "request_buffer.clear();\n");
+							            in_method.render(code);
 							            append(code, "auto request_writer = "
 							                         "Si::Sink<std::uint8_t, "
 							                         "Si::success>::erase(Si::make_"

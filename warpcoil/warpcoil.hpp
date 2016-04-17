@@ -92,13 +92,18 @@ namespace warpcoil
 			}
 		};
 
+		struct utf8
+		{
+			integer code_units;
+		};
+
 		struct variant;
 		struct tuple;
 		struct subset;
 		struct vector;
 
 		typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<subset>,
-		                    std::unique_ptr<vector>> type;
+		                    std::unique_ptr<vector>, utf8> type;
 
 		struct variant
 		{

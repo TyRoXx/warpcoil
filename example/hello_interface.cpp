@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 		types::interface_definition definition;
 		definition.methods.insert(
 		    std::make_pair("hello", types::interface_definition::method{types::make_string(), types::make_string()}));
-		cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("hello_as_a_service"),
-		                                     definition);
+		cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("hello_as_a_service"),
+		                                            definition);
 	}
 	Si::optional<ventura::absolute_path> const clang_format =
 	    (argc >= 3) ? ventura::absolute_path::create(argv[2]) : Si::none;

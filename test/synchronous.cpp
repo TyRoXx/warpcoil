@@ -42,6 +42,11 @@ namespace
 			return std::get<0>(argument) * std::get<1>(argument);
 		}
 
+		virtual std::string utf8(std::string argument) override
+		{
+			return argument + "123";
+		}
+
 		virtual std::vector<std::uint64_t> vectors(std::vector<std::uint64_t> argument) override
 		{
 			std::reverse(argument.begin(), argument.end());

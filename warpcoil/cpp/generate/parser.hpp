@@ -66,6 +66,12 @@ namespace warpcoil
 				                       Si::append(code, ", ");
 				                       generate_parser_type(code, parsed->element);
 				                       Si::append(code, ">");
+				                   },
+			                       [&code](types::utf8 const text)
+			                       {
+				                       Si::append(code, "warpcoil::cpp::utf8_parser<");
+				                       generate_parser_type(code, text.code_units);
+				                       Si::append(code, ">");
 				                   });
 		}
 	}

@@ -119,6 +119,12 @@ namespace
 			on_result({}, std::make_tuple(argument, argument));
 		}
 
+		virtual void type_erased_utf8(std::string argument,
+		                              std::function<void(boost::system::error_code, std::string)> on_result) override
+		{
+			on_result({}, argument + "123");
+		}
+
 		virtual void type_erased_vectors(
 		    std::vector<std::uint64_t> argument,
 		    std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
@@ -147,8 +153,13 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
 		    server->serve_one_request([&ok1, server](boost::system::error_code ec)
 		                              {
 			                              BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-			                              BOOST_REQUIRE(!ok1);
-			                              ok1 = true;
+			                              server->serve_one_request([&ok1, server](boost::system::error_code ec)
+			                                                        {
+				                                                        BOOST_REQUIRE_EQUAL(boost::system::error_code(),
+				                                                                            ec);
+				                                                        BOOST_REQUIRE(!ok1);
+				                                                        ok1 = true;
+				                                                    });
 			                          });
 		});
 	boost::asio::ip::tcp::socket socket(io);
@@ -165,6 +176,9 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
 			        std::vector<std::uint64_t> result = client.vectors(std::vector<std::uint64_t>{12, 34, 56}, yield);
 			        std::vector<std::uint64_t> const expected{56, 34, 12};
 			        BOOST_CHECK(expected == result);
+
+			        BOOST_CHECK_EQUAL("hello123", client.utf8("hello", yield));
+
 			        BOOST_REQUIRE(!ok2);
 			        ok2 = true;
 			    });

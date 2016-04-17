@@ -72,6 +72,9 @@ int main(int argc, char **argv)
 			                         Si::to_unique(types::vector{types::integer{0, 0xff}, types::integer{0, 0xffff}}),
 			                         Si::to_unique(std::move(parameters))}));
 		}
+		definition.methods.insert(
+		    std::make_pair("utf8", types::interface_definition::method{types::utf8{types::integer{0, 255}},
+		                                                               types::utf8{types::integer{0, 255}}}));
 		cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
 		                                     definition);
 	}
