@@ -137,10 +137,5 @@ namespace warpcoil
 
 			std::map<expressions::identifier, method> methods;
 		};
-
-		inline type make_string()
-		{
-			return type{Si::to_unique(vector{integer{0, 255}, integer{0, 255}})};
-		}
 	}
 }

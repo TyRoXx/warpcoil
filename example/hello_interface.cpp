@@ -29,7 +29,8 @@ int main(int argc, char **argv)
 	{
 		types::interface_definition definition;
 		definition.methods.insert(
-		    std::make_pair("hello", types::interface_definition::method{types::make_string(), types::make_string()}));
+		    std::make_pair("hello", types::interface_definition::method{types::utf8{types::integer{0, 255}},
+		                                                                types::utf8{types::integer{0, 255}}}));
 		cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("hello_as_a_service"),
 		                                            definition);
 	}

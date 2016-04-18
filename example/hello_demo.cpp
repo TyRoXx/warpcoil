@@ -7,15 +7,14 @@ namespace server
 {
 	struct my_hello_service : async_hello_as_a_service
 	{
-		virtual void
-		type_erased_hello(std::vector<std::uint8_t> argument,
-		                  std::function<void(boost::system::error_code, std::vector<std::uint8_t>)> on_result) override
+		virtual void type_erased_hello(std::string argument,
+		                               std::function<void(boost::system::error_code, std::string)> on_result) override
 		{
-			std::vector<std::uint8_t> result;
-			auto result_writer = Si::Sink<std::uint8_t, Si::success>::erase(Si::make_container_sink(result));
-			Si::append(result_writer, Si::make_c_str_range(reinterpret_cast<std::uint8_t const *>("Hello, ")));
+			std::string result;
+			auto result_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(result));
+			Si::append(result_writer, Si::make_c_str_range("Hello, "));
 			Si::append(result_writer, Si::make_contiguous_range(argument));
-			Si::append(result_writer, Si::make_c_str_range(reinterpret_cast<std::uint8_t const *>("!")));
+			Si::append(result_writer, Si::make_c_str_range("!"));
 			on_result({}, std::move(result));
 		}
 	};
@@ -46,23 +45,19 @@ int main()
 	// client:
 	ip::tcp::socket connecting_socket(io);
 	async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(connecting_socket, connecting_socket);
-	connecting_socket.async_connect(
-	    ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
-	    [&io, &client](boost::system::error_code ec)
-	    {
-		    Si::throw_if_error(ec);
-		    std::vector<std::uint8_t> argument;
-		    std::string name;
-		    std::cin >> name;
-		    std::uint8_t const *const name_data = reinterpret_cast<std::uint8_t const *>(name.data());
-		    Si::append(Si::make_container_sink(argument), Si::make_iterator_range(name_data, name_data + name.size()));
-		    client.hello(std::move(argument), [](boost::system::error_code ec, std::vector<std::uint8_t> result)
-		                 {
-			                 Si::throw_if_error(ec);
-			                 std::cout.write(reinterpret_cast<char const *>(result.data()), result.size());
-			                 std::cout << '\n';
-			             });
-		});
+	connecting_socket.async_connect(ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
+	                                [&io, &client](boost::system::error_code ec)
+	                                {
+		                                Si::throw_if_error(ec);
+		                                std::string name;
+		                                std::cin >> name;
+		                                client.hello(std::move(name),
+		                                             [](boost::system::error_code ec, std::string result)
+		                                             {
+			                                             Si::throw_if_error(ec);
+			                                             std::cout << result << '\n';
+			                                         });
+		                            });
 
 	io.run();
 }
