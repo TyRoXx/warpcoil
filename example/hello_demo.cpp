@@ -10,12 +10,7 @@ namespace server
 		virtual void type_erased_hello(std::string argument,
 		                               std::function<void(boost::system::error_code, std::string)> on_result) override
 		{
-			std::string result;
-			auto result_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(result));
-			Si::append(result_writer, Si::make_c_str_range("Hello, "));
-			Si::append(result_writer, Si::make_contiguous_range(argument));
-			Si::append(result_writer, Si::make_c_str_range("!"));
-			on_result({}, std::move(result));
+			on_result({}, "Hello, " + argument + "!");
 		}
 	};
 }
