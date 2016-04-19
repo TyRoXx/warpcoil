@@ -45,7 +45,7 @@ namespace
 		    std::vector<std::uint64_t> argument,
 		    std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
 		{
-			std::sort(argument.begin(), argument.end(), std::greater<std::uint64_t>());
+			std::reverse(argument.begin(), argument.end());
 			on_result({}, std::move(argument));
 		}
 	};
@@ -189,73 +189,108 @@ namespace boost
 	}
 }
 
+namespace
+{
+	template <class Result>
+	Result test_simple_request_response(
+	    std::function<void(async_test_interface &, std::function<void(boost::system::error_code, Result)>)>
+	        begin_request,
+	    std::vector<std::uint8_t> expected_request, std::vector<std::uint8_t> expected_response)
+	{
+		impl_test_interface server_impl;
+		async_read_stream server_requests;
+		async_write_stream server_responses;
+		async_test_interface_server<async_read_stream, async_write_stream> server(server_impl, server_requests,
+		                                                                          server_responses);
+		BOOST_REQUIRE(!server_requests.respond);
+		BOOST_REQUIRE(!server_responses.handle_result);
+		checkpoint request_served;
+		server.serve_one_request([&request_served](boost::system::error_code ec)
+		                         {
+			                         request_served.enter();
+			                         BOOST_REQUIRE(!ec);
+			                     });
+		BOOST_REQUIRE(server_requests.respond);
+		BOOST_REQUIRE(!server_responses.handle_result);
+
+		async_write_stream client_requests;
+		async_read_stream client_responses;
+		async_test_interface_client<async_write_stream, async_read_stream> client(client_requests, client_responses);
+		BOOST_REQUIRE(!client_responses.respond);
+		BOOST_REQUIRE(!client_requests.handle_result);
+
+		checkpoint response_received;
+		Result returned_result;
+		begin_request(client, [&response_received, &returned_result](boost::system::error_code ec, Result result)
+		              {
+			              response_received.enter();
+			              BOOST_REQUIRE(!ec);
+			              returned_result = std::move(result);
+			          });
+
+		BOOST_REQUIRE(server_requests.respond);
+		BOOST_REQUIRE(!server_responses.handle_result);
+		BOOST_REQUIRE(server_responses.written.empty());
+		BOOST_REQUIRE(!client_responses.respond);
+		BOOST_REQUIRE(client_requests.handle_result);
+		std::vector<std::vector<std::uint8_t>> const expected_request_buffers = {expected_request};
+		BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_request_buffers.begin(), expected_request_buffers.end(),
+		                                client_requests.written.begin(), client_requests.written.end());
+		Si::exchange(server_requests.respond, nullptr)(Si::make_memory_range(client_requests.written[0]));
+		client_requests.written.clear();
+
+		Si::exchange(client_requests.handle_result, nullptr)({}, expected_request.size());
+		BOOST_REQUIRE(!client_requests.handle_result);
+
+		BOOST_REQUIRE(!server_requests.respond);
+		BOOST_REQUIRE(server_responses.handle_result);
+		std::vector<std::vector<std::uint8_t>> const expected_response_buffers = {expected_response};
+		BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_response_buffers.begin(), expected_response_buffers.end(),
+		                                server_responses.written.begin(), server_responses.written.end());
+		request_served.enable();
+		Si::exchange(server_responses.handle_result, nullptr)({}, expected_response.size());
+		request_served.require_crossed();
+
+		BOOST_REQUIRE(!server_requests.respond);
+		BOOST_REQUIRE(!server_responses.handle_result);
+		BOOST_REQUIRE(client_responses.respond);
+		BOOST_REQUIRE(!client_requests.handle_result);
+
+		response_received.enable();
+		Si::exchange(client_responses.respond, nullptr)(Si::make_memory_range(expected_response));
+		response_received.require_crossed();
+
+		BOOST_REQUIRE(!server_requests.respond);
+		BOOST_REQUIRE(!server_responses.handle_result);
+		BOOST_REQUIRE(!client_responses.respond);
+		BOOST_REQUIRE(!client_requests.handle_result);
+		return returned_result;
+	}
+}
+
 BOOST_AUTO_TEST_CASE(async_server_utf8)
 {
-	impl_test_interface server_impl;
-	async_read_stream server_requests;
-	async_write_stream server_responses;
-	async_test_interface_server<async_read_stream, async_write_stream> server(server_impl, server_requests,
-	                                                                          server_responses);
-	BOOST_REQUIRE(!server_requests.respond);
-	BOOST_REQUIRE(!server_responses.handle_result);
-	checkpoint request_served;
-	server.serve_one_request([&request_served](boost::system::error_code ec)
-	                         {
-		                         request_served.enter();
-		                         BOOST_REQUIRE(!ec);
-		                     });
-	BOOST_REQUIRE(server_requests.respond);
-	BOOST_REQUIRE(!server_responses.handle_result);
+	std::string result = test_simple_request_response<std::string>(
+	    [](async_test_interface &client, std::function<void(boost::system::error_code, std::string)> on_result)
+	    {
+		    client.utf8("Name", on_result);
+		},
+	    {4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'},
+	    {12, 'H', 'e', 'l', 'l', 'o', ',', ' ', 'N', 'a', 'm', 'e', '!'});
+	BOOST_CHECK_EQUAL("Hello, Name!", result);
+}
 
-	async_write_stream client_requests;
-	async_read_stream client_responses;
-	async_test_interface_client<async_write_stream, async_read_stream> client(client_requests, client_responses);
-	BOOST_REQUIRE(!client_responses.respond);
-	BOOST_REQUIRE(!client_requests.handle_result);
-
-	checkpoint response_received;
-	client.utf8("Name", [&response_received](boost::system::error_code ec, std::string result)
-	            {
-		            response_received.enter();
-		            BOOST_REQUIRE(!ec);
-		            BOOST_REQUIRE_EQUAL("Hello, Name!", result);
-		        });
-
-	BOOST_REQUIRE(server_requests.respond);
-	BOOST_REQUIRE(!server_responses.handle_result);
-	BOOST_REQUIRE(server_responses.written.empty());
-	BOOST_REQUIRE(!client_responses.respond);
-	BOOST_REQUIRE(client_requests.handle_result);
-	std::vector<std::vector<std::uint8_t>> const expected_request = {{4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'}};
-	BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_request.begin(), expected_request.end(), client_requests.written.begin(),
-	                                client_requests.written.end());
-	Si::exchange(server_requests.respond, nullptr)(Si::make_memory_range(client_requests.written[0]));
-	client_requests.written.clear();
-
-	Si::exchange(client_requests.handle_result, nullptr)({}, 10);
-	BOOST_REQUIRE(!client_requests.handle_result);
-
-	BOOST_REQUIRE(!server_requests.respond);
-	BOOST_REQUIRE(server_responses.handle_result);
-	std::vector<std::vector<std::uint8_t>> const expected_response = {
-	    {12, 'H', 'e', 'l', 'l', 'o', ',', ' ', 'N', 'a', 'm', 'e', '!'}};
-	BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_response.begin(), expected_response.end(),
-	                                server_responses.written.begin(), server_responses.written.end());
-	request_served.enable();
-	Si::exchange(server_responses.handle_result, nullptr)({}, 13);
-	request_served.require_crossed();
-
-	BOOST_REQUIRE(!server_requests.respond);
-	BOOST_REQUIRE(!server_responses.handle_result);
-	BOOST_REQUIRE(client_responses.respond);
-	BOOST_REQUIRE(!client_requests.handle_result);
-
-	response_received.enable();
-	Si::exchange(client_responses.respond, nullptr)(Si::make_memory_range(expected_response[0]));
-	response_received.require_crossed();
-
-	BOOST_REQUIRE(!server_requests.respond);
-	BOOST_REQUIRE(!server_responses.handle_result);
-	BOOST_REQUIRE(!client_responses.respond);
-	BOOST_REQUIRE(!client_requests.handle_result);
+BOOST_AUTO_TEST_CASE(async_server_vector)
+{
+	std::vector<std::uint64_t> result = test_simple_request_response<std::vector<std::uint64_t>>(
+	    [](async_test_interface &client,
+	       std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result)
+	    {
+		    client.vectors(std::vector<std::uint64_t>{3, 2, 1}, on_result);
+		},
+	    {7, 'v', 'e', 'c', 't', 'o', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 2,
+	     0, 0, 0, 0, 0, 0, 0, 1},
+	    {0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3});
+	std::vector<std::uint64_t> const expected = {1, 2, 3};
+	BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(), result.begin(), result.end());
 }
