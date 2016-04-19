@@ -421,7 +421,7 @@ namespace warpcoil
 
 						          in_method.render(code);
 						          append(code,
-						                 "responses.async_read_some(boost::asio::buffer(request_buffer), [this, "
+						                 "requests.async_read_some(boost::asio::buffer(request_buffer), [this, "
 						                 "handle_result = std::forward<Handler>(handle_result), name = "
 						                 "std::move(name)](boost::system::error_code ec, std::size_t read) mutable\n");
 						          block(code, in_method,
@@ -558,7 +558,7 @@ namespace warpcoil
 
 							        start_line(
 							            code, in_method,
-							            "responses.async_read_some(boost::asio::buffer(request_buffer"
+							            "requests.async_read_some(boost::asio::buffer(request_buffer"
 							            "), [this, handle_result = std::forward<Handler>(handle_result), argument = "
 							            "std::move(argument)](boost::system::error_code ec, std::size_t read) "
 							            "mutable\n");
