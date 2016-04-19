@@ -294,3 +294,18 @@ BOOST_AUTO_TEST_CASE(async_server_vector)
 	std::vector<std::uint64_t> const expected = {1, 2, 3};
 	BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(), result.begin(), result.end());
 }
+
+BOOST_AUTO_TEST_CASE(async_server_tuple)
+{
+	std::tuple<std::uint64_t, std::uint64_t> result =
+	    test_simple_request_response<std::tuple<std::uint64_t, std::uint64_t>>(
+	        [](async_test_interface &client,
+	           std::function<void(boost::system::error_code, std::tuple<std::uint64_t, std::uint64_t>)> on_result)
+	        {
+		        client.two_results(123, on_result);
+		    },
+	        {11, 't', 'w', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', 's', 0, 0, 0, 0, 0, 0, 0, 123},
+	        {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0, 123});
+	std::tuple<std::uint64_t, std::uint64_t> const expected{123, 123};
+	BOOST_CHECK(expected == result);
+}
