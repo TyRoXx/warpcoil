@@ -102,23 +102,19 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
 	bool ok1 = false;
 	impl_test_interface server_impl;
 	acceptor.async_accept(
-	    accepted_socket, [&accepted_socket, &ok1, &server_impl](boost::system::error_code ec)
+	    accepted_socket, [&io, &accepted_socket, &ok1, &server_impl](boost::system::error_code ec)
 	    {
 		    BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-		    auto server = std::make_shared<
-		        async_test_interface_server<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket>>(
-		        server_impl, accepted_socket, accepted_socket);
-		    server->serve_one_request([&ok1, server](boost::system::error_code ec)
-		                              {
-			                              BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-			                              server->serve_one_request([&ok1, server](boost::system::error_code ec)
-			                                                        {
-				                                                        BOOST_REQUIRE_EQUAL(boost::system::error_code(),
-				                                                                            ec);
-				                                                        BOOST_REQUIRE(!ok1);
-				                                                        ok1 = true;
-				                                                    });
-			                          });
+		    boost::asio::spawn(
+		        io, [&server_impl, &accepted_socket, &ok1](boost::asio::yield_context yield)
+		        {
+			        async_test_interface_server<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> server(
+			            server_impl, accepted_socket, accepted_socket);
+			        server.serve_one_request(yield);
+			        server.serve_one_request(yield);
+			        BOOST_REQUIRE(!ok1);
+			        ok1 = true;
+			    });
 		});
 	boost::asio::ip::tcp::socket socket(io);
 	async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, socket);
