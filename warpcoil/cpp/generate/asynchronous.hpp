@@ -191,7 +191,7 @@ namespace warpcoil
 							                         "requests, "
 							                         "boost::asio::buffer(request_"
 							                         "buffer), [this, "
-							                         "handler](boost::system::error_"
+							                         "handler = std::move(handler)](boost::system::error_"
 							                         "code ec, std::size_t) mutable\n");
 							            block(code, in_method,
 							                  [&](indentation_level const in_written)
@@ -201,19 +201,19 @@ namespace warpcoil
 								                  {
 								                  case type_emptiness::non_empty:
 								                  {
-									                  append(code, "if (!!ec) { handler(ec, "
+									                  append(code, "if (!!ec) { std::move(handler)(ec, "
 									                               "{}); return; }\n");
 									                  in_written.render(code);
 									                  append(code, "begin_parse_value(responses, "
 									                               "boost::asio::buffer(response_buffer), "
 									                               "response_buffer_used, ");
 									                  generate_parser_type(code, entry.second.result);
-									                  append(code, "{}, handler);\n");
+									                  append(code, "{}, std::move(handler));\n");
 									                  break;
 								                  }
 
 								                  case type_emptiness::empty:
-									                  append(code, "handler(ec, {});\n");
+									                  append(code, "std::move(handler)(ec, {});\n");
 									                  break;
 								                  }
 								              },
