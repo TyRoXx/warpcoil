@@ -7,8 +7,8 @@ namespace server
 {
 	struct my_hello_service : async_hello_as_a_service
 	{
-		virtual void type_erased_hello(std::string argument,
-		                               std::function<void(boost::system::error_code, std::string)> on_result) override
+		virtual void hello(std::string argument,
+		                   std::function<void(boost::system::error_code, std::string)> on_result) override
 		{
 			on_result({}, "Hello, " + argument + "!");
 		}

@@ -26,53 +26,68 @@ namespace warpcoil
 					      for (auto const &entry : definition.methods)
 					      {
 						      in_class.render(code);
-						      append(code, "template <class CompletionToken>\n");
-						      in_class.render(code);
-						      append(code, "auto ");
-						      append(code, entry.first);
-						      append(code, "(");
-						      generate_type(code, entry.second.parameter);
-						      append(code, " argument, CompletionToken &&token)\n");
-						      block(code, in_class,
-						            [&](indentation_level const in_method)
-						            {
-							            in_method.render(code);
-							            append(code, "using handler_type = typename "
-							                         "boost::asio::handler_type<"
-							                         "decltype(token), "
-							                         "void(boost::system::error_code,"
-							                         " ");
-							            generate_type(code, entry.second.result);
-							            append(code, ")>::type;\n");
-							            in_method.render(code);
-							            append(code, "handler_type "
-							                         "handler(std::forward<"
-							                         "CompletionToken>(token));\n");
-							            in_method.render(code);
-							            append(code, "boost::asio::async_result<"
-							                         "handler_type> "
-							                         "result(handler);\n");
-							            in_method.render(code);
-							            append(code, "type_erased_");
-							            append(code, entry.first);
-							            append(code, "(std::move(argument), handler);\n");
-							            in_method.render(code);
-							            append(code, "return result.get();\n");
-							        },
-						            "\n\n");
-					      }
-					      indentation.render(code);
-					      append(code, "protected:\n");
-					      for (auto const &entry : definition.methods)
-					      {
-						      in_class.render(code);
-						      append(code, "virtual void type_erased_");
+						      append(code, "virtual void ");
 						      append(code, entry.first);
 						      append(code, "(");
 						      generate_parameters(code, entry.second.parameter);
 						      append(code, ", std::function<void(boost::system::error_code, ");
 						      generate_type(code, entry.second.result);
 						      append(code, ")> on_result) = 0;\n");
+					      }
+					  },
+				      ";\n\n");
+			}
+
+			template <class CharSink>
+			void generate_type_eraser(CharSink &&code, indentation_level indentation, Si::memory_range name,
+			                          types::interface_definition const &definition)
+			{
+				using Si::append;
+				start_line(code, indentation, "template <class Client>\n");
+				append(code, "struct async_type_erased_");
+				append(code, name);
+				append(code, " : async_");
+				append(code, name);
+				append(code, "\n");
+				block(code, indentation,
+				      [&](indentation_level const in_class)
+				      {
+					      start_line(code, indentation, "Client &client;\n\n");
+					      start_line(code, indentation, "explicit ");
+					      append(code, "async_type_erased_");
+					      append(code, name);
+					      append(code, "(Client &client) : client(client) {}\n\n");
+					      start_line(code, indentation, "virtual ~async_type_erased_");
+					      append(code, name);
+					      append(code, "() {}\n\n");
+					      for (auto const &entry : definition.methods)
+					      {
+						      in_class.render(code);
+						      append(code, "virtual void ");
+						      append(code, entry.first);
+						      append(code, "(");
+						      generate_parameters(code, entry.second.parameter);
+						      append(code, ", std::function<void(boost::system::error_code, ");
+						      type_emptiness const result_emptiness = generate_type(code, entry.second.result);
+						      append(code, ")> on_result) override\n");
+						      block(code, in_class,
+						            [&](indentation_level const in_method)
+						            {
+							            start_line(code, in_method, "return client.", entry.first, "(");
+							            switch (result_emptiness)
+							            {
+							            case type_emptiness::empty:
+								            append(code, "{}");
+								            break;
+
+							            case type_emptiness::non_empty:
+								            append(code, "std::move(argument)");
+								            break;
+							            }
+							            append(code, ", std::move(on_result));\n");
+
+							        },
+						            "\n\n");
 					      }
 					  },
 				      ";\n\n");
@@ -86,8 +101,7 @@ namespace warpcoil
 				append(code, "template <class AsyncWriteStream, class "
 				             "AsyncReadStream>\nstruct async_");
 				append(code, name);
-				append(code, "_client : async_");
-				append(code, name);
+				append(code, "_client");
 				append(code, "\n");
 				block(code, indentation,
 				      [&](indentation_level const in_class)
@@ -102,21 +116,46 @@ namespace warpcoil
 					      append(code, ": requests(requests), "
 					                   "responses(responses), "
 					                   "response_buffer_used(0) {}\n\n");
-					      indentation.render(code);
-					      append(code, "private:\n");
+
 					      for (auto const &entry : definition.methods)
 					      {
 						      in_class.render(code);
-						      append(code, "void type_erased_");
+						      append(code, "template <class CompletionToken>\n");
+						      in_class.render(code);
+						      append(code, "auto ");
 						      append(code, entry.first);
 						      append(code, "(");
-						      generate_parameters(code, entry.second.parameter);
-						      append(code, ", std::function<void(boost::system::error_code, ");
-						      type_emptiness const result_emptiness = generate_type(code, entry.second.result);
-						      append(code, ")> on_result) override\n");
+						      type_emptiness const parameter_emptiness = generate_type(code, entry.second.parameter);
+						      switch (parameter_emptiness)
+						      {
+						      case type_emptiness::non_empty:
+							      append(code, " argument");
+							      break;
+
+						      case type_emptiness::empty:
+							      break;
+						      }
+						      append(code, ", CompletionToken &&token)\n");
 						      block(code, in_class,
 						            [&](indentation_level const in_method)
 						            {
+							            in_method.render(code);
+							            append(code, "using handler_type = typename "
+							                         "boost::asio::handler_type<"
+							                         "decltype(token), "
+							                         "void(boost::system::error_code,"
+							                         " ");
+							            type_emptiness const result_emptiness =
+							                generate_type(code, entry.second.result);
+							            append(code, ")>::type;\n");
+							            in_method.render(code);
+							            append(code, "handler_type "
+							                         "handler(std::forward<"
+							                         "CompletionToken>(token));\n");
+							            in_method.render(code);
+							            append(code, "boost::asio::async_result<"
+							                         "handler_type> "
+							                         "result(handler);\n");
 							            in_method.render(code);
 							            append(code, "request_buffer.clear();\n");
 							            in_method.render(code);
@@ -152,8 +191,8 @@ namespace warpcoil
 							                         "requests, "
 							                         "boost::asio::buffer(request_"
 							                         "buffer), [this, "
-							                         "on_result](boost::system::error_"
-							                         "code ec, std::size_t)\n");
+							                         "handler](boost::system::error_"
+							                         "code ec, std::size_t) mutable\n");
 							            block(code, in_method,
 							                  [&](indentation_level const in_written)
 							                  {
@@ -162,7 +201,7 @@ namespace warpcoil
 								                  {
 								                  case type_emptiness::non_empty:
 								                  {
-									                  append(code, "if (!!ec) { on_result(ec, "
+									                  append(code, "if (!!ec) { handler(ec, "
 									                               "{}); return; }\n");
 									                  in_written.render(code);
 									                  append(code, "struct read_state\n");
@@ -185,7 +224,7 @@ namespace warpcoil
 									                               ");\n");
 									                  in_written.render(code);
 									                  append(code, "state->begin_parse = [this, "
-									                               "state, on_result]()\n");
+									                               "state, handler]() mutable\n");
 									                  block(code, in_written,
 									                        [&](indentation_level const in_begin)
 									                        {
@@ -216,7 +255,7 @@ namespace warpcoil
 												                                                 "used -= 1 + "
 												                                                 "i;\n");
 												                                    in_if.render(code);
-												                                    append(code, "on_result(boost::"
+												                                    append(code, "handler(boost::"
 												                                                 "system::error_"
 												                                                 "code(), "
 												                                                 "std::move(*"
@@ -232,15 +271,15 @@ namespace warpcoil
 										                        append(code, "responses.async_read_some("
 										                                     "boost::asio::buffer(response_"
 										                                     "buffer), [this, state, "
-										                                     "on_result](boost::system::"
+										                                     "handler](boost::system::"
 										                                     "error_code ec, std::size_t "
-										                                     "read)\n");
+										                                     "read) mutable\n");
 										                        block(code, in_begin,
 										                              [&](indentation_level const in_read)
 										                              {
 											                              in_read.render(code);
 											                              append(code, "if (!!ec) { "
-											                                           "on_result(ec, {}); "
+											                                           "handler(ec, {}); "
 											                                           "return; }\n");
 											                              in_read.render(code);
 											                              append(code, "response_buffer_"
@@ -257,14 +296,19 @@ namespace warpcoil
 								                  }
 
 								                  case type_emptiness::empty:
-									                  append(code, "on_result(ec, {});\n");
+									                  append(code, "handler(ec, {});\n");
 									                  break;
 								                  }
 								              },
 							                  ");\n");
+							            in_method.render(code);
+							            append(code, "return result.get();\n");
 							        },
 						            "\n\n");
 					      }
+
+					      indentation.render(code);
+					      append(code, "private:\n");
 
 					      in_class.render(code);
 					      append(code, "std::vector<std::uint8_t> request_buffer;\n");
@@ -587,6 +631,7 @@ namespace warpcoil
 			                                     types::interface_definition const &definition)
 			{
 				generate_interface(code, indentation, name, definition);
+				generate_type_eraser(code, indentation, name, definition);
 				generate_serialization_client(code, indentation, name, definition);
 				generate_serialization_server(code, indentation, name, definition);
 			}

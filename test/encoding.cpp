@@ -8,42 +8,42 @@ namespace
 {
 	struct impl_test_interface : async_test_interface
 	{
-		virtual void type_erased_integer_sizes(
-		    std::tuple<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t> argument,
-		    std::function<void(boost::system::error_code, std::vector<std::uint16_t>)> on_result) override
+		virtual void
+		integer_sizes(std::tuple<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t> argument,
+		              std::function<void(boost::system::error_code, std::vector<std::uint16_t>)> on_result) override
 		{
 			on_result({}, std::vector<std::uint16_t>{std::get<1>(argument)});
 		}
 
-		virtual void type_erased_no_result_no_parameter(
-		    std::tuple<> argument, std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
+		virtual void
+		no_result_no_parameter(std::tuple<> argument,
+		                       std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
 		{
 			on_result({}, argument);
 		}
 
-		virtual void
-		type_erased_two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
-		                           std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
+		virtual void two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
+		                            std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
 		{
 			on_result({}, std::get<0>(argument) * std::get<1>(argument));
 		}
 
-		virtual void type_erased_two_results(
+		virtual void two_results(
 		    std::uint64_t argument,
 		    std::function<void(boost::system::error_code, std::tuple<std::uint64_t, std::uint64_t>)> on_result) override
 		{
 			on_result({}, std::make_tuple(argument, argument));
 		}
 
-		virtual void type_erased_utf8(std::string argument,
-		                              std::function<void(boost::system::error_code, std::string)> on_result) override
+		virtual void utf8(std::string argument,
+		                  std::function<void(boost::system::error_code, std::string)> on_result) override
 		{
 			on_result({}, "Hello, " + argument + "!");
 		}
 
-		virtual void type_erased_vectors(
-		    std::vector<std::uint64_t> argument,
-		    std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
+		virtual void
+		vectors(std::vector<std::uint64_t> argument,
+		        std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
 		{
 			std::reverse(argument.begin(), argument.end());
 			on_result({}, std::move(argument));
@@ -221,7 +221,9 @@ namespace
 
 		checkpoint response_received;
 		Result returned_result;
-		begin_request(client, [&response_received, &returned_result](boost::system::error_code ec, Result result)
+		async_type_erased_test_interface<decltype(client)> type_erased_client{client};
+		begin_request(type_erased_client,
+		              [&response_received, &returned_result](boost::system::error_code ec, Result result)
 		              {
 			              response_received.enter();
 			              BOOST_REQUIRE(!ec);
