@@ -204,94 +204,11 @@ namespace warpcoil
 									                  append(code, "if (!!ec) { handler(ec, "
 									                               "{}); return; }\n");
 									                  in_written.render(code);
-									                  append(code, "struct read_state\n");
-									                  in_written.render(code);
-									                  append(code, "{\n");
-									                  {
-										                  indentation_level const in_struct = in_written.deeper();
-										                  in_struct.render(code);
-										                  append(code, "std::function<void()>"
-										                               " begin_parse;\n");
-										                  in_struct.render(code);
-										                  generate_parser_type(code, entry.second.result);
-										                  append(code, " parser;\n");
-									                  }
-									                  in_written.render(code);
-									                  append(code, "};\n");
-									                  in_written.render(code);
-									                  append(code, "auto state = "
-									                               "std::make_shared<read_state>("
-									                               ");\n");
-									                  in_written.render(code);
-									                  append(code, "state->begin_parse = [this, "
-									                               "state, handler]() mutable\n");
-									                  block(code, in_written,
-									                        [&](indentation_level const in_begin)
-									                        {
-										                        in_begin.render(code);
-										                        append(code, "for (std::size_t i = 0; i < "
-										                                     "response_buffer_used; ++i)\n");
-										                        block(code, in_begin,
-										                              [&](indentation_level const in_loop)
-										                              {
-											                              in_loop.render(code);
-											                              append(code, "if (auto *response = "
-											                                           "state->parser.parse_"
-											                                           "byte(response_buffer["
-											                                           "i]))\n");
-											                              block(code, in_loop,
-											                                    [&](indentation_level const in_if)
-											                                    {
-												                                    in_if.render(code);
-												                                    append(code,
-												                                           "std::copy(response_"
-												                                           "buffer.begin() + i + 1, "
-												                                           "response_buffer.begin() "
-												                                           "+ response_buffer_used, "
-												                                           "response_buffer.begin())"
-												                                           ";\n");
-												                                    in_if.render(code);
-												                                    append(code, "response_buffer_"
-												                                                 "used -= 1 + "
-												                                                 "i;\n");
-												                                    in_if.render(code);
-												                                    append(code, "handler(boost::"
-												                                                 "system::error_"
-												                                                 "code(), "
-												                                                 "std::move(*"
-												                                                 "response));\n");
-												                                    in_if.render(code);
-												                                    append(code, "return;\n");
-												                                },
-											                                    "\n");
-											                          },
-										                              "\n");
-
-										                        in_begin.render(code);
-										                        append(code, "responses.async_read_some("
-										                                     "boost::asio::buffer(response_"
-										                                     "buffer), [this, state, "
-										                                     "handler](boost::system::"
-										                                     "error_code ec, std::size_t "
-										                                     "read) mutable\n");
-										                        block(code, in_begin,
-										                              [&](indentation_level const in_read)
-										                              {
-											                              in_read.render(code);
-											                              append(code, "if (!!ec) { "
-											                                           "handler(ec, {}); "
-											                                           "return; }\n");
-											                              in_read.render(code);
-											                              append(code, "response_buffer_"
-											                                           "used = read;\n");
-											                              in_read.render(code);
-											                              append(code, "state->begin_parse();\n");
-											                          },
-										                              ");\n");
-										                    },
-									                        ";\n");
-									                  in_written.render(code);
-									                  append(code, "state->begin_parse();\n");
+									                  append(code, "begin_parse_response(responses, "
+									                               "boost::asio::buffer(response_buffer), "
+									                               "response_buffer_used, ");
+									                  generate_parser_type(code, entry.second.result);
+									                  append(code, "{}, handler);\n");
 									                  break;
 								                  }
 
