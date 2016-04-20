@@ -411,20 +411,23 @@ namespace warpcoil
 						    append(code, "(");
 						    generate_parser_type(code, entry.second.parameter);
 						    append(code, " argument, Handler &&handle_result)\n");
-						    block(code, in_class,
-						          [&](indentation_level const in_method)
-						          {
-							          start_line(code, in_method,
-							                     "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
-							                     "request_buffer_used, std::move(argument), "
-							                     "[this, handle_result](boost::system::error_code ec, ");
-							          generate_type(code, entry.second.parameter);
-							          append(code, " argument) mutable\n");
-							          block(
-							              code, in_method,
+						    block(
+						        code, in_class,
+						        [&](indentation_level const in_method)
+						        {
+							        start_line(code, in_method,
+							                   "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
+							                   "request_buffer_used, std::move(argument), "
+							                   "[this, handle_result = "
+							                   "std::forward<Handler>(handle_result)](boost::system::error_code ec, ");
+							        generate_type(code, entry.second.parameter);
+							        append(code, " argument) mutable\n");
+							        block(code, in_method,
 							              [&](indentation_level const on_result)
 							              {
-								              start_line(code, in_method, "if (!!ec) { handle_result(ec); return; }\n");
+								              start_line(
+								                  code, in_method,
+								                  "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
 								              start_line(code, on_result, "implementation.");
 								              append(code, entry.first);
 								              append(code, "(std::move(argument), [this, "
@@ -473,8 +476,8 @@ namespace warpcoil
 										                    in_lambda.render(code);
 										                    append(code, "boost::asio::async_write(responses,"
 										                                 " boost::asio::buffer(response_"
-										                                 "buffer), [this, handle_result = "
-										                                 "std::move(handle_result)](boost::"
+										                                 "buffer), [handle_result = "
+										                                 "std::forward<Handler>(handle_result)](boost::"
 										                                 "system::error_code ec, "
 										                                 "std::size_t) mutable\n");
 										                    block(code, in_lambda,
@@ -491,8 +494,8 @@ namespace warpcoil
 								                    ");\n");
 								          },
 							              ");\n");
-							      },
-						          "\n");
+							    },
+						        "\n");
 					    }
 					},
 				    ";\n\n");

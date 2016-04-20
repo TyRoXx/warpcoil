@@ -269,22 +269,28 @@ namespace warpcoil
 				{
 					std::copy(data + i + 1, data + receive_buffer_used, data);
 					receive_buffer_used -= 1 + i;
-					on_result(boost::system::error_code(), std::move(*response));
+					std::forward<ResultHandler>(on_result)(boost::system::error_code(), std::move(*response));
 					return;
 				}
 			}
-			input.async_read_some(
-			    receive_buffer, [&input, receive_buffer, &receive_buffer_used, parser = std::move(parser), on_result ](
-			                        boost::system::error_code ec, std::size_t read) mutable
-			    {
-				    if (!!ec)
-				    {
-					    on_result(ec, {});
-					    return;
-				    }
-				    receive_buffer_used = read;
-				    begin_parse_value(input, receive_buffer, receive_buffer_used, std::move(parser), on_result);
-				});
+			input.async_read_some(receive_buffer,
+			                      [
+				                    &input,
+				                    receive_buffer,
+				                    &receive_buffer_used,
+				                    parser = std::move(parser),
+				                    on_result = std::forward<ResultHandler>(on_result)
+				                  ](boost::system::error_code ec, std::size_t read) mutable
+			                      {
+				                      if (!!ec)
+				                      {
+					                      std::forward<ResultHandler>(on_result)(ec, {});
+					                      return;
+				                      }
+				                      receive_buffer_used = read;
+				                      begin_parse_value(input, receive_buffer, receive_buffer_used, std::move(parser),
+				                                        std::forward<ResultHandler>(on_result));
+				                  });
 		}
 	}
 }
