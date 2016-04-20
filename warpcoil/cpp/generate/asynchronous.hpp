@@ -358,7 +358,7 @@ namespace warpcoil
 									                      in_here.render(code);
 									                      append(code, "begin_receive_method_argument_of_");
 									                      append(code, entry.first);
-									                      append(code, "({}, std::forward<Handler>(handle_result));\n");
+									                      append(code, "(std::forward<Handler>(handle_result));\n");
 									                  },
 								                      "\n");
 							                }
@@ -378,16 +378,16 @@ namespace warpcoil
 						    in_class.render(code);
 						    append(code, "void begin_receive_method_argument_of_");
 						    append(code, entry.first);
-						    append(code, "(");
-						    generate_parser_type(code, entry.second.parameter);
-						    append(code, " argument, Handler &&handle_result)\n");
+						    append(code, "(Handler &&handle_result)\n");
 						    block(
 						        code, in_class,
 						        [&](indentation_level const in_method)
 						        {
 							        start_line(code, in_method,
 							                   "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
-							                   "request_buffer_used, std::move(argument), "
+							                   "request_buffer_used, ");
+									generate_parser_type(code, entry.second.parameter);
+									append(code, "{}, "
 							                   "[this, handle_result = "
 							                   "std::forward<Handler>(handle_result)](boost::system::error_code ec, ");
 							        generate_type(code, entry.second.parameter);
