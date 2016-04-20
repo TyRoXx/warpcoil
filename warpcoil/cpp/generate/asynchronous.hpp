@@ -204,7 +204,7 @@ namespace warpcoil
 									                  append(code, "if (!!ec) { handler(ec, "
 									                               "{}); return; }\n");
 									                  in_written.render(code);
-									                  append(code, "begin_parse_response(responses, "
+									                  append(code, "begin_parse_value(responses, "
 									                               "boost::asio::buffer(response_buffer), "
 									                               "response_buffer_used, ");
 									                  generate_parser_type(code, entry.second.result);
