@@ -289,7 +289,7 @@ namespace warpcoil
 						                       "handler_type> "
 						                       "result(handler);\n");
 						          in_method.render(code);
-						          append(code, "begin_receive_method_name({}, std::move(handler));\n");
+						          append(code, "begin_receive_method_name(std::move(handler));\n");
 						          in_method.render(code);
 						          append(code, "return result.get();\n");
 						      },
@@ -320,81 +320,51 @@ namespace warpcoil
 					    in_class.render(code);
 					    append(code, "template <class Handler>\n");
 					    in_class.render(code);
-					    append(code,
-					           "void begin_receive_method_name(method_name_parser name, Handler &&handle_result)\n");
+					    append(code, "void begin_receive_method_name(Handler &&handle_result)\n");
 					    block(code, in_class,
 					          [&](indentation_level const in_method)
 					          {
 						          in_method.render(code);
-						          append(code, "for (std::size_t i = 0; i < request_buffer_used; ++i)\n");
+						          append(code, "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
+						                       "request_buffer_used, method_name_parser(), "
+						                       "[this, handle_result = "
+						                       "std::forward<Handler>(handle_result)](boost::system::error_code ec, "
+						                       "std::vector<std::uint8_t> name) mutable\n");
 						          block(code, in_method,
-						                [&](indentation_level const in_loop)
+						                [&](indentation_level const on_result)
 						                {
-							                in_loop.render(code);
-							                append(code, "if (std::vector<std::uint8_t> const *parsed_name = "
-							                             "name.parse_byte(request_buffer[i]))\n");
-							                block(code, in_loop,
-							                      [&](indentation_level const in_if)
-							                      {
-								                      in_if.render(code);
-								                      append(code, "std::copy(request_buffer.begin() + i + 1, "
-								                                   "request_buffer.begin() + request_buffer_used, "
-								                                   "request_buffer.begin());\n");
-								                      in_if.render(code);
-								                      append(code, "request_buffer_used -= 1 + i;\n");
-
-								                      bool first = true;
-								                      for (auto const &entry : definition.methods)
+							                on_result.render(code);
+							                append(code,
+							                       "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
+							                bool first = true;
+							                for (auto const &entry : definition.methods)
+							                {
+								                on_result.render(code);
+								                if (first)
+								                {
+									                first = false;
+								                }
+								                else
+								                {
+									                append(code, "else ");
+								                }
+								                append(code, "if (boost::range::equal(name, "
+								                             "Si::make_c_str_range(\"");
+								                append(code, entry.first);
+								                append(code, "\")))\n");
+								                block(code, on_result,
+								                      [&](indentation_level const in_here)
 								                      {
-									                      in_if.render(code);
-									                      if (first)
-									                      {
-										                      first = false;
-									                      }
-									                      else
-									                      {
-										                      append(code, "else ");
-									                      }
-									                      append(code, "if (boost::range::equal(*parsed_name, "
-									                                   "Si::make_c_str_range(\"");
+									                      in_here.render(code);
+									                      append(code, "begin_receive_method_argument_of_");
 									                      append(code, entry.first);
-									                      append(code, "\")))\n");
-									                      block(code, in_if,
-									                            [&](indentation_level const in_here)
-									                            {
-										                            in_here.render(code);
-										                            append(code, "begin_receive_method_argument_of_");
-										                            append(code, entry.first);
-										                            append(code, "({}, std::move(handle_result));\n");
-										                        },
-									                            "\n");
-								                      }
-								                      in_if.render(code);
-								                      append(code, "else { throw std::logic_error(\"to do: handle "
-								                                   "unknown method name\"); }\n");
-
-								                      in_if.render(code);
-								                      append(code, "return;\n");
-								                  },
-							                      "\n");
-							            },
-						                "\n");
-
-						          in_method.render(code);
-						          append(code,
-						                 "requests.async_read_some(boost::asio::buffer(request_buffer), [this, "
-						                 "handle_result = std::forward<Handler>(handle_result), name = "
-						                 "std::move(name)](boost::system::error_code ec, std::size_t read) mutable\n");
-						          block(code, in_method,
-						                [&](indentation_level const in_read)
-						                {
-							                in_read.render(code);
-							                append(code, "if (!!ec) { handle_result(ec); return; }\n");
-							                in_read.render(code);
-							                append(code, "request_buffer_used = read;\n");
-							                in_read.render(code);
-							                append(code, "begin_receive_method_name(std::move(name), "
-							                             "std::forward<Handler>(handle_result));\n");
+									                      append(code, "({}, std::forward<Handler>(handle_result));\n");
+									                  },
+								                      "\n");
+							                }
+							                on_result.render(code);
+							                append(code, "else { throw std::logic_error(\"to do: handle "
+							                             "unknown method name\"); }\n");
 							            },
 						                ");\n");
 						      },
