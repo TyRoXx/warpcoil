@@ -411,133 +411,88 @@ namespace warpcoil
 						    append(code, "(");
 						    generate_parser_type(code, entry.second.parameter);
 						    append(code, " argument, Handler &&handle_result)\n");
-						    block(
-						        code, in_class,
-						        [&](indentation_level const in_method)
-						        {
-							        in_method.render(code);
-							        append(code, "for (std::size_t i = 0; i < "
-							                     "request_buffer_used; ++i)\n");
-							        block(code, in_method,
-							              [&](indentation_level const in_loop)
+						    block(code, in_class,
+						          [&](indentation_level const in_method)
+						          {
+							          start_line(code, in_method,
+							                     "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
+							                     "request_buffer_used, std::move(argument), "
+							                     "[this, handle_result](boost::system::error_code ec, ");
+							          generate_type(code, entry.second.parameter);
+							          append(code, " argument) mutable\n");
+							          block(
+							              code, in_method,
+							              [&](indentation_level const on_result)
 							              {
-								              in_loop.render(code);
-								              append(code, "if (auto const *parsed_argument = "
-								                           "argument.parse_byte(request_buffer[i]))\n");
-								              block(code, in_loop,
-								                    [&](indentation_level const in_if)
-								                    {
-									                    in_if.render(code);
-									                    append(code, "std::copy(request_buffer"
-									                                 ".begin() + i + 1, "
-									                                 "request_buffer.begin() "
-									                                 "+ request_buffer_used, "
-									                                 "request_buffer.begin())"
-									                                 ";\n");
-									                    in_if.render(code);
-									                    append(code, "request_buffer"
-									                                 "_used -= 1 + "
-									                                 "i;\n");
+								              start_line(code, in_method, "if (!!ec) { handle_result(ec); return; }\n");
+								              start_line(code, on_result, "implementation.");
+								              append(code, entry.first);
+								              append(code, "(std::move(argument), [this, "
+								                           "handle_result = "
+								                           "std::forward<Handler>(handle_result)](boost::"
+								                           "system::error_code ec, ");
+								              type_emptiness const result_empty =
+								                  generate_type(code, entry.second.result);
+								              switch (result_empty)
+								              {
+								              case type_emptiness::empty:
+									              break;
 
-									                    in_if.render(code);
-									                    append(code, "implementation.");
-									                    append(code, entry.first);
-									                    append(code, "(std::move(*parsed_argument), [this, "
-									                                 "handle_result = "
-									                                 "std::forward<Handler>(handle_result)](boost::"
-									                                 "system::error_code ec, ");
-									                    type_emptiness const result_empty =
-									                        generate_type(code, entry.second.result);
+								              case type_emptiness::non_empty:
+									              append(code, " result");
+									              break;
+								              }
+								              append(code, ") mutable\n");
+								              block(code, on_result,
+								                    [&](indentation_level const in_lambda)
+								                    {
 									                    switch (result_empty)
 									                    {
 									                    case type_emptiness::empty:
+										                    in_lambda.render(code);
+										                    append(code, "std::forward<Handler>(handle_result)(ec);\n");
 										                    break;
 
 									                    case type_emptiness::non_empty:
-										                    append(code, " result");
+										                    in_lambda.render(code);
+										                    append(code, "if (!!ec) { "
+										                                 "std::forward<Handler>(handle_result)(ec); "
+										                                 "return; }\n");
+										                    in_lambda.render(code);
+										                    append(code, "response_buffer.clear();\n");
+										                    in_lambda.render(code);
+										                    append(code, "auto response_writer = "
+										                                 "Si::Sink<std::uint8_t, "
+										                                 "Si::success>::erase(Si::make_"
+										                                 "container_sink(response_buffer));"
+										                                 "\n");
+										                    generate_value_serialization(
+										                        code, in_lambda,
+										                        Si::make_c_str_range("response_writer"),
+										                        Si::make_c_str_range("result"), entry.second.result);
+										                    in_lambda.render(code);
+										                    append(code, "boost::asio::async_write(responses,"
+										                                 " boost::asio::buffer(response_"
+										                                 "buffer), [this, handle_result = "
+										                                 "std::move(handle_result)](boost::"
+										                                 "system::error_code ec, "
+										                                 "std::size_t) mutable\n");
+										                    block(code, in_lambda,
+										                          [&](indentation_level const in_read)
+										                          {
+											                          in_read.render(code);
+											                          append(code, "std::forward<Handler>("
+											                                       "handle_result)(ec);\n");
+											                      },
+										                          ");\n");
 										                    break;
 									                    }
-									                    append(code, ") mutable\n");
-									                    block(
-									                        code, in_if,
-									                        [&](indentation_level const in_lambda)
-									                        {
-										                        switch (result_empty)
-										                        {
-										                        case type_emptiness::empty:
-											                        in_lambda.render(code);
-											                        append(
-											                            code,
-											                            "std::forward<Handler>(handle_result)(ec);\n");
-											                        break;
-
-										                        case type_emptiness::non_empty:
-											                        in_lambda.render(code);
-											                        append(code,
-											                               "if (!!ec) { "
-											                               "std::forward<Handler>(handle_result)(ec); "
-											                               "return; }\n");
-											                        in_lambda.render(code);
-											                        append(code, "response_buffer.clear();\n");
-											                        in_lambda.render(code);
-											                        append(code, "auto response_writer = "
-											                                     "Si::Sink<std::uint8_t, "
-											                                     "Si::success>::erase(Si::make_"
-											                                     "container_sink(response_buffer));"
-											                                     "\n");
-											                        generate_value_serialization(
-											                            code, in_lambda,
-											                            Si::make_c_str_range("response_writer"),
-											                            Si::make_c_str_range("result"),
-											                            entry.second.result);
-											                        in_lambda.render(code);
-											                        append(code, "boost::asio::async_write(responses,"
-											                                     " boost::asio::buffer(response_"
-											                                     "buffer), [this, handle_result = "
-											                                     "std::move(handle_result)](boost::"
-											                                     "system::error_code ec, "
-											                                     "std::size_t) mutable\n");
-											                        block(code, in_lambda,
-											                              [&](indentation_level const in_read)
-											                              {
-												                              in_read.render(code);
-												                              append(code, "std::forward<Handler>("
-												                                           "handle_result)(ec);\n");
-												                          },
-											                              ");\n");
-											                        break;
-										                        }
-										                    },
-									                        ");\n");
-
-									                    in_if.render(code);
-									                    append(code, "return;\n");
 									                },
-								                    "\n");
-								          },
-							              "\n");
-
-							        start_line(
-							            code, in_method,
-							            "requests.async_read_some(boost::asio::buffer(request_buffer"
-							            "), [this, handle_result = std::forward<Handler>(handle_result), argument = "
-							            "std::move(argument)](boost::system::error_code ec, std::size_t read) "
-							            "mutable\n");
-							        block(code, in_method,
-							              [&](indentation_level const in_read)
-							              {
-								              start_line(code, in_read, "if (!!ec) { "
-								                                        "std::forward<Handler>(handle_result)(ec); "
-								                                        "return; }\n");
-								              start_line(code, in_read, "request_buffer_used = read;\n");
-								              start_line(code, in_read, "begin_receive_method_argument_of_");
-								              append(code, entry.first);
-								              append(code,
-								                     "(std::move(argument), std::forward<Handler>(handle_result));\n");
+								                    ");\n");
 								          },
 							              ");\n");
-							    },
-						        "\n");
+							      },
+						          "\n");
 					    }
 					},
 				    ";\n\n");
