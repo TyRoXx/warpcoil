@@ -314,8 +314,7 @@ namespace warpcoil
 					    append(code, "AsyncWriteStream &responses;\n\n");
 					    in_class.render(code);
 					    append(code, "typedef ");
-					    generate_parser_type(
-					        code, Si::to_unique(types::vector{types::integer(0, 255), types::integer(0, 255)}));
+					    generate_parser_type(code, types::utf8{types::integer{0, 255}});
 					    append(code, " method_name_parser;\n\n");
 					    in_class.render(code);
 					    append(code, "template <class Handler>\n");
@@ -329,7 +328,7 @@ namespace warpcoil
 						                       "request_buffer_used, method_name_parser(), "
 						                       "[this, handle_result = "
 						                       "std::forward<Handler>(handle_result)](boost::system::error_code ec, "
-						                       "std::vector<std::uint8_t> name) mutable\n");
+						                       "std::string name) mutable\n");
 						          block(code, in_method,
 						                [&](indentation_level const on_result)
 						                {
@@ -379,20 +378,21 @@ namespace warpcoil
 						    append(code, "void begin_receive_method_argument_of_");
 						    append(code, entry.first);
 						    append(code, "(Handler &&handle_result)\n");
-						    block(
-						        code, in_class,
-						        [&](indentation_level const in_method)
-						        {
-							        start_line(code, in_method,
-							                   "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
-							                   "request_buffer_used, ");
-									generate_parser_type(code, entry.second.parameter);
-									append(code, "{}, "
-							                   "[this, handle_result = "
-							                   "std::forward<Handler>(handle_result)](boost::system::error_code ec, ");
-							        generate_type(code, entry.second.parameter);
-							        append(code, " argument) mutable\n");
-							        block(code, in_method,
+						    block(code, in_class,
+						          [&](indentation_level const in_method)
+						          {
+							          start_line(code, in_method,
+							                     "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
+							                     "request_buffer_used, ");
+							          generate_parser_type(code, entry.second.parameter);
+							          append(code,
+							                 "{}, "
+							                 "[this, handle_result = "
+							                 "std::forward<Handler>(handle_result)](boost::system::error_code ec, ");
+							          generate_type(code, entry.second.parameter);
+							          append(code, " argument) mutable\n");
+							          block(
+							              code, in_method,
 							              [&](indentation_level const on_result)
 							              {
 								              start_line(
@@ -464,8 +464,8 @@ namespace warpcoil
 								                    ");\n");
 								          },
 							              ");\n");
-							    },
-						        "\n");
+							      },
+						          "\n");
 					    }
 					},
 				    ";\n\n");
