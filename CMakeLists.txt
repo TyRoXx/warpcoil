@@ -144,7 +144,7 @@ add_executable(test_app_generate ${generateSources})
 target_link_libraries(test_app_generate ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CONAN_LIBS})
 set(generatedHeader ${CMAKE_BINARY_DIR}/generated.hpp)
 
-find_program(WARPCOIL_CLANG_FORMAT NAMES clang-format clang-format-3.7 clang-format-3.8 PATHS "C:/Program Files/LLVM/bin")
+find_program(WARPCOIL_CLANG_FORMAT NAMES clang-format clang-format-3.7 PATHS "C:/Program Files/LLVM/bin")
 if(WARPCOIL_CLANG_FORMAT)
 	add_custom_target(generatedHeaderTarget
 		COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
