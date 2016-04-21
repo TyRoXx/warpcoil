@@ -6,6 +6,7 @@
 #include <silicium/source/source.hpp>
 #include <silicium/variant.hpp>
 #include <boost/asio/buffer.hpp>
+#include <utf8/checked.h>
 
 namespace warpcoil
 {
@@ -39,29 +40,63 @@ namespace warpcoil
 			Si::append(to, Si::make_contiguous_range(bytes));
 		}
 
+		struct need_more_input
+		{
+		};
+
+		struct invalid_input
+		{
+		};
+
+		struct invalid_input_error_category : boost::system::error_category
+		{
+			virtual const char *name() const BOOST_SYSTEM_NOEXCEPT override
+			{
+				return "invalid_input";
+			}
+
+			virtual std::string message(int) const override
+			{
+				return "invalid input";
+			}
+		};
+
+		inline boost::system::error_code make_invalid_input_error()
+		{
+			static invalid_input_error_category const category;
+			return boost::system::error_code(1, category);
+		}
+
+		template <class T>
+		using parse_result = Si::variant<T, need_more_input, invalid_input>;
+
 		template <class... T>
 		struct tuple_parser
 		{
 			typedef std::tuple<typename T::result_type...> result_type;
 
-			result_type *parse_byte(std::uint8_t const input)
+			parse_result<result_type> parse_byte(std::uint8_t const input)
 			{
 				switch (Si::apply_visitor(visitor{this, input}, current_element))
 				{
-				case parse_result::complete:
-					return &result;
+				case internal_parse_result::complete:
+					return std::move(result);
 
-				case parse_result::incomplete:
-					return nullptr;
+				case internal_parse_result::incomplete:
+					return need_more_input();
+
+				case internal_parse_result::invalid:
+					return invalid_input();
 				}
 				SILICIUM_UNREACHABLE();
 			}
 
 		private:
-			enum class parse_result
+			enum class internal_parse_result
 			{
 				complete,
-				incomplete
+				incomplete,
+				invalid
 			};
 
 			template <std::size_t I, class Parser>
@@ -69,42 +104,52 @@ namespace warpcoil
 			{
 				Parser parser;
 
-				parse_result operator()(tuple_parser &parent, std::uint8_t const input)
+				internal_parse_result operator()(tuple_parser &parent, std::uint8_t const input)
 				{
-					if (auto *parsed = parser.parse_byte(input))
-					{
-						std::get<I>(parent.result) = std::move(*parsed);
-						return parent.go_to_next_state(std::integral_constant<std::size_t, I>());
-					}
-					return parse_result::incomplete;
+					parse_result<typename Parser::result_type> element = parser.parse_byte(input);
+					return Si::visit<internal_parse_result>(element,
+					                                        [&](typename Parser::result_type &message)
+					                                        {
+						                                        std::get<I>(parent.result) = std::move(message);
+						                                        return parent.go_to_next_state(
+						                                            std::integral_constant<std::size_t, I>());
+						                                    },
+					                                        [](need_more_input)
+					                                        {
+						                                        return internal_parse_result::incomplete;
+						                                    },
+					                                        [](invalid_input)
+					                                        {
+						                                        return internal_parse_result::invalid;
+						                                    });
 				}
 			};
 
 			struct visitor
 			{
-				typedef parse_result result_type;
+				typedef internal_parse_result result_type;
 
 				tuple_parser *parent;
 				std::uint8_t input;
 
 				template <class State>
-				parse_result operator()(State &state) const
+				internal_parse_result operator()(State &state) const
 				{
 					return state(*parent, input);
 				}
 			};
 
 			template <std::size_t CurrentElement>
-			parse_result go_to_next_state(std::integral_constant<std::size_t, CurrentElement>)
+			internal_parse_result go_to_next_state(std::integral_constant<std::size_t, CurrentElement>)
 			{
 				current_element = typename boost::mpl::at<typename decltype(current_element)::element_types,
 				                                          boost::mpl::int_<CurrentElement + 1>>::type();
-				return parse_result::incomplete;
+				return internal_parse_result::incomplete;
 			}
 
-			parse_result go_to_next_state(std::integral_constant<std::size_t, sizeof...(T)-1>)
+			internal_parse_result go_to_next_state(std::integral_constant<std::size_t, sizeof...(T)-1>)
 			{
-				return parse_result::complete;
+				return internal_parse_result::complete;
 			}
 
 			template <class Integers>
@@ -126,7 +171,7 @@ namespace warpcoil
 		{
 			typedef std::tuple<> result_type;
 
-			result_type *parse_byte(std::uint8_t const)
+			parse_result<result_type> parse_byte(std::uint8_t const)
 			{
 				SILICIUM_UNREACHABLE();
 			}
@@ -137,7 +182,7 @@ namespace warpcoil
 		{
 			typedef Unsigned result_type;
 
-			result_type const *parse_byte(std::uint8_t const input)
+			parse_result<result_type> parse_byte(std::uint8_t const input)
 			{
 				assert(bytes_received < sizeof(result_type));
 				result = static_cast<result_type>(result << 8);
@@ -145,9 +190,9 @@ namespace warpcoil
 				++bytes_received;
 				if (bytes_received == sizeof(result_type))
 				{
-					return &result;
+					return result;
 				}
-				return nullptr;
+				return need_more_input();
 			}
 
 		private:
@@ -160,36 +205,58 @@ namespace warpcoil
 		{
 			typedef std::vector<typename Element::result_type> result_type;
 
-			result_type *parse_byte(std::uint8_t const input)
+			parse_result<result_type> parse_byte(std::uint8_t const input)
 			{
-				return Si::visit<result_type *>(step,
-				                                [this, input](Length &parser) -> result_type *
-				                                {
-					                                if (typename Length::result_type const *length =
-					                                        parser.parse_byte(input))
-					                                {
-						                                result.resize(*length);
-						                                if (result.empty())
-						                                {
-							                                return &result;
-						                                }
-						                                step = parsing_element{{}, 0};
-					                                }
-					                                return nullptr;
-					                            },
-				                                [this, input](parsing_element &parsing) -> result_type *
-				                                {
-					                                if (auto *element = parsing.parser.parse_byte(input))
-					                                {
-						                                result[parsing.current_index] = std::move(*element);
-						                                if (parsing.current_index == (result.size() - 1))
-						                                {
-							                                return &result;
-						                                }
-						                                step = parsing_element{{}, parsing.current_index + 1};
-					                                }
-					                                return nullptr;
-					                            });
+				return Si::visit<parse_result<result_type>>(
+				    step,
+				    [this, input](Length &parser) -> parse_result<result_type>
+				    {
+					    parse_result<typename Length::result_type> length = parser.parse_byte(input);
+					    return Si::visit<parse_result<result_type>>(
+					        length,
+					        [this](typename Length::result_type const length) -> parse_result<result_type>
+					        {
+						        result.resize(length);
+						        if (result.empty())
+						        {
+							        return std::move(result);
+						        }
+						        step = parsing_element{{}, 0};
+						        return need_more_input();
+						    },
+					        [](need_more_input)
+					        {
+						        return need_more_input();
+						    },
+					        [](invalid_input)
+					        {
+						        return invalid_input();
+						    });
+					},
+				    [this, input](parsing_element &parsing) -> parse_result<result_type>
+				    {
+					    parse_result<typename Element::result_type> element = parsing.parser.parse_byte(input);
+					    return Si::visit<parse_result<result_type>>(
+					        element,
+					        [this, &parsing](typename Element::result_type element) -> parse_result<result_type>
+					        {
+						        result[parsing.current_index] = std::move(element);
+						        if (parsing.current_index == (result.size() - 1))
+						        {
+							        return std::move(result);
+						        }
+						        step = parsing_element{{}, parsing.current_index + 1};
+						        return need_more_input();
+						    },
+					        [](need_more_input)
+					        {
+						        return need_more_input();
+						    },
+					        [](invalid_input)
+					        {
+						        return invalid_input();
+						    });
+					});
 			}
 
 		private:
@@ -208,34 +275,51 @@ namespace warpcoil
 		{
 			typedef std::string result_type;
 
-			result_type *parse_byte(std::uint8_t const input)
+			parse_result<result_type> parse_byte(std::uint8_t const input)
 			{
-				return Si::visit<result_type *>(step,
-				                                [this, input](Length &parser) -> result_type *
-				                                {
-					                                if (typename Length::result_type const *length =
-					                                        parser.parse_byte(input))
-					                                {
-						                                result.resize(*length);
-						                                if (result.empty())
-						                                {
-							                                return &result;
-						                                }
-						                                step = parsing_element{0};
-					                                }
-					                                return nullptr;
-					                            },
-				                                [this, input](parsing_element &parsing) -> result_type *
-				                                {
-					                                // TODO: verify UTF-8
-					                                result[parsing.current_index] = input;
-					                                if (parsing.current_index == (result.size() - 1))
-					                                {
-						                                return &result;
-					                                }
-					                                step = parsing_element{parsing.current_index + 1};
-					                                return nullptr;
-					                            });
+				return Si::visit<parse_result<result_type>>(
+				    step,
+				    [this, input](Length &parser) -> parse_result<result_type>
+				    {
+					    parse_result<typename Length::result_type> const length = parser.parse_byte(input);
+					    return Si::visit<parse_result<result_type>>(
+					        length,
+					        [this](typename Length::result_type const length) -> parse_result<result_type>
+					        {
+						        result.resize(length);
+						        if (result.empty())
+						        {
+							        return std::move(result);
+						        }
+						        step = parsing_element{0};
+						        return need_more_input();
+						    },
+					        [](need_more_input)
+					        {
+						        return need_more_input();
+						    },
+					        [](invalid_input)
+					        {
+						        return invalid_input();
+						    });
+					},
+				    [this, input](parsing_element &parsing) -> parse_result<result_type>
+				    {
+					    result[parsing.current_index] = input;
+					    if (parsing.current_index == (result.size() - 1))
+					    {
+						    if (utf8::is_valid(result.begin(), result.end()))
+						    {
+							    return std::move(result);
+						    }
+						    else
+						    {
+							    return invalid_input();
+						    }
+					    }
+					    step = parsing_element{parsing.current_index + 1};
+					    return need_more_input();
+					});
 			}
 
 		private:
@@ -265,11 +349,26 @@ namespace warpcoil
 			for (std::size_t i = 0; i < receive_buffer_used; ++i)
 			{
 				std::uint8_t *const data = boost::asio::buffer_cast<std::uint8_t *>(receive_buffer);
-				if (auto *response = parser.parse_byte(data[i]))
+				parse_result<typename Parser::result_type> response = parser.parse_byte(data[i]);
+				if (Si::visit<bool>(response,
+				                    [&](typename Parser::result_type &message)
+				                    {
+					                    std::copy(data + i + 1, data + receive_buffer_used, data);
+					                    receive_buffer_used -= 1 + i;
+					                    std::forward<ResultHandler>(on_result)(boost::system::error_code(),
+					                                                           std::move(message));
+					                    return true;
+					                },
+				                    [](need_more_input)
+				                    {
+					                    return false;
+					                },
+				                    [&](invalid_input)
+				                    {
+					                    std::forward<ResultHandler>(on_result)(make_invalid_input_error(), {});
+					                    return true;
+					                }))
 				{
-					std::copy(data + i + 1, data + receive_buffer_used, data);
-					receive_buffer_used -= 1 + i;
-					std::forward<ResultHandler>(on_result)(boost::system::error_code(), std::move(*response));
 					return;
 				}
 			}

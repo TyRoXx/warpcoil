@@ -1,7 +1,7 @@
 #include <silicium/sink/iterator_sink.hpp>
 #include <silicium/source/memory_source.hpp>
 #include <ventura/run_process.hpp>
-#include <warpcoil/cpp/generate/everything.hpp>
+#include <warpcoil/cpp/generate/asynchronous.hpp>
 #include <warpcoil/update_generated_file.hpp>
 
 int main(int argc, char **argv)

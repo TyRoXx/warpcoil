@@ -1,7 +1,7 @@
 #include <silicium/sink/iterator_sink.hpp>
 #include <silicium/source/memory_source.hpp>
 #include <ventura/run_process.hpp>
-#include <warpcoil/cpp/generate/everything.hpp>
+#include <warpcoil/cpp/generate/asynchronous.hpp>
 #include <warpcoil/update_generated_file.hpp>
 
 int main(int argc, char **argv)
@@ -33,8 +33,8 @@ int main(int argc, char **argv)
 		parameters.elements.emplace_back(types::integer());
 		definition.methods.insert(std::make_pair(
 		    "evaluate", types::interface_definition::method{types::integer(), Si::to_unique(std::move(parameters))}));
-		cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("binary_integer_function"),
-		                                     definition);
+		cpp::async::generate_serializable_interface(code_writer, top_level,
+		                                            Si::make_c_str_range("binary_integer_function"), definition);
 	}
 	{
 		types::interface_definition definition;
@@ -75,8 +75,8 @@ int main(int argc, char **argv)
 		definition.methods.insert(
 		    std::make_pair("utf8", types::interface_definition::method{types::utf8{types::integer{0, 255}},
 		                                                               types::utf8{types::integer{0, 255}}}));
-		cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
-		                                     definition);
+		cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
+		                                            definition);
 	}
 	Si::optional<ventura::absolute_path> const clang_format =
 	    (argc >= 3) ? ventura::absolute_path::create(argv[2]) : Si::none;
