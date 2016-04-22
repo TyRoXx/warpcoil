@@ -4,7 +4,7 @@ class WarpcoilConan(ConanFile):
     name = "warpcoil"
     version = "0.1"
     generators = "cmake"
-    requires = "ventura/0.5@TyRoXx/master", "utfcpp/2.3.4@TyRoXx/stable"
+    requires = "ventura/0.5@TyRoXx/master", "utfcpp/2.3.4@TyRoXx/stable", "Beast/2016.4.22@TyRoXx/master"
     url="http://github.com/tyroxx/warpcoil"
     license="MIT"
     exports="warpcoil/*"
