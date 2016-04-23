@@ -44,8 +44,7 @@ int main()
                                     [&io, &client](boost::system::error_code ec)
                                     {
                                         Si::throw_if_error(ec);
-                                        std::string name;
-                                        std::cin >> name;
+                                        std::string name = "Alice";
                                         client.hello(std::move(name),
                                                      [](boost::system::error_code ec, std::string result)
                                                      {
