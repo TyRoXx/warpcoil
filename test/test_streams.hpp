@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/test/unit_test.hpp>
+#include <boost/asio/buffer.hpp>
 #include <boost/asio/async_result.hpp>
 #include <silicium/memory_range.hpp>
 #include <silicium/error_or.hpp>
