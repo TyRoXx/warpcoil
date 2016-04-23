@@ -46,7 +46,7 @@ Cpp11BracedListStyle: true
 Standard:        Cpp11
 IndentWidth:     4
 TabWidth:        4
-UseTab:          ForIndentation
+UseTab:          Never
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpacesInAngles:  false
