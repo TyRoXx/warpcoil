@@ -36,7 +36,6 @@ namespace warpcoil
             {
                 result->set_value(std::move(value));
                 context.handled->get_future().get();
-                *context.handled = std::promise<void>();
             }
 
             void operator()(boost::system::error_code ec, T value)
@@ -50,7 +49,6 @@ namespace warpcoil
                     result->set_value(std::move(value));
                 }
                 context.handled->get_future().get();
-                *context.handled = std::promise<void>();
             }
 
             void resume()
@@ -58,7 +56,6 @@ namespace warpcoil
                 context.handled->set_value();
             }
 
-        private:
             yield_context context;
             std::shared_ptr<std::promise<T>> result;
         };
@@ -92,7 +89,6 @@ namespace warpcoil
                     result->set_value();
                 }
                 context.handled->get_future().get();
-                *context.handled = std::promise<void>();
             }
 
             void resume()
@@ -100,7 +96,6 @@ namespace warpcoil
                 context.handled->set_value();
             }
 
-        private:
             yield_context context;
             std::shared_ptr<std::promise<void>> result;
         };
@@ -146,6 +141,7 @@ namespace boost
             explicit async_result(warpcoil::detail::coroutine_handler<T> &handler)
                 : handler(handler)
             {
+                *handler.context.handled = std::promise<void>();
             }
 
             type get()
