@@ -55,6 +55,12 @@ if(MSVC)
 	#Boost in_place triggers /W4 warning about an assignment operator that could not be generated
 	add_definitions("/wd4512")
 
+	#"decorated name length exceeded, name was truncated"
+	add_definitions("/wd4503")
+	
+	#"needs to have dll-interface to be used by clients of class"
+	add_definitions("/wd4251")
+
 	#stupid warning about std::copy
 	add_definitions("/wd4996")
 
