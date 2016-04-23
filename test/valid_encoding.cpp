@@ -1,7 +1,7 @@
 #include "test_streams.hpp"
 #include "checkpoint.hpp"
 #include "generated.hpp"
-#include <boost/test/test_tools.hpp>
+#include "boost_print_log_value.hpp"
 #include <silicium/exchange.hpp>
 #include <silicium/error_or.hpp>
 
@@ -50,42 +50,7 @@ namespace
             on_result({}, std::move(argument));
         }
     };
-}
 
-namespace boost
-{
-    namespace test_tools
-    {
-        namespace tt_detail
-        {
-            template <typename T>
-            struct print_log_value<std::vector<T>>
-            {
-                void operator()(std::ostream &out, std::vector<T> const &v)
-                {
-                    out << '{';
-                    bool first = true;
-                    for (T const &e : v)
-                    {
-                        if (first)
-                        {
-                            first = false;
-                        }
-                        else
-                        {
-                            out << ", ";
-                        }
-                        out << static_cast<unsigned>(e);
-                    }
-                    out << '}';
-                }
-            };
-        }
-    }
-}
-
-namespace
-{
     template <class Result>
     Result test_simple_request_response(
         std::function<void(async_test_interface &, std::function<void(boost::system::error_code, Result)>)>
