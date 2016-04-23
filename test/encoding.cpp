@@ -1,5 +1,5 @@
+#include "checkpoint.hpp"
 #include "generated.hpp"
-#include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 #include <silicium/exchange.hpp>
 #include <silicium/error_or.hpp>
@@ -101,60 +101,6 @@ namespace
             return result.get();
         }
     };
-
-    struct checkpoint : private boost::noncopyable
-    {
-        checkpoint()
-            : m_state(state::created)
-        {
-        }
-
-        ~checkpoint()
-        {
-            BOOST_CHECK_EQUAL(state::crossed, m_state);
-        }
-
-        void enable()
-        {
-            BOOST_REQUIRE_EQUAL(state::created, m_state);
-            m_state = state::enabled;
-        }
-
-        void enter()
-        {
-            BOOST_REQUIRE_EQUAL(state::enabled, m_state);
-            m_state = state::crossed;
-        }
-
-        void require_crossed()
-        {
-            BOOST_REQUIRE_EQUAL(state::crossed, m_state);
-        }
-
-    private:
-        enum class state
-        {
-            created,
-            enabled,
-            crossed
-        };
-
-        friend std::ostream &operator<<(std::ostream &out, state s)
-        {
-            switch (s)
-            {
-            case state::created:
-                return out << "created";
-            case state::enabled:
-                return out << "enabled";
-            case state::crossed:
-                return out << "crossed";
-            }
-            SILICIUM_UNREACHABLE();
-        }
-
-        state m_state;
-    };
 }
 
 namespace boost
@@ -204,7 +150,7 @@ namespace
                                                                                   server_responses);
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
-        checkpoint request_served;
+        warpcoil::checkpoint request_served;
         server.serve_one_request([&request_served](boost::system::error_code ec)
                                  {
                                      request_served.enter();
@@ -219,7 +165,7 @@ namespace
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
 
-        checkpoint response_received;
+        warpcoil::checkpoint response_received;
         Result returned_result;
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};
         begin_request(type_erased_client,
