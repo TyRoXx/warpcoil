@@ -57,6 +57,14 @@ namespace
             Si::ignore_unused_variable_warning(on_result);
             BOOST_FAIL("unexpected call");
         }
+
+        void vectors_256(std::vector<std::uint64_t> argument,
+                         std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
+        {
+            Si::ignore_unused_variable_warning(argument);
+            Si::ignore_unused_variable_warning(on_result);
+            BOOST_FAIL("unexpected call");
+        }
     };
 
     void test_invalid_server_request(std::vector<std::uint8_t> expected_request)
@@ -125,5 +133,24 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_request)
         [](async_test_interface &client, std::function<void(boost::system::error_code, std::string)> on_result)
         {
             client.utf8("Name\xff", on_result);
+        });
+}
+
+BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_length_request)
+{
+    test_invalid_client_request<std::string>(
+        [](async_test_interface &client, std::function<void(boost::system::error_code, std::string)> on_result)
+        {
+            client.utf8(std::string(256, 'a'), on_result);
+        });
+}
+
+BOOST_AUTO_TEST_CASE(async_client_invalid_vector_length_request)
+{
+    test_invalid_client_request<std::vector<std::uint64_t>>(
+        [](async_test_interface &client,
+           std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result)
+        {
+            client.vectors_256(std::vector<std::uint64_t>(256), on_result);
         });
 }

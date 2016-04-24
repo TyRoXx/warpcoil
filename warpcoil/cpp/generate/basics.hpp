@@ -245,14 +245,21 @@ namespace warpcoil
                 type,
                 [&](types::integer range)
                 {
-                    indentation.render(code);
-                    Si::append(code, "warpcoil::cpp::write_integer<");
-                    Si::append(code, find_suitable_uint_cpp_type(range));
-                    Si::append(code, ">(");
-                    Si::append(code, sink);
-                    Si::append(code, ", ");
-                    Si::append(code, value);
-                    Si::append(code, ");\n");
+                    if (range.minimum == 0)
+                    {
+                        start_line(code, indentation, "if ((", value, ") > ",
+                                   boost::lexical_cast<std::string>(range.maximum), ") { ", return_invalid_input_error,
+                                   "; }\n");
+                    }
+                    else
+                    {
+                        start_line(code, indentation, "if (((", value, ") < ",
+                                   boost::lexical_cast<std::string>(range.minimum), ") || ((", value, ") > ",
+                                   boost::lexical_cast<std::string>(range.maximum), ")) { ", return_invalid_input_error,
+                                   "; }\n");
+                    }
+                    start_line(code, indentation, "warpcoil::cpp::write_integer(", sink, ", static_cast<",
+                               find_suitable_uint_cpp_type(range), ">(", value, "));\n");
                 },
                 [&](std::unique_ptr<types::variant> const &)
                 {
@@ -278,12 +285,9 @@ namespace warpcoil
                 [&](std::unique_ptr<types::vector> const &root)
                 {
                     {
-                        std::string size = "static_cast<";
-                        Si::memory_range const size_type = find_suitable_uint_cpp_type(root->length);
-                        size.append(size_type.begin(), size_type.end());
-                        size += ">(";
+                        std::string size;
                         size.append(value.begin(), value.end());
-                        size += ".size())";
+                        size += ".size()";
                         generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(size),
                                                      root->length, return_invalid_input_error);
                     }
@@ -307,12 +311,9 @@ namespace warpcoil
                                return_invalid_input_error, "; }\n");
                     indentation.render(code);
                     {
-                        std::string size = "static_cast<";
-                        Si::memory_range const size_type = find_suitable_uint_cpp_type(text.code_units);
-                        size.append(size_type.begin(), size_type.end());
-                        size += ">(";
+                        std::string size;
                         size.append(value.begin(), value.end());
-                        size += ".size())";
+                        size += ".size()";
                         generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(size),
                                                      text.code_units, return_invalid_input_error);
                     }

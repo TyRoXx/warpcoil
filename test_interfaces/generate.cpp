@@ -61,6 +61,10 @@ int main(int argc, char **argv)
             "vectors",
             types::interface_definition::method{Si::to_unique(types::vector{types::integer(), types::integer()}),
                                                 Si::to_unique(types::vector{types::integer(), types::integer()})}));
+        definition.methods.insert(
+            std::make_pair("vectors_256", types::interface_definition::method{
+                                              Si::to_unique(types::vector{types::integer{0, 255}, types::integer()}),
+                                              Si::to_unique(types::vector{types::integer{0, 255}, types::integer()})}));
         {
             types::tuple parameters;
             parameters.elements.emplace_back(types::integer{0, 0xff});

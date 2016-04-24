@@ -9,42 +9,46 @@ namespace
 {
     struct impl_test_interface : async_test_interface
     {
-        virtual void
+        void
         integer_sizes(std::tuple<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t> argument,
                       std::function<void(boost::system::error_code, std::vector<std::uint16_t>)> on_result) override
         {
             on_result({}, std::vector<std::uint16_t>{std::get<1>(argument)});
         }
 
-        virtual void
-        no_result_no_parameter(std::tuple<> argument,
-                               std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
+        void no_result_no_parameter(std::tuple<> argument,
+                                    std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
         {
             on_result({}, argument);
         }
 
-        virtual void two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
-                                    std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
+        void two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
+                            std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
         {
             on_result({}, std::get<0>(argument) * std::get<1>(argument));
         }
 
-        virtual void two_results(
+        void two_results(
             std::uint64_t argument,
             std::function<void(boost::system::error_code, std::tuple<std::uint64_t, std::uint64_t>)> on_result) override
         {
             on_result({}, std::make_tuple(argument, argument));
         }
 
-        virtual void utf8(std::string argument,
-                          std::function<void(boost::system::error_code, std::string)> on_result) override
+        void utf8(std::string argument, std::function<void(boost::system::error_code, std::string)> on_result) override
         {
             on_result({}, "Hello, " + argument + "!");
         }
 
-        virtual void
-        vectors(std::vector<std::uint64_t> argument,
-                std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
+        void vectors(std::vector<std::uint64_t> argument,
+                     std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
+        {
+            std::reverse(argument.begin(), argument.end());
+            on_result({}, std::move(argument));
+        }
+
+        void vectors_256(std::vector<std::uint64_t> argument,
+                         std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
         {
             std::reverse(argument.begin(), argument.end());
             on_result({}, std::move(argument));
