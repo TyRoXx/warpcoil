@@ -65,6 +65,14 @@ namespace
             Si::ignore_unused_variable_warning(on_result);
             BOOST_FAIL("unexpected call");
         }
+
+        void atypical_int(std::uint16_t argument,
+                          std::function<void(boost::system::error_code, std::uint16_t)> on_result) override
+        {
+            Si::ignore_unused_variable_warning(argument);
+            Si::ignore_unused_variable_warning(on_result);
+            BOOST_FAIL("unexpected call");
+        }
     };
 
     void test_invalid_server_request(std::vector<std::uint8_t> expected_request)
@@ -152,5 +160,23 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_vector_length_request)
            std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result)
         {
             client.vectors_256(std::vector<std::uint64_t>(256), on_result);
+        });
+}
+
+BOOST_AUTO_TEST_CASE(async_client_invalid_int_request_too_small)
+{
+    test_invalid_client_request<std::uint16_t>(
+        [](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
+        {
+            client.atypical_int(0, on_result);
+        });
+}
+
+BOOST_AUTO_TEST_CASE(async_client_invalid_int_request_too_large)
+{
+    test_invalid_client_request<std::uint16_t>(
+        [](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
+        {
+            client.atypical_int(1001, on_result);
         });
 }

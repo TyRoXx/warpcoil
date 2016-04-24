@@ -79,6 +79,8 @@ int main(int argc, char **argv)
         definition.methods.insert(
             std::make_pair("utf8", types::interface_definition::method{types::utf8{types::integer{0, 255}},
                                                                        types::utf8{types::integer{0, 255}}}));
+        definition.methods.insert(std::make_pair(
+            "atypical_int", types::interface_definition::method{types::integer{1, 1000}, types::integer{1, 1000}}));
         cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
                                                     definition);
     }

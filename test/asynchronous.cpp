@@ -94,6 +94,12 @@ namespace
             std::sort(argument.begin(), argument.end(), std::greater<std::uint64_t>());
             on_result({}, std::move(argument));
         }
+
+        void atypical_int(std::uint16_t argument,
+                          std::function<void(boost::system::error_code, std::uint16_t)> on_result) override
+        {
+            on_result({}, argument);
+        }
     };
 }
 
