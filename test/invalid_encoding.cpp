@@ -59,10 +59,7 @@ namespace
         }
     };
 
-    template <class Result>
-    void test_invalid_request(std::function<void(async_test_interface &,
-                                                 std::function<void(boost::system::error_code, Result)>)> begin_request,
-                              std::vector<std::uint8_t> expected_request)
+    void test_invalid_server_request(std::vector<std::uint8_t> expected_request)
     {
         failing_test_interface server_impl;
         warpcoil::async_read_stream server_requests;
@@ -79,39 +76,10 @@ namespace
                                  });
         BOOST_REQUIRE(server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
-
-        warpcoil::async_write_stream client_requests;
-        warpcoil::async_read_stream client_responses;
-        async_test_interface_client<warpcoil::async_write_stream, warpcoil::async_read_stream> client(client_requests,
-                                                                                                      client_responses);
-        BOOST_REQUIRE(!client_responses.respond);
-        BOOST_REQUIRE(!client_requests.handle_result);
-
-        Result returned_result;
-        async_type_erased_test_interface<decltype(client)> type_erased_client{client};
-        begin_request(type_erased_client, [](boost::system::error_code ec, Result result)
-                      {
-                          Si::ignore_unused_variable_warning(ec);
-                          Si::ignore_unused_variable_warning(result);
-                          BOOST_FAIL("unexpected response");
-                      });
-
-        BOOST_REQUIRE(server_requests.respond);
-        BOOST_REQUIRE(!server_responses.handle_result);
         BOOST_REQUIRE(server_responses.written.empty());
-        BOOST_REQUIRE(!client_responses.respond);
-        BOOST_REQUIRE(client_requests.handle_result);
-        std::vector<std::vector<std::uint8_t>> const expected_request_buffers = {expected_request};
-        BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_request_buffers.begin(), expected_request_buffers.end(),
-                                        client_requests.written.begin(), client_requests.written.end());
         request_served.enable();
-        Si::exchange(server_requests.respond, nullptr)(Si::make_memory_range(client_requests.written[0]));
+        Si::exchange(server_requests.respond, nullptr)(Si::make_memory_range(expected_request));
         request_served.require_crossed();
-        client_requests.written.clear();
-
-        Si::exchange(client_requests.handle_result, nullptr)({}, expected_request.size());
-        BOOST_REQUIRE(!client_requests.handle_result);
-
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
     }
@@ -119,10 +87,43 @@ namespace
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_utf8_request)
 {
-    test_invalid_request<std::string>(
+    test_invalid_server_request({4, 'u', 't', 'f', '8', 5, 'N', 'a', 'm', 'e', 0xff});
+}
+
+namespace
+{
+    template <class Result>
+    void test_invalid_client_request(
+        std::function<void(async_test_interface &, std::function<void(boost::system::error_code, Result)>)>
+            begin_request)
+    {
+        warpcoil::async_write_stream client_requests;
+        warpcoil::async_read_stream client_responses;
+        async_test_interface_client<warpcoil::async_write_stream, warpcoil::async_read_stream> client(client_requests,
+                                                                                                      client_responses);
+        BOOST_REQUIRE(!client_responses.respond);
+        BOOST_REQUIRE(!client_requests.handle_result);
+        Result returned_result;
+        async_type_erased_test_interface<decltype(client)> type_erased_client{client};
+        warpcoil::checkpoint request_rejected;
+        request_rejected.enable();
+        begin_request(type_erased_client, [&request_rejected](boost::system::error_code ec, Result result)
+                      {
+                          BOOST_REQUIRE_EQUAL(warpcoil::cpp::make_invalid_input_error(), ec);
+                          Si::ignore_unused_variable_warning(result);
+                          request_rejected.enter();
+                      });
+        request_rejected.require_crossed();
+        BOOST_REQUIRE(!client_responses.respond);
+        BOOST_REQUIRE(!client_requests.handle_result);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_request)
+{
+    test_invalid_client_request<std::string>(
         [](async_test_interface &client, std::function<void(boost::system::error_code, std::string)> on_result)
         {
             client.utf8("Name\xff", on_result);
-        },
-        {4, 'u', 't', 'f', '8', 5, 'N', 'a', 'm', 'e', 0xff});
+        });
 }

@@ -238,11 +238,12 @@ namespace warpcoil
 
         template <class CharSink>
         void generate_value_serialization(CharSink &&code, indentation_level indentation, Si::memory_range sink,
-                                          Si::memory_range value, types::type const &type)
+                                          Si::memory_range value, types::type const &type,
+                                          Si::memory_range return_invalid_input_error)
         {
             return Si::visit<void>(
                 type,
-                [&code, sink, value, indentation](types::integer range)
+                [&](types::integer range)
                 {
                     indentation.render(code);
                     Si::append(code, "warpcoil::cpp::write_integer<");
@@ -253,11 +254,11 @@ namespace warpcoil
                     Si::append(code, value);
                     Si::append(code, ");\n");
                 },
-                [&code](std::unique_ptr<types::variant> const &)
+                [&](std::unique_ptr<types::variant> const &)
                 {
                     throw std::logic_error("to do");
                 },
-                [&code, sink, value, indentation](std::unique_ptr<types::tuple> const &root)
+                [&](std::unique_ptr<types::tuple> const &root)
                 {
                     std::size_t element_index = 0;
                     for (types::type const &element : root->elements)
@@ -266,15 +267,15 @@ namespace warpcoil
                         element_name.insert(element_name.end(), value.begin(), value.end());
                         element_name += ")";
                         generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(element_name),
-                                                     element);
+                                                     element, return_invalid_input_error);
                         ++element_index;
                     }
                 },
-                [&code](std::unique_ptr<types::subset> const &)
+                [&](std::unique_ptr<types::subset> const &)
                 {
                     throw std::logic_error("to do");
                 },
-                [&code, sink, value, indentation](std::unique_ptr<types::vector> const &root)
+                [&](std::unique_ptr<types::vector> const &root)
                 {
                     {
                         std::string size = "static_cast<";
@@ -284,7 +285,7 @@ namespace warpcoil
                         size.append(value.begin(), value.end());
                         size += ".size())";
                         generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(size),
-                                                     root->length);
+                                                     root->length, return_invalid_input_error);
                     }
                     indentation.render(code);
                     Si::append(code, "for (auto const &element : ");
@@ -294,14 +295,16 @@ namespace warpcoil
                     Si::append(code, "{\n");
                     {
                         indentation_level const in_for = indentation.deeper();
-                        generate_value_serialization(code, in_for, sink, Si::make_c_str_range("element"),
-                                                     root->element);
+                        generate_value_serialization(code, in_for, sink, Si::make_c_str_range("element"), root->element,
+                                                     return_invalid_input_error);
                     }
                     indentation.render(code);
                     Si::append(code, "}\n");
                 },
-                [&code, sink, value, indentation](types::utf8 const text)
+                [&](types::utf8 const text)
                 {
+                    start_line(code, indentation, "if (!utf8::is_valid(", value, ".begin(), ", value, ".end())) { ",
+                               return_invalid_input_error, "; }\n");
                     indentation.render(code);
                     {
                         std::string size = "static_cast<";
@@ -311,7 +314,7 @@ namespace warpcoil
                         size.append(value.begin(), value.end());
                         size += ".size())";
                         generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(size),
-                                                     text.code_units);
+                                                     text.code_units, return_invalid_input_error);
                     }
                     Si::append(code, "Si::append(");
                     Si::append(code, sink);

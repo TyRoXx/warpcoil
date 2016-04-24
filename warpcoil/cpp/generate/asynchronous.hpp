@@ -185,7 +185,9 @@ namespace warpcoil
                                         append(code, "\")));\n");
                                         generate_value_serialization(
                                             code, in_method, Si::make_c_str_range("request_writer"),
-                                            Si::make_c_str_range("argument"), entry.second.parameter);
+                                            Si::make_c_str_range("argument"), entry.second.parameter,
+                                            Si::make_c_str_range("handler(warpcoil::cpp::make_invalid_input_error(), "
+                                                                 "{}); return result.get()"));
                                         in_method.render(code);
                                         append(code, "boost::asio::async_write("
                                                      "requests, "
@@ -442,7 +444,11 @@ namespace warpcoil
                                                             generate_value_serialization(
                                                                 code, in_lambda,
                                                                 Si::make_c_str_range("response_writer"),
-                                                                Si::make_c_str_range("result"), entry.second.result);
+                                                                Si::make_c_str_range("result"), entry.second.result,
+                                                                Si::make_c_str_range(
+                                                                    "return std::forward<Handler>(handle_"
+                                                                    "result)(warpcoil::cpp::make_"
+                                                                    "invalid_input_error())"));
                                                             in_lambda.render(code);
                                                             append(code, "boost::asio::async_write(responses,"
                                                                          " boost::asio::buffer(response_"
