@@ -248,15 +248,15 @@ namespace warpcoil
                     if (range.minimum == 0)
                     {
                         start_line(code, indentation, "if ((", value, ") > ",
-                                   boost::lexical_cast<std::string>(range.maximum), ") { ", return_invalid_input_error,
+                                   boost::lexical_cast<std::string>(range.maximum), "u) { ", return_invalid_input_error,
                                    "; }\n");
                     }
                     else
                     {
                         start_line(code, indentation, "if (((", value, ") < ",
-                                   boost::lexical_cast<std::string>(range.minimum), ") || ((", value, ") > ",
-                                   boost::lexical_cast<std::string>(range.maximum), ")) { ", return_invalid_input_error,
-                                   "; }\n");
+                                   boost::lexical_cast<std::string>(range.minimum), "u) || ((", value, ") > ",
+                                   boost::lexical_cast<std::string>(range.maximum), "u)) { ",
+                                   return_invalid_input_error, "; }\n");
                     }
                     start_line(code, indentation, "warpcoil::cpp::write_integer(", sink, ", static_cast<",
                                find_suitable_uint_cpp_type(range), ">(", value, "));\n");

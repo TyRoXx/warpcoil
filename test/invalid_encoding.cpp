@@ -119,7 +119,6 @@ namespace
                                                                                                       client_responses);
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
-        Result returned_result;
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};
         warpcoil::checkpoint request_rejected;
         request_rejected.enable();
