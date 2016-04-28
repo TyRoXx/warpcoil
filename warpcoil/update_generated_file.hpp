@@ -54,4 +54,48 @@ namespace warpcoil
                                    SILICIUM_UNREACHABLE();
                                });
     }
+
+    inline int run_code_generator_command_line_tool(Si::iterator_range<char **> command_line_arguments,
+                                                    std::ostream &log, Si::memory_range code)
+    {
+        if (command_line_arguments.size() < 2)
+        {
+            log << "requires output file name as the command line argument\n";
+            return 1;
+        }
+        Si::optional<ventura::absolute_path> const clang_format =
+            (command_line_arguments.size() >= 3) ? ventura::absolute_path::create(command_line_arguments[2]) : Si::none;
+        Si::optional<ventura::absolute_path> const clang_format_config_dir =
+            (command_line_arguments.size() >= 4) ? ventura::absolute_path::create(command_line_arguments[3]) : Si::none;
+        std::vector<char> formatted_code;
+        if (clang_format)
+        {
+            if (!clang_format_config_dir)
+            {
+                log << "command line argument for the clang-format config directory missing\n";
+                return 1;
+            }
+            auto formatted_code_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(formatted_code));
+            ventura::process_parameters parameters;
+            parameters.executable = *clang_format;
+            parameters.current_path = *clang_format_config_dir;
+            parameters.out = &formatted_code_writer;
+            auto original_code_reader = Si::Source<char>::erase(Si::memory_source<char>(code));
+            parameters.in = &original_code_reader;
+            parameters.inheritance = ventura::environment_inheritance::inherit;
+            Si::error_or<int> result = ventura::run_process(parameters);
+            if (result.is_error())
+            {
+                log << "clang-format failed: " << result.error() << '\n';
+                return 1;
+            }
+            if (result.get() != 0)
+            {
+                log << "clang-format failed with return code " << result.get() << '\n';
+                return 1;
+            }
+            code = Si::make_contiguous_range(formatted_code);
+        }
+        return warpcoil::update_generated_file(command_line_arguments[1], code, std::cerr) ? 0 : 1;
+    }
 }
