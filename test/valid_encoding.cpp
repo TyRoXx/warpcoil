@@ -22,6 +22,12 @@ namespace
             on_result({}, argument);
         }
 
+        void real_multi_parameters(std::string first, std::uint16_t second,
+                                   std::function<void(boost::system::error_code, std::uint8_t)> on_result) override
+        {
+            on_result({}, static_cast<std::uint8_t>(first.size() + second));
+        }
+
         void two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
                             std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
         {
@@ -181,4 +187,18 @@ BOOST_AUTO_TEST_CASE(async_server_tuple)
             {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0, 123});
     std::tuple<std::uint64_t, std::uint64_t> const expected{123, 123};
     BOOST_CHECK(expected == result);
+}
+
+BOOST_AUTO_TEST_CASE(async_server_multiple_parameters)
+{
+    std::uint8_t const result = test_simple_request_response<std::uint8_t>(
+        [](async_test_interface &client, std::function<void(boost::system::error_code, std::uint8_t)> on_result)
+        {
+            client.real_multi_parameters("abc", 123, on_result);
+        },
+        {21, 'r', 'e', 'a', 'l', '_', 'm', 'u', 'l', 't', 'i', '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r', 's', 3,
+         'a', 'b', 'c', 0, 123},
+        {126});
+    std::uint8_t const expected{126};
+    BOOST_CHECK_EQUAL(expected, result);
 }

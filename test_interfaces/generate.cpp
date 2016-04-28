@@ -27,7 +27,8 @@ int main(int argc, char **argv)
         parameters.elements.emplace_back(types::integer());
         parameters.elements.emplace_back(types::integer());
         definition.methods.insert(std::make_pair(
-            "evaluate", types::interface_definition::method{types::integer(), Si::to_unique(std::move(parameters))}));
+            "evaluate", types::method{types::integer(), make_vector<types::parameter>(types::parameter{
+                                                            "argument", Si::to_unique(std::move(parameters))})}));
         cpp::async::generate_serializable_interface(code_writer, top_level,
                                                     Si::make_c_str_range("binary_integer_function"), definition);
     }
@@ -35,14 +36,16 @@ int main(int argc, char **argv)
         types::interface_definition definition;
         definition.methods.insert(std::make_pair(
             "no_result_no_parameter",
-            types::interface_definition::method{Si::to_unique(types::tuple()), Si::to_unique(types::tuple())}));
+            types::method{Si::to_unique(types::tuple()),
+                          make_vector<types::parameter>(types::parameter{"argument", Si::to_unique(types::tuple())})}));
         {
             types::tuple results;
             results.elements.emplace_back(types::integer());
             results.elements.emplace_back(types::integer());
-            definition.methods.insert(
-                std::make_pair("two_results", types::interface_definition::method{Si::to_unique(std::move(results)),
-                                                                                  types::integer()}));
+            definition.methods.insert(std::make_pair(
+                "two_results",
+                types::method{Si::to_unique(std::move(results)),
+                              make_vector<types::parameter>(types::parameter{"argument", types::integer()})}));
         }
         {
             types::tuple parameters;
@@ -50,16 +53,19 @@ int main(int argc, char **argv)
             parameters.elements.emplace_back(types::integer());
             definition.methods.insert(std::make_pair(
                 "two_parameters",
-                types::interface_definition::method{types::integer(), Si::to_unique(std::move(parameters))}));
+                types::method{types::integer(), make_vector<types::parameter>(types::parameter{
+                                                    "argument", Si::to_unique(std::move(parameters))})}));
         }
         definition.methods.insert(std::make_pair(
             "vectors",
-            types::interface_definition::method{Si::to_unique(types::vector{types::integer(), types::integer()}),
-                                                Si::to_unique(types::vector{types::integer(), types::integer()})}));
-        definition.methods.insert(
-            std::make_pair("vectors_256", types::interface_definition::method{
-                                              Si::to_unique(types::vector{types::integer{0, 255}, types::integer()}),
-                                              Si::to_unique(types::vector{types::integer{0, 255}, types::integer()})}));
+            types::method{Si::to_unique(types::vector{types::integer(), types::integer()}),
+                          make_vector<types::parameter>(types::parameter{
+                              "argument", Si::to_unique(types::vector{types::integer(), types::integer()})})}));
+        definition.methods.insert(std::make_pair(
+            "vectors_256",
+            types::method{Si::to_unique(types::vector{types::integer{0, 255}, types::integer()}),
+                          make_vector<types::parameter>(types::parameter{
+                              "argument", Si::to_unique(types::vector{types::integer{0, 255}, types::integer()})})}));
         {
             types::tuple parameters;
             parameters.elements.emplace_back(types::integer{0, 0xff});
@@ -67,15 +73,26 @@ int main(int argc, char **argv)
             parameters.elements.emplace_back(types::integer{0, 0xffffffff});
             parameters.elements.emplace_back(types::integer{0, 0xffffffffffffffff});
             definition.methods.insert(std::make_pair(
-                "integer_sizes", types::interface_definition::method{
-                                     Si::to_unique(types::vector{types::integer{0, 0xff}, types::integer{0, 0xffff}}),
-                                     Si::to_unique(std::move(parameters))}));
+                "integer_sizes",
+                types::method{Si::to_unique(types::vector{types::integer{0, 0xff}, types::integer{0, 0xffff}}),
+                              make_vector<types::parameter>(
+                                  types::parameter{"argument", Si::to_unique(std::move(parameters))})}));
         }
         definition.methods.insert(
-            std::make_pair("utf8", types::interface_definition::method{types::utf8{types::integer{0, 255}},
-                                                                       types::utf8{types::integer{0, 255}}}));
+            std::make_pair("utf8", types::method{types::utf8{types::integer{0, 255}},
+                                                 make_vector<types::parameter>(types::parameter{
+                                                     "argument", types::utf8{types::integer{0, 255}}})}));
+
         definition.methods.insert(std::make_pair(
-            "atypical_int", types::interface_definition::method{types::integer{1, 1000}, types::integer{1, 1000}}));
+            "atypical_int", types::method{types::integer{1, 1000}, make_vector<types::parameter>(types::parameter{
+                                                                       "argument", types::integer{1, 1000}})}));
+
+        definition.methods.insert(std::make_pair(
+            "real_multi_parameters",
+            types::method{types::integer{0, 255},
+                          make_vector<types::parameter>(types::parameter{"first", types::utf8{types::integer{0, 255}}},
+                                                        types::parameter{"second", types::integer{0, 0xffff}})}));
+
         cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
                                                     definition);
     }

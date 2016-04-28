@@ -85,6 +85,8 @@ if(MSVC)
 	if(MSVC14 AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
 		set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MDd /Zi /Ob0 /Od")
 	endif()
+
+	add_definitions("/bigobj")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")

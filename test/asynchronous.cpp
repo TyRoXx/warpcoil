@@ -63,6 +63,12 @@ namespace
             on_result({}, argument);
         }
 
+        void real_multi_parameters(std::string first, std::uint16_t second,
+                                   std::function<void(boost::system::error_code, std::uint8_t)> on_result) override
+        {
+            on_result({}, static_cast<std::uint8_t>(first.size() + second));
+        }
+
         void two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
                             std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
         {

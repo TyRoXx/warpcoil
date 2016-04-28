@@ -26,6 +26,15 @@ namespace
             BOOST_FAIL("unexpected call");
         }
 
+        void real_multi_parameters(std::string first, std::uint16_t second,
+                                   std::function<void(boost::system::error_code, std::uint8_t)> on_result) override
+        {
+            Si::ignore_unused_variable_warning(first);
+            Si::ignore_unused_variable_warning(second);
+            Si::ignore_unused_variable_warning(on_result);
+            BOOST_FAIL("unexpected call");
+        }
+
         void two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
                             std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
         {
