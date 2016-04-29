@@ -350,10 +350,9 @@ namespace warpcoil
                 integer_parser<index_type> parser;
             };
 
-            struct element_parser_visitor
+            struct element_parser_visitor : boost::static_visitor<parse_result<result_type>>
             {
                 typedef result_type parent_result_type;
-                typedef parse_result<parent_result_type> result_type;
 
                 variant_parser &parent;
                 std::uint8_t const input;
@@ -364,6 +363,12 @@ namespace warpcoil
                 {
                 }
 
+                template <class Parser>
+                static void switch_to_state(variant_parser &parent)
+                {
+                    parent.m_state = Parser();
+                }
+
                 parse_result<parent_result_type> operator()(parsing_index &state) const
                 {
                     return Si::visit<parse_result<parent_result_type>>(
@@ -371,10 +376,7 @@ namespace warpcoil
                         [this](index_type const index) -> parse_result<parent_result_type>
                         {
                             static std::array<void (*)(variant_parser &), sizeof...(ElementParsers)> const transitions =
-                                {{[](variant_parser &parent) -> void
-                                  {
-                                      parent.m_state = ElementParsers();
-                                  }...}};
+                                {{&switch_to_state<ElementParsers>...}};
                             if (index >= transitions.size())
                             {
                                 return invalid_input();
