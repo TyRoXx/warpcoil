@@ -135,12 +135,26 @@ namespace warpcoil
                               append(code, "auto ");
                               append(code, entry.first);
                               append(code, "(");
-                              generate_parameters(code, entry.second.parameters);
+                              type_emptiness const parameter_emptiness =
+                                  generate_parameters(code, entry.second.parameters);
                               append(code, "CompletionToken &&token)\n");
                               block(
                                   code, in_class,
                                   [&](indentation_level const in_method)
                                   {
+                                      switch (parameter_emptiness)
+                                      {
+                                      case type_emptiness::empty:
+                                          for (types::parameter const &parameter_ : entry.second.parameters)
+                                          {
+                                              start_line(code, in_method, "static_cast<void>(", parameter_.name,
+                                                         ");\n");
+                                          }
+                                          break;
+
+                                      case type_emptiness::non_empty:
+                                          break;
+                                      }
                                       in_method.render(code);
                                       append(code, "using handler_type = typename "
                                                    "boost::asio::handler_type<"
@@ -390,8 +404,7 @@ namespace warpcoil
                                       start_line(code, in_method,
                                                  "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
                                                  "request_buffer_used, ");
-                                      types::type const parameter_type =
-                                          Si::to_unique(get_parameter_type(entry.second.parameters));
+                                      types::type const parameter_type = get_parameter_type(entry.second.parameters);
                                       generate_parser_type(code, parameter_type);
                                       append(code,
                                              "{}, "

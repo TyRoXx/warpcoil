@@ -183,15 +183,15 @@ namespace warpcoil
                                    });
         }
 
-        inline tuple get_parameter_type(std::vector<parameter> const &parameters)
+        inline type get_parameter_type(std::vector<parameter> const &parameters)
         {
             tuple result;
             result.elements.reserve(parameters.size());
-            for (parameter const &parameter : parameters)
+            for (parameter const &parameter_ : parameters)
             {
-                result.elements.emplace_back(clone(parameter.type_));
+                result.elements.emplace_back(clone(parameter_.type_));
             }
-            return result;
+            return type{Si::to_unique(std::move(result))};
         }
 
         struct method

@@ -406,20 +406,25 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_parameters(CharSink &&code, std::vector<types::parameter> const &parameters)
+        type_emptiness generate_parameters(CharSink &&code, std::vector<types::parameter> const &parameters)
         {
+            type_emptiness total_emptiness = type_emptiness::empty;
             for (types::parameter const &param : parameters)
             {
                 switch (generate_type(code, param.type_))
                 {
                 case type_emptiness::empty:
+                    break;
+
                 case type_emptiness::non_empty:
-                    Si::append(code, " ");
-                    Si::append(code, param.name);
+                    total_emptiness = type_emptiness::non_empty;
                     break;
                 }
+                Si::append(code, " ");
+                Si::append(code, param.name);
                 Si::append(code, ", ");
             }
+            return total_emptiness;
         }
     }
 }
