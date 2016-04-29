@@ -99,11 +99,13 @@ namespace warpcoil
 
         struct variant;
         struct tuple;
-        struct subset;
         struct vector;
 
-        typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<subset>,
-                            std::unique_ptr<vector>, utf8> type;
+        typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<vector>, utf8>
+            type;
+
+        BOOST_STATIC_ASSERT((std::is_nothrow_move_constructible<type>::value));
+        BOOST_STATIC_ASSERT((std::is_nothrow_move_assignable<type>::value));
 
         type clone(type const &original);
 
@@ -134,17 +136,6 @@ namespace warpcoil
                     result.elements.emplace_back(types::clone(element));
                 }
                 return result;
-            }
-        };
-
-        struct subset
-        {
-            type superset;
-            values::closure is_inside;
-
-            subset clone() const
-            {
-                throw std::logic_error("not implemented");
             }
         };
 
@@ -179,10 +170,6 @@ namespace warpcoil
                                        return Si::to_unique(value->clone());
                                    },
                                    [](std::unique_ptr<tuple> const &value)
-                                   {
-                                       return Si::to_unique(value->clone());
-                                   },
-                                   [](std::unique_ptr<subset> const &value)
                                    {
                                        return Si::to_unique(value->clone());
                                    },

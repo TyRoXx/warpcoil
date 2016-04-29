@@ -146,11 +146,6 @@ namespace warpcoil
                     Si::append(code, ">");
                     return root->elements.empty() ? type_emptiness::empty : type_emptiness::non_empty;
                 },
-                [&code](std::unique_ptr<types::subset> const &root)
-                {
-                    Si::append(code, "/*subset of*/");
-                    return generate_type(code, root->superset);
-                },
                 [&code](std::unique_ptr<types::vector> const &root)
                 {
                     Si::append(code, "std::vector<");
@@ -278,10 +273,6 @@ namespace warpcoil
                         ++element_index;
                     }
                 },
-                [&](std::unique_ptr<types::subset> const &)
-                {
-                    throw std::logic_error("to do");
-                },
                 [&](std::unique_ptr<types::vector> const &root)
                 {
                     {
@@ -369,10 +360,6 @@ namespace warpcoil
                     }
                     indentation.render(code);
                     Si::append(code, "}()");
-                },
-                [&code](std::unique_ptr<types::subset> const &)
-                {
-                    throw std::logic_error("to do");
                 },
                 [&code, source, indentation, &type](std::unique_ptr<types::vector> const &root)
                 {

@@ -55,10 +55,6 @@ namespace warpcoil
                                        }
                                        Si::append(code, ">");
                                    },
-                                   [&code](std::unique_ptr<types::subset> const &)
-                                   {
-                                       throw std::logic_error("to do");
-                                   },
                                    [&code](std::unique_ptr<types::vector> const &parsed)
                                    {
                                        Si::append(code, "warpcoil::cpp::vector_parser<");
