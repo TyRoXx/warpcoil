@@ -82,6 +82,15 @@ namespace
             Si::ignore_unused_variable_warning(on_result);
             BOOST_FAIL("unexpected call");
         }
+
+        virtual void variant(
+            Si::variant<std::uint32_t, std::string> argument,
+            std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result) override
+        {
+            Si::ignore_unused_variable_warning(argument);
+            Si::ignore_unused_variable_warning(on_result);
+            BOOST_FAIL("unexpected call");
+        }
     };
 
     void test_invalid_server_request(std::vector<std::uint8_t> expected_request)
@@ -113,6 +122,16 @@ namespace
 BOOST_AUTO_TEST_CASE(async_server_invalid_utf8_request)
 {
     test_invalid_server_request({4, 'u', 't', 'f', '8', 5, 'N', 'a', 'm', 'e', 0xff});
+}
+
+BOOST_AUTO_TEST_CASE(async_server_invalid_variant_request_a)
+{
+    test_invalid_server_request({7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 2, 0, 0, 0, 0});
+}
+
+BOOST_AUTO_TEST_CASE(async_server_invalid_variant_request_b)
+{
+    test_invalid_server_request({7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 255, 0, 0, 0, 0});
 }
 
 namespace
@@ -186,5 +205,15 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_int_request_too_large)
         [](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
         {
             client.atypical_int(1001, on_result);
+        });
+}
+
+BOOST_AUTO_TEST_CASE(async_client_invalid_variant_element_request)
+{
+    test_invalid_client_request<Si::variant<std::uint16_t, std::string>>(
+        [](async_test_interface &client,
+           std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result)
+        {
+            client.variant(std::string("Name\xff"), on_result);
         });
 }

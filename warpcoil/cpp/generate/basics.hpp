@@ -3,6 +3,7 @@
 #include <boost/lexical_cast.hpp>
 #include <silicium/sink/append.hpp>
 #include <silicium/sink/ptr_sink.hpp>
+#include <silicium/sink/iterator_sink.hpp>
 #include <warpcoil/warpcoil.hpp>
 
 namespace warpcoil
@@ -256,9 +257,35 @@ namespace warpcoil
                     start_line(code, indentation, "warpcoil::cpp::write_integer(", sink, ", static_cast<",
                                find_suitable_uint_cpp_type(range), ">(", value, "));\n");
                 },
-                [&](std::unique_ptr<types::variant> const &)
+                [&](std::unique_ptr<types::variant> const &root)
                 {
-                    throw std::logic_error("to do");
+                    std::string index(value.begin(), value.end());
+                    index += ".index()";
+                    generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(index),
+                                                 types::integer{0, root->elements.size() - 1},
+                                                 return_invalid_input_error);
+
+                    start_line(code, indentation, "switch (", value, ".index())");
+                    block(code, indentation,
+                          [&](indentation_level const in_switch)
+                          {
+                              std::size_t index = 0;
+                              for (types::type const &element : root->elements)
+                              {
+                                  start_line(code, in_switch, "case ", boost::lexical_cast<std::string>(index), ": ");
+                                  std::string element_expression = "(*Si::try_get_ptr<";
+                                  generate_type(Si::make_container_sink(element_expression), element);
+                                  element_expression += ">(";
+                                  element_expression.insert(element_expression.end(), value.begin(), value.end());
+                                  element_expression += "))";
+                                  generate_value_serialization(code, indentation, sink,
+                                                               Si::make_contiguous_range(element_expression), element,
+                                                               return_invalid_input_error);
+                                  append(code, " break;\n");
+                                  ++index;
+                              }
+                          },
+                          ";\n");
                 },
                 [&](std::unique_ptr<types::tuple> const &root)
                 {
@@ -317,91 +344,6 @@ namespace warpcoil
                     Si::append(code, ".data() + ");
                     Si::append(code, value);
                     Si::append(code, ".size())));\n");
-                });
-        }
-
-        template <class CharSink>
-        void generate_value_deserialization(CharSink &&code, indentation_level indentation, Si::memory_range source,
-                                            types::type const &type)
-        {
-            return Si::visit<void>(
-                type,
-                [&code, source](types::integer range)
-                {
-                    Si::append(code, "warpcoil::cpp::read_integer<");
-                    Si::append(code, find_suitable_uint_cpp_type(range));
-                    Si::append(code, ">(");
-                    Si::append(code, source);
-                    Si::append(code, ")");
-                },
-                [&code](std::unique_ptr<types::variant> const &)
-                {
-                    throw std::logic_error("to do");
-                },
-                [&code, source, &type, indentation](std::unique_ptr<types::tuple> const &root)
-                {
-                    Si::append(code, "[&] {\n");
-                    {
-                        indentation_level const in_lambda = indentation.deeper();
-                        in_lambda.render(code);
-                        generate_type(code, type);
-                        Si::append(code, " result;\n");
-                        for (std::size_t i = 0; i < root->elements.size(); ++i)
-                        {
-                            in_lambda.render(code);
-                            Si::append(code, "std::get<");
-                            Si::append(code, boost::lexical_cast<std::string>(i));
-                            Si::append(code, ">(result) = ");
-                            generate_value_deserialization(code, in_lambda, source, root->elements[i]);
-                            Si::append(code, ";\n");
-                        }
-                        in_lambda.render(code);
-                        Si::append(code, "return result;\n");
-                    }
-                    indentation.render(code);
-                    Si::append(code, "}()");
-                },
-                [&code, source, indentation, &type](std::unique_ptr<types::vector> const &root)
-                {
-                    Si::append(code, "[&] {\n");
-                    {
-                        indentation_level const in_lambda = indentation.deeper();
-                        in_lambda.render(code);
-                        generate_type(code, type);
-                        Si::append(code, " result(");
-                        generate_value_deserialization(code, in_lambda, source, root->length);
-                        Si::append(code, ");\n");
-                        in_lambda.render(code);
-                        Si::append(code, "for (auto &element : result) { element = ");
-                        generate_value_deserialization(code, in_lambda, source, root->element);
-                        Si::append(code, "; }\n");
-                        in_lambda.render(code);
-                        Si::append(code, "return result;\n");
-                    }
-                    indentation.render(code);
-                    Si::append(code, "}()");
-                },
-                [&code, source, indentation, &type](types::utf8 const text)
-                {
-                    Si::append(code, "[&] {\n");
-                    {
-                        indentation_level const in_lambda = indentation.deeper();
-                        in_lambda.render(code);
-                        generate_type(code, type);
-                        Si::append(code, " result;\n");
-                        in_lambda.render(code);
-                        Si::append(code, "result.resize(static_cast<std::size_t>(");
-                        generate_value_deserialization(code, in_lambda, source, text.code_units);
-                        Si::append(code, "));\n");
-                        in_lambda.render(code);
-                        Si::append(code, "for (auto &element : result) { element = ");
-                        generate_value_deserialization(code, in_lambda, source, types::integer{0, 255});
-                        Si::append(code, "; }\n");
-                        in_lambda.render(code);
-                        Si::append(code, "return result;\n");
-                    }
-                    indentation.render(code);
-                    Si::append(code, "}()");
                 });
         }
 

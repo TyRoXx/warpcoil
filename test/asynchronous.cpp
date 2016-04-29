@@ -106,6 +106,22 @@ namespace
         {
             on_result({}, argument);
         }
+
+        virtual void variant(
+            Si::variant<std::uint32_t, std::string> argument,
+            std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result) override
+        {
+            on_result({}, Si::visit<Si::variant<std::uint16_t, std::string>>(argument,
+                                                                             [](std::uint32_t value)
+                                                                             {
+                                                                                 return static_cast<std::uint16_t>(
+                                                                                     value + 1);
+                                                                             },
+                                                                             [](std::string value)
+                                                                             {
+                                                                                 return value + 'd';
+                                                                             }));
+        }
     };
 }
 

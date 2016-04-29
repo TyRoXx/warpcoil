@@ -65,6 +65,22 @@ namespace
         {
             on_result({}, argument);
         }
+
+        virtual void variant(
+            Si::variant<std::uint32_t, std::string> argument,
+            std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result) override
+        {
+            on_result({}, Si::visit<Si::variant<std::uint16_t, std::string>>(argument,
+                                                                             [](std::uint32_t value)
+                                                                             {
+                                                                                 return static_cast<std::uint16_t>(
+                                                                                     value + 1);
+                                                                             },
+                                                                             [](std::string value)
+                                                                             {
+                                                                                 return value + 'd';
+                                                                             }));
+        }
     };
 
     template <class Result>
@@ -201,4 +217,32 @@ BOOST_AUTO_TEST_CASE(async_server_multiple_parameters)
         {126});
     std::uint8_t const expected{126};
     BOOST_CHECK_EQUAL(expected, result);
+}
+
+BOOST_AUTO_TEST_CASE(async_server_variant_first)
+{
+    Si::variant<std::uint16_t, std::string> const result =
+        test_simple_request_response<Si::variant<std::uint16_t, std::string>>(
+            [](async_test_interface &client,
+               std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result)
+            {
+                client.variant(static_cast<std::uint32_t>(0x11223344), on_result);
+            },
+            {7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 0, 0x11, 0x22, 0x33, 0x44}, {0, 0x33, 0x45});
+    Si::variant<std::uint16_t, std::string> const expected{static_cast<std::uint16_t>(0x3345)};
+    BOOST_CHECK(expected == result);
+}
+
+BOOST_AUTO_TEST_CASE(async_server_variant_second)
+{
+    Si::variant<std::uint16_t, std::string> const result =
+        test_simple_request_response<Si::variant<std::uint16_t, std::string>>(
+            [](async_test_interface &client,
+               std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result)
+            {
+                client.variant(std::string("abc"), on_result);
+            },
+            {7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 1, 3, 'a', 'b', 'c'}, {1, 4, 'a', 'b', 'c', 'd'});
+    Si::variant<std::uint16_t, std::string> const expected{std::string("abcd")};
+    BOOST_CHECK(expected == result);
 }

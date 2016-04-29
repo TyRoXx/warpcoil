@@ -10,7 +10,7 @@ namespace warpcoil
         void generate_parser_type(CharSink &&code, types::type const &parsed)
         {
             return Si::visit<void>(parsed,
-                                   [&code](types::integer const parsed)
+                                   [&](types::integer const parsed)
                                    {
                                        Si::memory_range bits;
                                        if (parsed.maximum <= 0xffu)
@@ -33,11 +33,25 @@ namespace warpcoil
                                        Si::append(code, bits);
                                        Si::append(code, "_t>");
                                    },
-                                   [&code](std::unique_ptr<types::variant> const &)
+                                   [&](std::unique_ptr<types::variant> const &parsed)
                                    {
-                                       throw std::logic_error("to do");
+                                       Si::append(code, "warpcoil::cpp::variant_parser<");
+                                       bool first = true;
+                                       for (types::type const &element : parsed->elements)
+                                       {
+                                           if (first)
+                                           {
+                                               first = false;
+                                           }
+                                           else
+                                           {
+                                               Si::append(code, ", ");
+                                           }
+                                           generate_parser_type(code, element);
+                                       }
+                                       Si::append(code, ">");
                                    },
-                                   [&code](std::unique_ptr<types::tuple> const &parsed)
+                                   [&](std::unique_ptr<types::tuple> const &parsed)
                                    {
                                        Si::append(code, "warpcoil::cpp::tuple_parser<");
                                        bool first = true;
@@ -55,7 +69,7 @@ namespace warpcoil
                                        }
                                        Si::append(code, ">");
                                    },
-                                   [&code](std::unique_ptr<types::vector> const &parsed)
+                                   [&](std::unique_ptr<types::vector> const &parsed)
                                    {
                                        Si::append(code, "warpcoil::cpp::vector_parser<");
                                        generate_parser_type(code, parsed->length);
@@ -63,7 +77,7 @@ namespace warpcoil
                                        generate_parser_type(code, parsed->element);
                                        Si::append(code, ">");
                                    },
-                                   [&code](types::utf8 const text)
+                                   [&](types::utf8 const text)
                                    {
                                        Si::append(code, "warpcoil::cpp::utf8_parser<");
                                        generate_parser_type(code, text.code_units);

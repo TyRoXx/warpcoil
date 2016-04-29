@@ -93,6 +93,14 @@ int main(int argc, char **argv)
                           make_vector<types::parameter>(types::parameter{"first", types::utf8{types::integer{0, 255}}},
                                                         types::parameter{"second", types::integer{0, 0xffff}})}));
 
+        definition.methods.insert(std::make_pair(
+            "variant", types::method{Si::to_unique(types::variant{warpcoil::make_vector<types::type>(
+                                         types::integer{0, 0xffff}, types::utf8{types::integer{0, 255}})}),
+                                     make_vector<types::parameter>(types::parameter{
+                                         "argument",
+                                         Si::to_unique(types::variant{warpcoil::make_vector<types::type>(
+                                             types::integer{1, 0xffffffff}, types::utf8{types::integer{0, 255}})})})}));
+
         cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
                                                     definition);
     }
