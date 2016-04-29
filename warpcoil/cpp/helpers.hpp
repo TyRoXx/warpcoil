@@ -352,7 +352,7 @@ namespace warpcoil
 
             struct element_parser_visitor : boost::static_visitor<parse_result<result_type>>
             {
-                typedef result_type parent_result_type;
+                typedef typename variant_parser::result_type parent_result_type;
 
                 variant_parser &parent;
                 std::uint8_t const input;
