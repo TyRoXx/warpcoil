@@ -162,7 +162,7 @@ namespace warpcoil
         struct parameter
         {
             std::string name;
-            type type;
+            type type_;
         };
 
         inline type clone(type const &original)
@@ -202,7 +202,7 @@ namespace warpcoil
             result.elements.reserve(parameters.size());
             for (parameter const &parameter : parameters)
             {
-                result.elements.emplace_back(clone(parameter.type));
+                result.elements.emplace_back(clone(parameter.type_));
             }
             return result;
         }

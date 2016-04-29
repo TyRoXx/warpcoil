@@ -423,7 +423,7 @@ namespace warpcoil
         {
             for (types::parameter const &param : parameters)
             {
-                switch (generate_type(code, param.type))
+                switch (generate_type(code, param.type_))
                 {
                 case type_emptiness::empty:
                 case type_emptiness::non_empty:

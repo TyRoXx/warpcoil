@@ -82,7 +82,7 @@ namespace warpcoil
                               append(code, "(");
                               generate_parameters(code, entry.second.parameters);
                               append(code, "std::function<void(boost::system::error_code, ");
-                              type_emptiness const result_emptiness = generate_type(code, entry.second.result);
+                              generate_type(code, entry.second.result);
                               append(code, ")> on_result) override\n");
                               block(code, in_class,
                                     [&](indentation_level const in_method)
@@ -188,7 +188,7 @@ namespace warpcoil
                                       {
                                           generate_value_serialization(
                                               code, in_method, Si::make_c_str_range("request_writer"),
-                                              Si::make_contiguous_range(param.name), param.type,
+                                              Si::make_contiguous_range(param.name), param.type_,
                                               Si::make_c_str_range("handler(warpcoil::cpp::make_invalid_input_error(), "
                                                                    "{}); return result.get()"));
                                       }
