@@ -126,10 +126,7 @@ namespace warpcoil
                     token);
                 std::size_t const size = boost::asio::buffer_size(buffers);
                 m_websocket.async_write(
-                    buffers, [ handler = std::move(completion.handler), size ](boost::system::error_code ec) mutable
-                    {
-                        std::move(handler)(ec, ec ? 0 : size);
-                    });
+                    buffers, write_operation<decltype(completion.handler)>(std::move(completion.handler), size));
                 return completion.result.get();
             }
 
@@ -137,6 +134,31 @@ namespace warpcoil
             WebsocketStream m_websocket;
             ::beast::websocket::opcode m_receivedOpcode;
             ::beast::streambuf m_receiveBuffer;
+
+            template <class Handler>
+            struct write_operation
+            {
+                Handler handler;
+                std::size_t bytes_transferred;
+
+                explicit write_operation(Handler handler, std::size_t bytes_transferred)
+                    : handler(std::move(handler))
+                    , bytes_transferred(bytes_transferred)
+                {
+                }
+
+                void operator()(boost::system::error_code ec)
+                {
+                    handler(ec, ec ? 0 : bytes_transferred);
+                }
+
+                template <class Function>
+                friend void asio_handler_invoke(Function &&f, write_operation *operation)
+                {
+                    using boost::asio::asio_handler_invoke;
+                    asio_handler_invoke(f, &operation->handler);
+                }
+            };
 
             template <class MutableBufferSequence>
             std::size_t read_from_receive_buffer(MutableBufferSequence buffers)
