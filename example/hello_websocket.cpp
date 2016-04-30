@@ -63,7 +63,7 @@ int main()
                         std::make_shared<async_hello_as_a_service_client<decltype(*session), decltype(*session)>>(
                             *session, *session);
                     std::string name = "Alice";
-                    client->hello(std::move(name), [client](boost::system::error_code ec, std::string result)
+                    client->hello(std::move(name), [client, session](boost::system::error_code ec, std::string result)
                                   {
                                       Si::throw_if_error(ec);
                                       std::cout << result << '\n';
