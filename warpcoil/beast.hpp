@@ -74,47 +74,15 @@ namespace warpcoil
                 std::size_t const read = read_from_receive_buffer(buffers);
                 if (read)
                 {
-                    std::move(completion.handler)(boost::system::error_code(), read);
+                    using boost::asio::asio_handler_invoke;
+                    asio_handler_invoke(std::bind(std::ref(completion.handler), boost::system::error_code(), read),
+                                        &completion.handler);
                 }
                 else
                 {
-                    m_websocket.async_read(
-                        m_receivedOpcode, m_receiveBuffer,
-                        [ this, buffers, handler = std::move(completion.handler) ](boost::system::error_code ec) mutable
-                        {
-                            if (!!ec)
-                            {
-                                std::move(handler)(ec, 0);
-                                return;
-                            }
-                            switch (m_receivedOpcode)
-                            {
-                            case ::beast::websocket::opcode::binary:
-                            case ::beast::websocket::opcode::text:
-                                std::move(handler)(ec, read_from_receive_buffer(buffers));
-                                break;
-
-                            case ::beast::websocket::opcode::close:
-                                std::move(handler)(websocket_error::close, 0);
-                                break;
-
-                            case ::beast::websocket::opcode::cont:
-                            case ::beast::websocket::opcode::rsv3:
-                            case ::beast::websocket::opcode::rsv4:
-                            case ::beast::websocket::opcode::rsv5:
-                            case ::beast::websocket::opcode::rsv6:
-                            case ::beast::websocket::opcode::rsv7:
-                            case ::beast::websocket::opcode::ping:
-                            case ::beast::websocket::opcode::pong:
-                            case ::beast::websocket::opcode::crsvb:
-                            case ::beast::websocket::opcode::crsvc:
-                            case ::beast::websocket::opcode::crsvd:
-                            case ::beast::websocket::opcode::crsve:
-                            case ::beast::websocket::opcode::crsvf:
-                                std::move(handler)(websocket_error::unexpected_opcode, 0);
-                                break;
-                            }
-                        });
+                    typedef read_operation<decltype(completion.handler), MutableBufferSequence> my_handler;
+                    m_websocket.async_read(m_receivedOpcode, m_receiveBuffer,
+                                           my_handler{std::move(completion.handler), buffers, *this});
                 }
                 return completion.result.get();
             }
@@ -134,6 +102,64 @@ namespace warpcoil
             WebsocketStream m_websocket;
             ::beast::websocket::opcode m_receivedOpcode;
             ::beast::streambuf m_receiveBuffer;
+
+            template <class Handler, class MutableBufferSequence>
+            struct read_operation
+            {
+                Handler handler;
+                MutableBufferSequence buffers;
+                async_stream_adaptor &parent;
+
+                explicit read_operation(Handler handler, MutableBufferSequence buffers, async_stream_adaptor &parent)
+                    : handler(std::move(handler))
+                    , buffers(buffers)
+                    , parent(parent)
+                {
+                }
+
+                void operator()(boost::system::error_code ec)
+                {
+                    if (!!ec)
+                    {
+                        std::move(handler)(ec, 0);
+                        return;
+                    }
+                    switch (parent.m_receivedOpcode)
+                    {
+                    case ::beast::websocket::opcode::binary:
+                    case ::beast::websocket::opcode::text:
+                        std::move(handler)(ec, parent.read_from_receive_buffer(buffers));
+                        break;
+
+                    case ::beast::websocket::opcode::close:
+                        std::move(handler)(websocket_error::close, 0);
+                        break;
+
+                    case ::beast::websocket::opcode::cont:
+                    case ::beast::websocket::opcode::rsv3:
+                    case ::beast::websocket::opcode::rsv4:
+                    case ::beast::websocket::opcode::rsv5:
+                    case ::beast::websocket::opcode::rsv6:
+                    case ::beast::websocket::opcode::rsv7:
+                    case ::beast::websocket::opcode::ping:
+                    case ::beast::websocket::opcode::pong:
+                    case ::beast::websocket::opcode::crsvb:
+                    case ::beast::websocket::opcode::crsvc:
+                    case ::beast::websocket::opcode::crsvd:
+                    case ::beast::websocket::opcode::crsve:
+                    case ::beast::websocket::opcode::crsvf:
+                        std::move(handler)(websocket_error::unexpected_opcode, 0);
+                        break;
+                    }
+                }
+
+                template <class Function>
+                friend void asio_handler_invoke(Function &&f, read_operation *operation)
+                {
+                    using boost::asio::asio_handler_invoke;
+                    asio_handler_invoke(f, &operation->handler);
+                }
+            };
 
             template <class Handler>
             struct write_operation
