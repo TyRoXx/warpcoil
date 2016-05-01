@@ -1,95 +1,20 @@
 #include "test_streams.hpp"
 #include "checkpoint.hpp"
 #include "generated.hpp"
+#include "impl_test_interface.hpp"
 #include "boost_print_log_value.hpp"
 #include <silicium/exchange.hpp>
 #include <silicium/error_or.hpp>
 
 namespace
 {
-    struct impl_test_interface : async_test_interface
-    {
-        void
-        integer_sizes(std::tuple<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t> argument,
-                      std::function<void(boost::system::error_code, std::vector<std::uint16_t>)> on_result) override
-        {
-            on_result({}, std::vector<std::uint16_t>{std::get<1>(argument)});
-        }
-
-        void no_result_no_parameter(std::tuple<> argument,
-                                    std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
-        {
-            on_result({}, argument);
-        }
-
-        void real_multi_parameters(std::string first, std::uint16_t second,
-                                   std::function<void(boost::system::error_code, std::uint8_t)> on_result) override
-        {
-            on_result({}, static_cast<std::uint8_t>(first.size() + second));
-        }
-
-        void two_parameters(std::tuple<std::uint64_t, std::uint64_t> argument,
-                            std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
-        {
-            on_result({}, std::get<0>(argument) * std::get<1>(argument));
-        }
-
-        void two_results(
-            std::uint64_t argument,
-            std::function<void(boost::system::error_code, std::tuple<std::uint64_t, std::uint64_t>)> on_result) override
-        {
-            on_result({}, std::make_tuple(argument, argument));
-        }
-
-        void utf8(std::string argument, std::function<void(boost::system::error_code, std::string)> on_result) override
-        {
-            on_result({}, "Hello, " + argument + "!");
-        }
-
-        void vectors(std::vector<std::uint64_t> argument,
-                     std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
-        {
-            std::reverse(argument.begin(), argument.end());
-            on_result({}, std::move(argument));
-        }
-
-        void vectors_256(std::vector<std::uint64_t> argument,
-                         std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result) override
-        {
-            std::reverse(argument.begin(), argument.end());
-            on_result({}, std::move(argument));
-        }
-
-        void atypical_int(std::uint16_t argument,
-                          std::function<void(boost::system::error_code, std::uint16_t)> on_result) override
-        {
-            on_result({}, argument);
-        }
-
-        virtual void variant(
-            Si::variant<std::uint32_t, std::string> argument,
-            std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result) override
-        {
-            on_result({}, Si::visit<Si::variant<std::uint16_t, std::string>>(argument,
-                                                                             [](std::uint32_t value)
-                                                                             {
-                                                                                 return static_cast<std::uint16_t>(
-                                                                                     value + 1);
-                                                                             },
-                                                                             [](std::string value)
-                                                                             {
-                                                                                 return value + 'd';
-                                                                             }));
-        }
-    };
-
     template <class Result>
     Result test_simple_request_response(
         std::function<void(async_test_interface &, std::function<void(boost::system::error_code, Result)>)>
             begin_request,
         std::vector<std::uint8_t> expected_request, std::vector<std::uint8_t> expected_response)
     {
-        impl_test_interface server_impl;
+        warpcoil::impl_test_interface server_impl;
         warpcoil::async_read_stream server_requests;
         warpcoil::async_write_stream server_responses;
         async_test_interface_server<warpcoil::async_read_stream, warpcoil::async_write_stream> server(
@@ -170,9 +95,8 @@ BOOST_AUTO_TEST_CASE(async_server_utf8)
         {
             client.utf8("Name", on_result);
         },
-        {4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'},
-        {12, 'H', 'e', 'l', 'l', 'o', ',', ' ', 'N', 'a', 'm', 'e', '!'});
-    BOOST_CHECK_EQUAL("Hello, Name!", result);
+        {4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'}, {7, 'N', 'a', 'm', 'e', '1', '2', '3'});
+    BOOST_CHECK_EQUAL("Name123", result);
 }
 
 BOOST_AUTO_TEST_CASE(async_server_vector)
