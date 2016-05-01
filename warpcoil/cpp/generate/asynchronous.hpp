@@ -71,9 +71,6 @@ namespace warpcoil
                           append(code, "async_type_erased_");
                           append(code, name);
                           append(code, "(Client &client) : client(client) {}\n\n");
-                          start_line(code, indentation, "virtual ~async_type_erased_");
-                          append(code, name);
-                          append(code, "() {}\n\n");
                           for (auto const &entry : definition.methods)
                           {
                               in_class.render(code);
