@@ -11,6 +11,7 @@ int main(int argc, char **argv)
     auto code_writer = Si::make_container_sink(code);
     Si::append(code_writer, "#pragma once\n"
                             "#include <warpcoil/cpp/helpers.hpp>\n"
+                            "#include <warpcoil/cpp/request_operation.hpp>\n"
                             "#include <silicium/source/source.hpp>\n"
                             "#include <silicium/sink/iterator_sink.hpp>\n"
                             "#include <silicium/sink/append.hpp>\n"
