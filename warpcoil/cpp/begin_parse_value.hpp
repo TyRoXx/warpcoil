@@ -1,6 +1,7 @@
 #pragma once
 
 #include <warpcoil/cpp/helpers.hpp>
+#include <boost/asio/buffer.hpp>
 
 namespace warpcoil
 {

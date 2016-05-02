@@ -3,6 +3,7 @@
 #include <warpcoil/cpp/parse_result.hpp>
 #include <silicium/source/source.hpp>
 #include <silicium/sink/sink.hpp>
+#include <silicium/sink/append.hpp>
 
 namespace warpcoil
 {
