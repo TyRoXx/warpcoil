@@ -336,9 +336,9 @@ namespace warpcoil
                                   in_method.render(code);
                                   append(code, "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
                                                "request_buffer_used, method_name_parser(), "
-                                               "[this, handle_result = "
-                                               "std::forward<Handler>(handle_result)](boost::system::error_code ec, "
-                                               "std::string name) mutable\n");
+                                               "warpcoil::cpp::make_handler_with_argument([this"
+                                               "](boost::system::error_code ec, "
+                                               "std::string name, Handler &handle_result)\n");
                                   block(code, in_method,
                                         [&](indentation_level const on_result)
                                         {
@@ -375,7 +375,7 @@ namespace warpcoil
                                             append(code, "else { throw std::logic_error(\"to do: handle "
                                                          "unknown method name\"); }\n");
                                         },
-                                        ");\n");
+                                        ", std::forward<Handler>(handle_result)));\n");
                               },
                               "\n");
 

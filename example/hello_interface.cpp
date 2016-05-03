@@ -12,6 +12,7 @@ int main(int argc, char **argv)
     Si::append(code_writer, "#pragma once\n"
                             "#include <warpcoil/cpp/begin_parse_value.hpp>\n"
                             "#include <warpcoil/cpp/request_operation.hpp>\n"
+                            "#include <warpcoil/cpp/handler_with_argument.hpp>\n"
                             "#include <silicium/source/source.hpp>\n"
                             "#include <silicium/sink/iterator_sink.hpp>\n"
                             "#include <silicium/sink/append.hpp>\n"
