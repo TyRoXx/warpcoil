@@ -396,12 +396,11 @@ namespace warpcoil
                                                  "request_buffer_used, ");
                                       types::type const parameter_type = get_parameter_type(entry.second.parameters);
                                       generate_parser_type(code, parameter_type);
-                                      append(code,
-                                             "{}, "
-                                             "[this, handle_result = "
-                                             "std::forward<Handler>(handle_result)](boost::system::error_code ec, ");
+                                      append(code, "{}, "
+                                                   "warpcoil::cpp::make_handler_with_argument([this](boost::system::"
+                                                   "error_code ec, ");
                                       generate_type(code, parameter_type);
-                                      append(code, " argument) mutable\n");
+                                      append(code, " argument, Handler &handle_result)\n");
                                       block(
                                           code, in_method,
                                           [&](indentation_level const on_result)
@@ -414,9 +413,7 @@ namespace warpcoil
                                               append(code, "(");
                                               move_arguments_out_of_tuple(code, Si::make_c_str_range("argument"),
                                                                           entry.second.parameters.size());
-                                              append(code, "[this, "
-                                                           "handle_result = "
-                                                           "std::forward<Handler>(handle_result)](boost::"
+                                              append(code, "warpcoil::cpp::make_handler_with_argument([this](boost::"
                                                            "system::error_code ec, ");
                                               type_emptiness const result_empty =
                                                   generate_type(code, entry.second.result);
@@ -429,7 +426,7 @@ namespace warpcoil
                                                   append(code, " result");
                                                   break;
                                               }
-                                              append(code, ") mutable\n");
+                                              append(code, ", Handler &handle_result)\n");
                                               block(code, on_result,
                                                     [&](indentation_level const in_lambda)
                                                     {
@@ -464,10 +461,11 @@ namespace warpcoil
                                                             in_lambda.render(code);
                                                             append(code, "boost::asio::async_write(responses,"
                                                                          " boost::asio::buffer(response_"
-                                                                         "buffer), [handle_result = "
-                                                                         "std::forward<Handler>(handle_result)](boost::"
+                                                                         "buffer), "
+                                                                         "warpcoil::cpp::make_handler_with_argument([]("
+                                                                         "boost::"
                                                                          "system::error_code ec, "
-                                                                         "std::size_t) mutable\n");
+                                                                         "std::size_t, Handler &handle_result)\n");
                                                             block(code, in_lambda,
                                                                   [&](indentation_level const in_read)
                                                                   {
@@ -475,13 +473,13 @@ namespace warpcoil
                                                                       append(code, "std::forward<Handler>("
                                                                                    "handle_result)(ec);\n");
                                                                   },
-                                                                  ");\n");
+                                                                  ", std::forward<Handler>(handle_result)));\n");
                                                             break;
                                                         }
                                                     },
-                                                    ");\n");
+                                                    ", std::forward<Handler>(handle_result)));\n");
                                           },
-                                          ");\n");
+                                          ", std::forward<Handler>(handle_result)));\n");
                                   },
                                   "\n");
                         }
