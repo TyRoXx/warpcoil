@@ -21,6 +21,7 @@ namespace warpcoil
             {
             }
 
+            template <bool IsSurelyCalledInHandlerContext>
             void start() &&
             {
                 using boost::asio::asio_handler_invoke;
@@ -34,9 +35,16 @@ namespace warpcoil
                             {
                                 std::copy(data + i + 1, data + m_receive_buffer_used, data);
                                 m_receive_buffer_used -= 1 + i;
-                                asio_handler_invoke(
-                                    std::bind(std::ref(m_on_result), boost::system::error_code(), std::move(message)),
-                                    &m_on_result);
+                                if (IsSurelyCalledInHandlerContext)
+                                {
+                                    m_on_result(boost::system::error_code(), std::move(message));
+                                }
+                                else
+                                {
+                                    asio_handler_invoke(std::bind(std::ref(m_on_result), boost::system::error_code(),
+                                                                  std::move(message)),
+                                                        &m_on_result);
+                                }
                                 return true;
                             },
                             [](need_more_input)
@@ -45,9 +53,16 @@ namespace warpcoil
                             },
                             [&](invalid_input)
                             {
-                                asio_handler_invoke(std::bind(std::ref(m_on_result), make_invalid_input_error(),
-                                                              typename Parser::result_type{}),
-                                                    &m_on_result);
+                                if (IsSurelyCalledInHandlerContext)
+                                {
+                                    m_on_result(make_invalid_input_error(), typename Parser::result_type{});
+                                }
+                                else
+                                {
+                                    asio_handler_invoke(std::bind(std::ref(m_on_result), make_invalid_input_error(),
+                                                                  typename Parser::result_type{}),
+                                                        &m_on_result);
+                                }
                                 return true;
                             }))
                     {
@@ -61,13 +76,13 @@ namespace warpcoil
             {
                 if (!!ec)
                 {
-                    using boost::asio::asio_handler_invoke;
-                    asio_handler_invoke(std::bind(std::ref(m_on_result), ec, typename Parser::result_type{}),
-                                        &m_on_result);
+                    // No asio_handler_invoke because we assume that this method gets called only in the correct
+                    // context.
+                    m_on_result(ec, typename Parser::result_type{});
                     return;
                 }
                 m_receive_buffer_used = read;
-                std::move(*this).start();
+                std::move(*this).template start<true>();
             }
 
             template <class Function>
@@ -91,7 +106,7 @@ namespace warpcoil
         {
             parse_operation<AsyncReadStream, Buffer, Parser, typename std::decay<ResultHandler>::type> operation(
                 input, receive_buffer, receive_buffer_used, std::move(parser), std::forward<ResultHandler>(on_result));
-            std::move(operation).start();
+            std::move(operation).template start<false>();
         }
     }
 }
