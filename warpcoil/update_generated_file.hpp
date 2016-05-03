@@ -30,13 +30,14 @@ namespace warpcoil
                                },
                                [&](boost::system::error_code error)
                                {
-                                   log << "Could not read " << file << "\n" << error << '\n';
+                                   log << "Could not read " << file << "\nError code: " << error << '\n';
                                    error = ventura::write_file(ventura::safe_c_str(file_name), new_content);
                                    if (!!error)
                                    {
                                        log << "Could not open " << file << "\n" << error << '\n';
                                        return false;
                                    }
+                                   log << "Write file " << file << '\n';
                                    return true;
                                },
                                [&](ventura::read_file_problem const problem)
