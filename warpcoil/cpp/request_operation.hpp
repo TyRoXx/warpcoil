@@ -68,5 +68,29 @@ namespace warpcoil
                 asio_handler_invoke(f, &operation->m_handler);
             }
         };
+
+        template <class ResultHandler>
+        struct no_response_request_send_operation
+        {
+            explicit no_response_request_send_operation(ResultHandler handler)
+                : m_handler(std::move(handler))
+            {
+            }
+
+            void operator()(boost::system::error_code ec, std::size_t)
+            {
+                m_handler(ec, {});
+            }
+
+        private:
+            ResultHandler m_handler;
+
+            template <class Function>
+            friend void asio_handler_invoke(Function &&f, no_response_request_send_operation *operation)
+            {
+                using boost::asio::asio_handler_invoke;
+                asio_handler_invoke(f, &operation->m_handler);
+            }
+        };
     }
 }
