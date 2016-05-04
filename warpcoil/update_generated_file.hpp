@@ -26,6 +26,7 @@ namespace warpcoil
                                        log << "Could not open " << file << "\n" << error << '\n';
                                        return false;
                                    }
+                                   log << "Wrote file " << file << " (" << new_content.size() << " bytes)\n";
                                    return true;
                                },
                                [&](boost::system::error_code error)
@@ -37,7 +38,7 @@ namespace warpcoil
                                        log << "Could not open " << file << "\n" << error << '\n';
                                        return false;
                                    }
-                                   log << "Write file " << file << '\n';
+                                   log << "Wrote file " << file << " (" << new_content.size() << " bytes)\n";
                                    return true;
                                },
                                [&](ventura::read_file_problem const problem)
