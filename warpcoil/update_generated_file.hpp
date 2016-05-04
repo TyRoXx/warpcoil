@@ -77,6 +77,7 @@ namespace warpcoil
                 log << "command line argument for the clang-format config directory missing\n";
                 return 1;
             }
+            log << "formatting the code (originally " << code.size() << " bytes)\n";
             auto formatted_code_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(formatted_code));
             ventura::process_parameters parameters;
             parameters.executable = *clang_format;
