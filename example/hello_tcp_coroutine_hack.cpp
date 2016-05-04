@@ -197,15 +197,16 @@ int main()
     // server:
     ip::tcp::acceptor acceptor(io, ip::tcp::endpoint(ip::tcp::v6(), 0), true);
     acceptor.listen();
-    warpcoil::spawn_coroutine(io, [&io, &acceptor](warpcoil::yield_context yield)
-                              {
-                                  ip::tcp::socket accepted_socket(io);
-                                  server::my_hello_service server_impl;
-                                  acceptor.async_accept(accepted_socket, yield);
-                                  async_hello_as_a_service_server<ip::tcp::socket, ip::tcp::socket> server(
-                                      server_impl, accepted_socket, accepted_socket);
-                                  server.serve_one_request(yield);
-                              });
+    warpcoil::spawn_coroutine(
+        io, [&io, &acceptor](warpcoil::yield_context yield)
+        {
+            ip::tcp::socket accepted_socket(io);
+            server::my_hello_service server_impl;
+            acceptor.async_accept(accepted_socket, yield);
+            async_hello_as_a_service_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket> server(
+                server_impl, accepted_socket, accepted_socket);
+            server.serve_one_request(yield);
+        });
     // client:
     warpcoil::spawn_coroutine(io, [&io, &acceptor](warpcoil::yield_context yield)
                               {

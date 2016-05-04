@@ -55,21 +55,22 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
     boost::asio::ip::tcp::socket accepted_socket(io);
     bool ok1 = false;
     warpcoil::impl_test_interface server_impl;
-    acceptor.async_accept(
-        accepted_socket, [&io, &accepted_socket, &ok1, &server_impl](boost::system::error_code ec)
-        {
-            BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-            boost::asio::spawn(
-                io, [&server_impl, &accepted_socket, &ok1](boost::asio::yield_context yield)
-                {
-                    async_test_interface_server<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> server(
-                        server_impl, accepted_socket, accepted_socket);
-                    server.serve_one_request(yield);
-                    server.serve_one_request(yield);
-                    BOOST_REQUIRE(!ok1);
-                    ok1 = true;
-                });
-        });
+    acceptor.async_accept(accepted_socket, [&io, &accepted_socket, &ok1, &server_impl](boost::system::error_code ec)
+                          {
+                              BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
+                              boost::asio::spawn(
+                                  io, [&server_impl, &accepted_socket, &ok1](boost::asio::yield_context yield)
+                                  {
+                                      async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
+                                                                  boost::asio::ip::tcp::socket> server(server_impl,
+                                                                                                       accepted_socket,
+                                                                                                       accepted_socket);
+                                      server.serve_one_request(yield);
+                                      server.serve_one_request(yield);
+                                      BOOST_REQUIRE(!ok1);
+                                      ok1 = true;
+                                  });
+                          });
     boost::asio::ip::tcp::socket socket(io);
     async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, socket);
     bool ok2 = false;

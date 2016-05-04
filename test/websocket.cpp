@@ -37,7 +37,8 @@ BOOST_AUTO_TEST_CASE(websocket)
                     websocket_accepted.enter();
                     received_response.enable();
                     Si::throw_if_error(ec);
-                    auto server = std::make_shared<async_test_interface_server<decltype(*session), decltype(*session)>>(
+                    auto server = std::make_shared<
+                        async_test_interface_server<decltype(server_impl), decltype(*session), decltype(*session)>>(
                         server_impl, *session, *session);
                     server->serve_one_request([server, session, &served](boost::system::error_code ec)
                                               {

@@ -256,7 +256,7 @@ namespace warpcoil
                                                types::interface_definition const &definition)
             {
                 using Si::append;
-                append(code, "template <class AsyncReadStream, class AsyncWriteStream>\n");
+                append(code, "template <class Implementation, class AsyncReadStream, class AsyncWriteStream>\n");
                 indentation.render(code);
                 append(code, "struct async_");
                 append(code, name);
@@ -269,10 +269,9 @@ namespace warpcoil
                         in_class.render(code);
                         append(code, "explicit async_");
                         append(code, name);
-                        append(code, "_server(async_");
-                        append(code, name);
-                        append(code, " &implementation, AsyncReadStream &requests, AsyncWriteStream "
-                                     "&responses)\n");
+                        append(code,
+                               "_server(Implementation &implementation, AsyncReadStream &requests, AsyncWriteStream "
+                               "&responses)\n");
                         in_class.deeper().render(code);
                         append(code, ": implementation(implementation), requests(requests), "
                                      "request_buffer_used(0), responses(responses) {}\n\n");
@@ -309,9 +308,7 @@ namespace warpcoil
                         append(code, "private:\n");
 
                         in_class.render(code);
-                        append(code, "async_");
-                        append(code, name);
-                        append(code, " &implementation;\n");
+                        append(code, "Implementation &implementation;\n");
                         in_class.render(code);
                         append(code, "AsyncReadStream &requests;\n");
                         in_class.render(code);

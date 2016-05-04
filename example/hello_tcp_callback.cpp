@@ -25,17 +25,18 @@ int main()
     acceptor.listen();
     ip::tcp::socket accepted_socket(io);
     server::my_hello_service server_impl;
-    acceptor.async_accept(accepted_socket, [&accepted_socket, &server_impl](boost::system::error_code ec)
-                          {
-                              Si::throw_if_error(ec);
-                              auto server =
-                                  std::make_shared<async_hello_as_a_service_server<ip::tcp::socket, ip::tcp::socket>>(
-                                      server_impl, accepted_socket, accepted_socket);
-                              server->serve_one_request([server](boost::system::error_code ec)
-                                                        {
-                                                            Si::throw_if_error(ec);
-                                                        });
-                          });
+    acceptor.async_accept(
+        accepted_socket, [&accepted_socket, &server_impl](boost::system::error_code ec)
+        {
+            Si::throw_if_error(ec);
+            auto server = std::make_shared<
+                async_hello_as_a_service_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket>>(
+                server_impl, accepted_socket, accepted_socket);
+            server->serve_one_request([server](boost::system::error_code ec)
+                                      {
+                                          Si::throw_if_error(ec);
+                                      });
+        });
 
     // client:
     ip::tcp::socket connecting_socket(io);

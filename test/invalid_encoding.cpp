@@ -98,8 +98,8 @@ namespace
         failing_test_interface server_impl;
         warpcoil::async_read_stream server_requests;
         warpcoil::async_write_stream server_responses;
-        async_test_interface_server<warpcoil::async_read_stream, warpcoil::async_write_stream> server(
-            server_impl, server_requests, server_responses);
+        async_test_interface_server<decltype(server_impl), warpcoil::async_read_stream, warpcoil::async_write_stream>
+            server(server_impl, server_requests, server_responses);
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
         warpcoil::checkpoint request_served;

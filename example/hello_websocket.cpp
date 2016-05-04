@@ -36,9 +36,9 @@ int main()
                 [session, &server_impl](boost::system::error_code ec)
                 {
                     Si::throw_if_error(ec);
-                    auto server =
-                        std::make_shared<async_hello_as_a_service_server<decltype(*session), decltype(*session)>>(
-                            server_impl, *session, *session);
+                    auto server = std::make_shared<
+                        async_hello_as_a_service_server<decltype(server_impl), decltype(*session), decltype(*session)>>(
+                        server_impl, *session, *session);
                     server->serve_one_request([server, session](boost::system::error_code ec)
                                               {
                                                   Si::throw_if_error(ec);
