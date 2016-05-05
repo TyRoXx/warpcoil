@@ -285,7 +285,7 @@ namespace warpcoil
                                   ++index;
                               }
                           },
-                          ";\n");
+                          "\n");
                 },
                 [&](std::unique_ptr<types::tuple> const &root)
                 {
