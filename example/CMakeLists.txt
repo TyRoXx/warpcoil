@@ -24,19 +24,14 @@ target_link_libraries(hello_tcp_callback ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_
 add_dependencies(hello_tcp_callback hello_interfaces_header)
 target_include_directories(hello_tcp_callback PRIVATE ${CMAKE_BINARY_DIR})
 
-if(NOT WIN32)
-	#boost::asio::spawn can make the creation of a socket crash with an Access Violation.
-	#WSASocketW indirectly calls LoadLibraryExW which is not fully supported by Boost Coroutines.
-	#http://boost.2283326.n4.nabble.com/boost-context-cause-strange-crash-on-certan-WIN32-API-td4669587.html
-	set(demoSources "hello_tcp_coroutine.cpp")
-	if(EXISTS ${generatedHeader})
-		set(demoSources ${demoSources} ${generatedHeader})
-	endif()
-	add_executable(hello_tcp_coroutine ${demoSources})
-	target_link_libraries(hello_tcp_coroutine ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CONAN_LIBS})
-	add_dependencies(hello_tcp_coroutine hello_interfaces_header)
-	target_include_directories(hello_tcp_coroutine PRIVATE ${CMAKE_BINARY_DIR})
+set(demoSources "hello_tcp_coroutine.cpp")
+if(EXISTS ${generatedHeader})
+	set(demoSources ${demoSources} ${generatedHeader})
 endif()
+add_executable(hello_tcp_coroutine ${demoSources})
+target_link_libraries(hello_tcp_coroutine ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CONAN_LIBS})
+add_dependencies(hello_tcp_coroutine hello_interfaces_header)
+target_include_directories(hello_tcp_coroutine PRIVATE ${CMAKE_BINARY_DIR})
 
 set(demoSources "hello_tcp_coroutine_hack.cpp")
 if(EXISTS ${generatedHeader})
