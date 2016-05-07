@@ -32,6 +32,12 @@ if(UNIX)
 
 	#reduce size of binaries in the order of ~10%
 	add_definitions("-fvisibility=hidden -fvisibility-inlines-hidden")
+
+	option(WARPCOIL_COVERAGE "passes -coverage to the compiler" OFF)
+	if(WARPCOIL_COVERAGE)
+		add_definitions("-coverage")
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -coverage")
+	endif()
 endif()
 
 if(MSVC)

@@ -16,10 +16,10 @@ addons:
     - g++-4.8
 
 env:
- - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Release CONAN="-s compiler.version=4.9 -s build_type=Release"
- - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Debug   CONAN="-s compiler.version=4.9 -s build_type=Debug"
- - CPP=g++-4.8 GCC=gcc-4.8 BUILD_TYPE=Release CONAN="-s compiler.version=4.8 -s build_type=Release"
- - CPP=g++-4.8 GCC=gcc-4.8 BUILD_TYPE=Debug   CONAN="-s compiler.version=4.8 -s build_type=Debug"
+ - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Release CONAN="-s compiler.version=4.9 -s build_type=Release" COVERAGE=YES
+ - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Debug   CONAN="-s compiler.version=4.9 -s build_type=Debug"   COVERAGE=NO
+ - CPP=g++-4.8 GCC=gcc-4.8 BUILD_TYPE=Release CONAN="-s compiler.version=4.8 -s build_type=Release" COVERAGE=NO
+ - CPP=g++-4.8 GCC=gcc-4.8 BUILD_TYPE=Debug   CONAN="-s compiler.version=4.8 -s build_type=Debug"   COVERAGE=NO
 
 install:
  - wget https://s3-eu-west-1.amazonaws.com/conanio-production/downloads/conan-ubuntu-64_0_9_0.deb -O conan.deb || exit 1
@@ -37,9 +37,10 @@ script:
  - mkdir build
  - pushd build
  - CXX=$CPP CC=$GCC conan install --build silicium --build ventura --build Beast -s compiler=gcc $CONAN .. || exit 1
- - CXX=$CPP CC=$GCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DWARPCOIL_WARNING_IS_ERROR=ON -DWARPCOIL_USE_CLANG_FORMAT=OFF || exit 1
+ - CXX=$CPP CC=$GCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DWARPCOIL_WARNING_IS_ERROR=ON -DWARPCOIL_USE_CLANG_FORMAT=OFF -DWARPCOIL_COVERAGE=$COVERAGE || exit 1
  - cmake --build . -- -j2 || exit 1
  - pushd bin
- - if [ $NO_RTTI != "ON" ]; then
-     ./tests || exit 1;
+ - ./tests || exit 1
+ - if [ $COVERAGE == "YES" ]; then
+     bash <(curl -s https://codecov.io/bash) || exit 1;
    fi
