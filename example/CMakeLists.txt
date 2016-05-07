@@ -5,7 +5,7 @@ add_executable(hello_interfaces "hello_interface.cpp")
 target_link_libraries(hello_interfaces ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${CONAN_LIBS})
 set(generatedHeader ${CMAKE_BINARY_DIR}/hello_interfaces.hpp)
 
-if(WARPCOIL_CLANG_FORMAT)
+if(WARPCOIL_USE_CLANG_FORMAT AND WARPCOIL_CLANG_FORMAT)
 	add_custom_target(hello_interfaces_header
 		COMMAND $<TARGET_FILE:hello_interfaces> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
 		DEPENDS hello_interfaces)
