@@ -265,23 +265,24 @@ namespace warpcoil
                                                  types::integer{0, root->elements.size() - 1},
                                                  return_invalid_input_error);
 
-                    start_line(code, indentation, "switch (", value, ".index())");
+                    start_line(code, indentation, "switch (", value, ".index())\n");
                     block(code, indentation,
                           [&](indentation_level const in_switch)
                           {
                               std::size_t index = 0;
                               for (types::type const &element : root->elements)
                               {
-                                  start_line(code, in_switch, "case ", boost::lexical_cast<std::string>(index), ": ");
+                                  start_line(code, in_switch, "case ", boost::lexical_cast<std::string>(index), ":\n");
+                                  indentation_level const in_case = in_switch.deeper();
                                   std::string element_expression = "(*Si::try_get_ptr<";
                                   generate_type(Si::make_container_sink(element_expression), element);
                                   element_expression += ">(";
                                   element_expression.insert(element_expression.end(), value.begin(), value.end());
                                   element_expression += "))";
-                                  generate_value_serialization(code, indentation, sink,
+                                  generate_value_serialization(code, in_case, sink,
                                                                Si::make_contiguous_range(element_expression), element,
                                                                return_invalid_input_error);
-                                  append(code, " break;\n");
+                                  start_line(code, in_case, "break;\n");
                                   ++index;
                               }
                           },
@@ -327,7 +328,6 @@ namespace warpcoil
                 {
                     start_line(code, indentation, "if (!utf8::is_valid(", value, ".begin(), ", value, ".end())) { ",
                                return_invalid_input_error, "; }\n");
-                    indentation.render(code);
                     {
                         std::string size;
                         size.append(value.begin(), value.end());
@@ -335,7 +335,7 @@ namespace warpcoil
                         generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(size),
                                                      text.code_units, return_invalid_input_error);
                     }
-                    Si::append(code, "Si::append(");
+                    start_line(code, indentation, "Si::append(");
                     Si::append(code, sink);
                     Si::append(code, ", Si::make_iterator_range(reinterpret_cast<std::uint8_t const *>(");
                     Si::append(code, value);
