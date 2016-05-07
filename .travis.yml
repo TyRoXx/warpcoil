@@ -42,5 +42,7 @@ script:
  - pushd bin
  - ./tests || exit 1
  - if [ $COVERAGE == "YES" ]; then
-     bash <(curl -s https://codecov.io/bash) || exit 1;
+     curl -s https://codecov.io/bash > codecov.sh || exit 1;
+     chmod +x codecov.sh || exit 1;
+     ./codecov.sh -x gcov-4.9 || exit 1;
    fi
