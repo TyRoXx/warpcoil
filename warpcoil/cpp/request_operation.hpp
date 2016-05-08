@@ -25,12 +25,6 @@ namespace warpcoil
                     m_handler(ec, std::get<1>(std::move(response)));
                 }
 
-                void operator()(boost::system::error_code ec, request_id)
-                {
-                    // TODO: use request_id
-                    m_handler(ec, {});
-                }
-
             private:
                 ResultHandler m_handler;
 
@@ -80,43 +74,6 @@ namespace warpcoil
                     asio_handler_invoke(f, &operation->m_handler);
                 }
             };
-
-            template <class ResultHandler, class AsyncReadStream, class Buffer>
-            struct no_response_request_send_operation
-            {
-                explicit no_response_request_send_operation(ResultHandler handler, AsyncReadStream &input,
-                                                            Buffer receive_buffer, std::size_t &receive_buffer_used)
-                    : m_handler(std::move(handler))
-                    , m_input(input)
-                    , m_receive_buffer(receive_buffer)
-                    , m_receive_buffer_used(receive_buffer_used)
-                {
-                }
-
-                void operator()(boost::system::error_code ec, std::size_t)
-                {
-                    if (!!ec)
-                    {
-                        m_handler(ec, {});
-                        return;
-                    }
-                    begin_parse_value(m_input, m_receive_buffer, m_receive_buffer_used, integer_parser<request_id>(),
-                                      response_parse_operation<ResultHandler, request_id>(std::move(m_handler)));
-                }
-
-            private:
-                ResultHandler m_handler;
-                AsyncReadStream &m_input;
-                Buffer m_receive_buffer;
-                std::size_t &m_receive_buffer_used;
-
-                template <class Function>
-                friend void asio_handler_invoke(Function &&f, no_response_request_send_operation *operation)
-                {
-                    using boost::asio::asio_handler_invoke;
-                    asio_handler_invoke(f, &operation->m_handler);
-                }
-            };
         }
 
         enum class client_pipeline_request_status
@@ -157,29 +114,6 @@ namespace warpcoil
                                                                   AsyncReadStream, decltype(receive_buffer),
                                                                   ResultParser>(std::move(handler), responses,
                                                                                 receive_buffer, response_buffer_used));
-            }
-
-            template <class ResultParser, class RequestBuilder, class ResultHandler>
-            void request_without_response(RequestBuilder build_request, ResultHandler &handler)
-            {
-                begin_request();
-                {
-                    auto sink = Si::Sink<std::uint8_t>::erase(Si::make_container_sink(request_buffer));
-                    switch (build_request(sink))
-                    {
-                    case client_pipeline_request_status::ok:
-                        break;
-
-                    case client_pipeline_request_status::failure:
-                        return;
-                    }
-                }
-                auto receive_buffer = boost::asio::buffer(response_buffer);
-                boost::asio::async_write(
-                    requests, boost::asio::buffer(request_buffer),
-                    warpcoil::cpp::detail::no_response_request_send_operation<
-                        typename std::decay<decltype(handler)>::type, AsyncReadStream, decltype(receive_buffer)>(
-                        std::move(handler), responses, receive_buffer, response_buffer_used));
             }
 
         private:

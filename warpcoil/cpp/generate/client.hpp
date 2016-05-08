@@ -68,16 +68,7 @@ namespace warpcoil
                                       start_line(code, in_method, "boost::asio::async_result<"
                                                                   "handler_type> "
                                                                   "result(handler);\n");
-                                      switch (result_emptiness)
-                                      {
-                                      case type_emptiness::non_empty:
-                                          start_line(code, in_method, "pipeline.template request<");
-                                          break;
-
-                                      case type_emptiness::empty:
-                                          start_line(code, in_method, "pipeline.template request_without_response<");
-                                          break;
-                                      }
+                                      start_line(code, in_method, "pipeline.template request<");
                                       generate_parser_type(code, entry.second.result);
                                       append(code, ">([&](Si::Sink<std::uint8_t>::interface &request_writer) -> "
                                                    "warpcoil::cpp::client_pipeline_request_status\n");
