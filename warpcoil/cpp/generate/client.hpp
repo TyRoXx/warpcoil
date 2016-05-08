@@ -38,41 +38,41 @@ namespace warpcoil
                               type_emptiness const parameter_emptiness =
                                   generate_parameters(code, entry.second.parameters);
                               append(code, "CompletionToken &&token)\n");
-                              block(
-                                  code, in_class,
-                                  [&](indentation_level const in_method)
-                                  {
-                                      switch (parameter_emptiness)
-                                      {
-                                      case type_emptiness::empty:
-                                          for (types::parameter const &parameter_ : entry.second.parameters)
-                                          {
-                                              start_line(code, in_method, "static_cast<void>(", parameter_.name,
-                                                         ");\n");
-                                          }
-                                          break;
+                              block(code, in_class,
+                                    [&](indentation_level const in_method)
+                                    {
+                                        switch (parameter_emptiness)
+                                        {
+                                        case type_emptiness::empty:
+                                            for (types::parameter const &parameter_ : entry.second.parameters)
+                                            {
+                                                start_line(code, in_method, "static_cast<void>(", parameter_.name,
+                                                           ");\n");
+                                            }
+                                            break;
 
-                                      case type_emptiness::non_empty:
-                                          break;
-                                      }
-                                      start_line(code, in_method, "using handler_type = typename "
-                                                                  "boost::asio::handler_type<"
-                                                                  "decltype(token), "
-                                                                  "void(boost::system::error_code,"
-                                                                  " ");
-                                      generate_type(code, entry.second.result);
-                                      append(code, ")>::type;\n");
-                                      start_line(code, in_method, "handler_type "
-                                                                  "handler(std::forward<"
-                                                                  "CompletionToken>(token));\n");
-                                      start_line(code, in_method, "boost::asio::async_result<"
-                                                                  "handler_type> "
-                                                                  "result(handler);\n");
-                                      start_line(code, in_method, "pipeline.template request<");
-                                      generate_parser_type(code, entry.second.result);
-                                      append(code, ">([&](Si::Sink<std::uint8_t>::interface &request_writer) -> "
-                                                   "warpcoil::cpp::client_pipeline_request_status\n");
-                                      block(code, in_method,
+                                        case type_emptiness::non_empty:
+                                            break;
+                                        }
+                                        start_line(code, in_method, "using handler_type = typename "
+                                                                    "boost::asio::handler_type<"
+                                                                    "decltype(token), "
+                                                                    "void(boost::system::error_code,"
+                                                                    " ");
+                                        generate_type(code, entry.second.result);
+                                        append(code, ")>::type;\n");
+                                        start_line(code, in_method, "handler_type "
+                                                                    "handler(std::forward<"
+                                                                    "CompletionToken>(token));\n");
+                                        start_line(code, in_method, "boost::asio::async_result<"
+                                                                    "handler_type> "
+                                                                    "result(handler);\n");
+                                        start_line(code, in_method, "pipeline.template request<");
+                                        generate_parser_type(code, entry.second.result);
+                                        append(code, ">([&](Si::Sink<std::uint8_t>::interface &request_writer) -> "
+                                                     "warpcoil::cpp::client_pipeline_request_status\n");
+                                        block(
+                                            code, in_method,
                                             [&](indentation_level const in_builder)
                                             {
                                                 start_line(code, in_builder, "append(request_writer, ");
@@ -104,10 +104,10 @@ namespace warpcoil
                                                            "return warpcoil::cpp::client_pipeline_request_status::ok;");
                                             },
                                             "");
-                                      append(code, ", handler);\n");
-                                      start_line(code, in_method, "return result.get();\n");
-                                  },
-                                  "\n\n");
+                                        append(code, ", handler);\n");
+                                        start_line(code, in_method, "return result.get();\n");
+                                    },
+                                    "\n\n");
                           }
 
                           start_line(code, indentation, "private:\n");
