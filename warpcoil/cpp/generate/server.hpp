@@ -67,55 +67,54 @@ namespace warpcoil
                         append(code, " request_header_parser;\n\n");
                         start_line(code, in_class, "template <class Handler>\n");
                         start_line(code, in_class, "void begin_receive_request_header(Handler &&handle_result)\n");
-                        block(
-                            code, in_class,
-                            [&](indentation_level const in_method)
-                            {
-                                start_line(
-                                    code, in_method,
-                                    "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
-                                    "request_buffer_used, request_header_parser(), "
-                                    "warpcoil::cpp::make_handler_with_argument([this"
-                                    "](boost::system::error_code ec, "
-                                    "std::tuple<std::uint64_t, std::string> request_header, Handler &handle_result)\n");
-                                block(code, in_method,
-                                      [&](indentation_level const on_result)
-                                      {
-                                          start_line(
-                                              code, on_result,
-                                              "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
-                                          bool first = true;
-                                          for (auto const &entry : definition.methods)
-                                          {
-                                              on_result.render(code);
-                                              if (first)
-                                              {
-                                                  first = false;
-                                              }
-                                              else
-                                              {
-                                                  append(code, "else ");
-                                              }
-                                              append(code, "if (boost::range::equal(std::get<1>(request_header), "
-                                                           "Si::make_c_str_range(\"");
-                                              append(code, entry.first);
-                                              append(code, "\")))\n");
-                                              block(code, on_result,
-                                                    [&](indentation_level const in_here)
-                                                    {
-                                                        in_here.render(code);
-                                                        append(code, "begin_receive_method_argument_of_");
-                                                        append(code, entry.first);
-                                                        append(code, "(std::forward<Handler>(handle_result));\n");
-                                                    },
-                                                    "\n");
-                                          }
-                                          start_line(code, on_result, "else { throw std::logic_error(\"to do: handle "
-                                                                      "unknown method name\"); }\n");
-                                      },
-                                      ", std::forward<Handler>(handle_result)));\n");
-                            },
-                            "\n");
+                        block(code, in_class,
+                              [&](indentation_level const in_method)
+                              {
+                                  start_line(
+                                      code, in_method,
+                                      "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
+                                      "request_buffer_used, request_header_parser(), "
+                                      "warpcoil::cpp::make_handler_with_argument([this"
+                                      "](boost::system::error_code ec, "
+                                      "std::tuple<request_id, std::string> request_header, Handler &handle_result)\n");
+                                  block(code, in_method,
+                                        [&](indentation_level const on_result)
+                                        {
+                                            start_line(
+                                                code, on_result,
+                                                "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
+                                            bool first = true;
+                                            for (auto const &entry : definition.methods)
+                                            {
+                                                on_result.render(code);
+                                                if (first)
+                                                {
+                                                    first = false;
+                                                }
+                                                else
+                                                {
+                                                    append(code, "else ");
+                                                }
+                                                append(code, "if (boost::range::equal(std::get<1>(request_header), "
+                                                             "Si::make_c_str_range(\"");
+                                                append(code, entry.first);
+                                                append(code, "\")))\n");
+                                                block(code, on_result,
+                                                      [&](indentation_level const in_here)
+                                                      {
+                                                          in_here.render(code);
+                                                          append(code, "begin_receive_method_argument_of_");
+                                                          append(code, entry.first);
+                                                          append(code, "(std::forward<Handler>(handle_result));\n");
+                                                      },
+                                                      "\n");
+                                            }
+                                            start_line(code, on_result, "else { throw std::logic_error(\"to do: handle "
+                                                                        "unknown method name\"); }\n");
+                                        },
+                                        ", std::forward<Handler>(handle_result)));\n");
+                              },
+                              "\n");
 
                         for (auto const &entry : definition.methods)
                         {

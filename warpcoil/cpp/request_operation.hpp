@@ -164,7 +164,7 @@ namespace warpcoil
             std::array<std::uint8_t, 512> response_buffer;
             AsyncReadStream &responses;
             std::size_t response_buffer_used;
-            std::uint64_t next_request_id = 0;
+            request_id next_request_id = 0;
 
             void begin_request()
             {

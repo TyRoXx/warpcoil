@@ -19,5 +19,7 @@ namespace warpcoil
             std::string name;
             std::size_t expected_length;
         };
+
+        typedef std::uint64_t request_id;
     }
 }
