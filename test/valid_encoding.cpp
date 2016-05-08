@@ -51,7 +51,7 @@ namespace
         BOOST_REQUIRE(server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
         BOOST_REQUIRE(server_responses.written.empty());
-        BOOST_REQUIRE(!client_responses.respond);
+        BOOST_REQUIRE(client_responses.respond);
         BOOST_REQUIRE(client_requests.handle_result);
         std::vector<std::vector<std::uint8_t>> const expected_request_buffers = {expected_request};
         BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_request_buffers.begin(), expected_request_buffers.end(),
