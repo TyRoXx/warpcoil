@@ -117,7 +117,7 @@ namespace warpcoil
             template <class ResultParser, class RequestBuilder, class ResultHandler>
             void request(RequestBuilder build_request, ResultHandler &handler)
             {
-                request_buffer.clear();
+                begin_request();
                 {
                     auto sink = Si::Sink<std::uint8_t>::erase(Si::make_container_sink(request_buffer));
                     switch (build_request(sink))
@@ -141,7 +141,7 @@ namespace warpcoil
             template <class ResultParser, class RequestBuilder, class ResultHandler>
             void request_without_response(RequestBuilder build_request, ResultHandler &handler)
             {
-                request_buffer.clear();
+                begin_request();
                 {
                     auto sink = Si::Sink<std::uint8_t>::erase(Si::make_container_sink(request_buffer));
                     switch (build_request(sink))
@@ -164,6 +164,15 @@ namespace warpcoil
             std::array<std::uint8_t, 512> response_buffer;
             AsyncReadStream &responses;
             std::size_t response_buffer_used;
+            std::uint64_t next_request_id = 0;
+
+            void begin_request()
+            {
+                request_buffer.clear();
+                auto sink = Si::Sink<std::uint8_t>::erase(Si::make_container_sink(request_buffer));
+                write_integer(sink, next_request_id);
+                ++next_request_id;
+            }
         };
     }
 }

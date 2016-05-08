@@ -121,17 +121,17 @@ namespace
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_utf8_request)
 {
-    test_invalid_server_request({4, 'u', 't', 'f', '8', 5, 'N', 'a', 'm', 'e', 0xff});
+    test_invalid_server_request({0, 0, 0, 0, 0, 0, 0, 0, 4, 'u', 't', 'f', '8', 5, 'N', 'a', 'm', 'e', 0xff});
 }
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_variant_request_a)
 {
-    test_invalid_server_request({7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 2, 0, 0, 0, 0});
+    test_invalid_server_request({0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 2, 0, 0, 0, 0});
 }
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_variant_request_b)
 {
-    test_invalid_server_request({7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 255, 0, 0, 0, 0});
+    test_invalid_server_request({0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 255, 0, 0, 0, 0});
 }
 
 namespace

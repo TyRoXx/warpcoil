@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(async_client_with_callback)
                                   [&accepted_socket, &ok1](boost::system::error_code ec, std::size_t received)
                                   {
                                       BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                                      BOOST_REQUIRE_EQUAL(23, received);
+                                      BOOST_REQUIRE_EQUAL(31, received);
                                       BOOST_REQUIRE(!ok1);
                                       ok1 = true;
                                   });
