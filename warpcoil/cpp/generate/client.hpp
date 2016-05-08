@@ -60,7 +60,7 @@ namespace warpcoil
                                                                   "decltype(token), "
                                                                   "void(boost::system::error_code,"
                                                                   " ");
-                                      type_emptiness const result_emptiness = generate_type(code, entry.second.result);
+                                      generate_type(code, entry.second.result);
                                       append(code, ")>::type;\n");
                                       start_line(code, in_method, "handler_type "
                                                                   "handler(std::forward<"
