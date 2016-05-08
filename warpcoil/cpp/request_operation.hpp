@@ -19,9 +19,16 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code ec, Result result)
+                void operator()(boost::system::error_code ec, std::tuple<request_id, Result> response)
                 {
-                    m_handler(ec, std::move(result));
+                    // TODO: use request_id
+                    m_handler(ec, std::get<1>(std::move(response)));
+                }
+
+                void operator()(boost::system::error_code ec, request_id)
+                {
+                    // TODO: use request_id
+                    m_handler(ec, {});
                 }
 
             private:
@@ -55,7 +62,8 @@ namespace warpcoil
                         return;
                     }
                     begin_parse_value(
-                        m_input, m_receive_buffer, m_receive_buffer_used, Parser(),
+                        m_input, m_receive_buffer, m_receive_buffer_used,
+                        tuple_parser<integer_parser<request_id>, Parser>(),
                         response_parse_operation<ResultHandler, typename Parser::result_type>(std::move(m_handler)));
                 }
 
@@ -73,21 +81,34 @@ namespace warpcoil
                 }
             };
 
-            template <class ResultHandler>
+            template <class ResultHandler, class AsyncReadStream, class Buffer>
             struct no_response_request_send_operation
             {
-                explicit no_response_request_send_operation(ResultHandler handler)
+                explicit no_response_request_send_operation(ResultHandler handler, AsyncReadStream &input,
+                                                            Buffer receive_buffer, std::size_t &receive_buffer_used)
                     : m_handler(std::move(handler))
+                    , m_input(input)
+                    , m_receive_buffer(receive_buffer)
+                    , m_receive_buffer_used(receive_buffer_used)
                 {
                 }
 
                 void operator()(boost::system::error_code ec, std::size_t)
                 {
-                    m_handler(ec, {});
+                    if (!!ec)
+                    {
+                        m_handler(ec, {});
+                        return;
+                    }
+                    begin_parse_value(m_input, m_receive_buffer, m_receive_buffer_used, integer_parser<request_id>(),
+                                      response_parse_operation<ResultHandler, request_id>(std::move(m_handler)));
                 }
 
             private:
                 ResultHandler m_handler;
+                AsyncReadStream &m_input;
+                Buffer m_receive_buffer;
+                std::size_t &m_receive_buffer_used;
 
                 template <class Function>
                 friend void asio_handler_invoke(Function &&f, no_response_request_send_operation *operation)
@@ -153,9 +174,12 @@ namespace warpcoil
                         return;
                     }
                 }
-                boost::asio::async_write(requests, boost::asio::buffer(request_buffer),
-                                         warpcoil::cpp::detail::no_response_request_send_operation<
-                                             typename std::decay<decltype(handler)>::type>(std::move(handler)));
+                auto receive_buffer = boost::asio::buffer(response_buffer);
+                boost::asio::async_write(
+                    requests, boost::asio::buffer(request_buffer),
+                    warpcoil::cpp::detail::no_response_request_send_operation<
+                        typename std::decay<decltype(handler)>::type, AsyncReadStream, decltype(receive_buffer)>(
+                        std::move(handler), responses, receive_buffer, response_buffer_used));
             }
 
         private:
