@@ -9,7 +9,7 @@
 
 BOOST_AUTO_TEST_CASE(async_client_pipelining)
 {
-    //skip for now because it crashes
+    // skip for now because it crashes
     return;
 
     boost::asio::io_service io;
