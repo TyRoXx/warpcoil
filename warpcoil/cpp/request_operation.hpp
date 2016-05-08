@@ -105,6 +105,10 @@ namespace warpcoil
                         return;
                     }
                     writer.being_written.clear();
+                    if (!writer.buffer.empty())
+                    {
+                        writer.send_buffer();
+                    }
                 }
 
                 template <class Function>
