@@ -149,7 +149,6 @@ namespace warpcoil
                         return;
                     }
                 }
-                auto receive_buffer = boost::asio::buffer(response_buffer);
                 boost::asio::async_write(
                     requests, boost::asio::buffer(request_buffer),
                     warpcoil::cpp::no_response_request_send_operation<typename std::decay<decltype(handler)>::type>(
