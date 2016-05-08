@@ -19,11 +19,11 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining)
     warpcoil::checkpoint served_0;
     warpcoil::checkpoint served_1;
     warpcoil::checkpoint got_1;
+    warpcoil::impl_test_interface server_impl;
     acceptor.async_accept(
-        accepted_socket, [&accepted_socket, &served_0, &served_1, &got_1](boost::system::error_code ec)
+        accepted_socket, [&accepted_socket, &server_impl, &served_0, &served_1, &got_1](boost::system::error_code ec)
         {
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-            warpcoil::impl_test_interface server_impl;
             auto server =
                 std::make_shared<async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining)
                                           served_0.enter();
                                           served_1.enable();
                                           got_1.enable();
-                                          server->serve_one_request([&served_1](boost::system::error_code ec)
+                                          server->serve_one_request([server, &served_1](boost::system::error_code ec)
                                                                     {
                                                                         BOOST_REQUIRE_EQUAL(boost::system::error_code(),
                                                                                             ec);
