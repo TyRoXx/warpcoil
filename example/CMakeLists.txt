@@ -6,18 +6,18 @@ target_link_libraries(hello_interfaces ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_IN
 set(generatedHeader ${CMAKE_BINARY_DIR}/hello_interfaces.hpp)
 
 if(WARPCOIL_USE_CLANG_FORMAT AND WARPCOIL_CLANG_FORMAT)
-	add_custom_target(hello_interfaces_header
-		COMMAND $<TARGET_FILE:hello_interfaces> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
-		DEPENDS hello_interfaces)
+    add_custom_target(hello_interfaces_header
+        COMMAND $<TARGET_FILE:hello_interfaces> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
+        DEPENDS hello_interfaces)
 else()
-	add_custom_target(hello_interfaces_header
-		COMMAND $<TARGET_FILE:hello_interfaces> ${generatedHeader}
-		DEPENDS hello_interfaces)
+    add_custom_target(hello_interfaces_header
+        COMMAND $<TARGET_FILE:hello_interfaces> ${generatedHeader}
+        DEPENDS hello_interfaces)
 endif()
 
 set(demoSources "hello_tcp_callback.cpp")
 if(EXISTS ${generatedHeader})
-	set(demoSources ${demoSources} ${generatedHeader})
+    set(demoSources ${demoSources} ${generatedHeader})
 endif()
 add_executable(hello_tcp_callback ${demoSources})
 target_link_libraries(hello_tcp_callback ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
@@ -26,7 +26,7 @@ target_include_directories(hello_tcp_callback PRIVATE ${CMAKE_BINARY_DIR})
 
 set(demoSources "hello_tcp_coroutine.cpp")
 if(EXISTS ${generatedHeader})
-	set(demoSources ${demoSources} ${generatedHeader})
+    set(demoSources ${demoSources} ${generatedHeader})
 endif()
 add_executable(hello_tcp_coroutine ${demoSources})
 target_link_libraries(hello_tcp_coroutine ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
@@ -44,7 +44,7 @@ target_include_directories(hello_tcp_coroutine_hack PRIVATE ${CMAKE_BINARY_DIR})
     
 set(demoSources "hello_websocket.cpp")
 if(EXISTS ${generatedHeader})
-	set(demoSources ${demoSources} ${generatedHeader})
+    set(demoSources ${demoSources} ${generatedHeader})
 endif()
 add_executable(hello_websocket ${demoSources})
 target_link_libraries(hello_websocket ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
