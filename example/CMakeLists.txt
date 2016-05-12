@@ -2,7 +2,7 @@ file(GLOB sources "*.hpp" "*.cpp")
 set(formatted ${formatted} ${sources} PARENT_SCOPE)
 
 add_executable(hello_interfaces "hello_interface.cpp")
-target_link_libraries(hello_interfaces ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(hello_interfaces ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${WARPCOIL_LIBRT})
 set(generatedHeader ${CMAKE_BINARY_DIR}/hello_interfaces.hpp)
 
 if(WARPCOIL_USE_CLANG_FORMAT AND WARPCOIL_CLANG_FORMAT)

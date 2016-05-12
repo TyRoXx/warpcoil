@@ -149,6 +149,10 @@ endif()
 
 find_package(Threads)
 
+if(UNIX AND NOT APPLE)
+    set(WARPCOIL_LIBRT rt)
+endif()
+
 add_definitions("-DSILICIUM_NO_DEPRECATED")
 
 include_directories(".")
@@ -156,7 +160,7 @@ include_directories(".")
 file(GLOB generateSources "test_interfaces/generate.cpp")
 set(formatted ${formatted} ${generateSources})
 add_executable(test_app_generate ${generateSources})
-target_link_libraries(test_app_generate ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_app_generate ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${WARPCOIL_LIBRT})
 set(generatedHeader ${CMAKE_BINARY_DIR}/generated.hpp)
 
 option(WARPCOIL_USE_CLANG_FORMAT "look for and use clang-format if available" ON)
