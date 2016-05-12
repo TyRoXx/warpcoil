@@ -134,10 +134,10 @@ else()
     endif()
     include_directories(SYSTEM ${Boost_INCLUDE_DIR})
     link_directories(${Boost_LIBRARY_DIR})
-endif()
 
-if(UNIX)
-    add_definitions("-DBOOST_TEST_DYN_LINK")
+    if(UNIX)
+        add_definitions("-DBOOST_TEST_DYN_LINK")
+    endif()
 endif()
 
 if(WIN32)
