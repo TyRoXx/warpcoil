@@ -9,6 +9,9 @@ class WarpcoilConan(ConanFile):
     license="MIT"
     exports="warpcoil/*"
 
+    def config(self):
+        self.options["Boost"].shared = True
+
     def package(self):
         self.copy(pattern="*.hpp", dst="include/warpcoil", src="warpcoil", keep_path=True)
 
