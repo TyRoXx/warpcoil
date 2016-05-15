@@ -107,7 +107,6 @@ else()
 endif()
 
 conan_basic_setup()
-find_package(Boost REQUIRED COMPONENTS unit_test_framework test_exec_monitor filesystem coroutine context thread chrono program_options system)
 
 if(WIN32)
     #Boost.Asio wants this for no reason
@@ -129,7 +128,7 @@ include_directories(".")
 file(GLOB generateSources "test_interfaces/generate.cpp")
 set(formatted ${formatted} ${generateSources})
 add_executable(test_app_generate ${generateSources})
-target_link_libraries(test_app_generate ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${WARPCOIL_LIBRT})
+target_link_libraries(test_app_generate ${CONAN_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${WARPCOIL_LIBRT})
 set(generatedHeader ${CMAKE_BINARY_DIR}/generated.hpp)
 
 option(WARPCOIL_USE_CLANG_FORMAT "look for and use clang-format if available" ON)
