@@ -3,4 +3,26 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/tmygcx40pj2cupkg/branch/master?svg=true)](https://ci.appveyor.com/project/TyRoXx/warpcoil/branch/master)
 [![codecov](https://codecov.io/gh/TyRoXx/warpcoil/branch/master/graph/badge.svg)](https://codecov.io/gh/TyRoXx/warpcoil)
 
-Have a look at ``prepare_for_build_with_msvc.sh`` for build instructions.
+# wire protocol
+
+## basic types
+| name | parameters | encoding | remarks |
+| --- | --- | --- | --- |
+| integer | minimum, maximum  | big endian, as many bytes as necessary for maximum | i. e. 1 byte for 255, 2 bytes for 256 |
+| UTF-8 | length (integer) | actual length followed by the usual UTF-8 code units | length is the number of code units. Has to be valid and complete UTF-8 |
+| tuple | element types | elements in order | |
+| variant | element types | actual element index encoded as an integer followed by the actual element | |
+| vector | length (integer) | length followed by the elements in order | |
+
+## client to server
+| part of the message | type |
+| --- | --- |
+| request ID | 8 byte unsigned |
+| method | UTF-8, length 0-255 |
+| argument |  the parameters of the method being called |
+
+## server to client
+| part of the message | type |
+| --- | --- |
+| request ID | 8 byte unsigned |
+| result |  the result of the method being called |
