@@ -13,7 +13,6 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-4.9
-    - g++-4.8
 
 env:
  - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Release CONAN="-s compiler.version=4.9 -s build_type=Release" COVERAGE=NO
