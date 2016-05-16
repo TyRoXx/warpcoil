@@ -9,9 +9,6 @@
 
 BOOST_AUTO_TEST_CASE(async_client_pipelining)
 {
-    // skip for now because it crashes
-    return;
-
     boost::asio::io_service io;
     boost::asio::ip::tcp::acceptor acceptor(io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v6(), 0), true);
     acceptor.listen();
