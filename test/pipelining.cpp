@@ -92,7 +92,7 @@ namespace
                 {
                     return;
                 }
-                count_up(client, first + 1, last);
+                count_up(client, static_cast<std::uint16_t>(first + 1), last);
             });
     }
 }
