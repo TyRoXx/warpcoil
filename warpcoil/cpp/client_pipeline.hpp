@@ -2,6 +2,7 @@
 
 #include <warpcoil/protocol.hpp>
 #include <warpcoil/cpp/buffered_writer.hpp>
+#include <warpcoil/cpp/integer_parser.hpp>
 #include <map>
 
 namespace warpcoil
