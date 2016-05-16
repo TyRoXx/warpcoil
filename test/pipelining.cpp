@@ -2,10 +2,7 @@
 #include "impl_test_interface.hpp"
 #include "checkpoint.hpp"
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/spawn.hpp>
 #include <boost/test/unit_test.hpp>
-#include <silicium/sink/iterator_sink.hpp>
-#include <silicium/source/memory_source.hpp>
 
 BOOST_AUTO_TEST_CASE(async_client_pipelining)
 {

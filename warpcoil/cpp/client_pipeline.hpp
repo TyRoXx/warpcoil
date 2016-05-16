@@ -101,6 +101,17 @@ namespace warpcoil
                 state = response_state::parsing_header;
             }
 
+            void on_error(boost::system::error_code ec)
+            {
+                std::map<request_id, expected_response> local_expected_responses = std::move(expected_responses);
+                assert(expected_responses.empty());
+                state = response_state::not_expecting_response;
+                for (auto const &entry : local_expected_responses)
+                {
+                    entry.second.on_error(ec);
+                }
+            }
+
             template <class DummyHandler>
             struct parse_header_operation
             {
@@ -118,14 +129,7 @@ namespace warpcoil
                     assert(pipeline.state == response_state::parsing_header);
                     if (!!ec)
                     {
-                        std::map<request_id, expected_response> local_expected_responses =
-                            std::move(pipeline.expected_responses);
-                        assert(pipeline.expected_responses.empty());
-                        pipeline.state = response_state::not_expecting_response;
-                        for (auto const &entry : local_expected_responses)
-                        {
-                            entry.second.on_error(ec);
-                        }
+                        pipeline.on_error(ec);
                         return;
                     }
                     auto const entry_found = pipeline.expected_responses.find(id);
@@ -165,19 +169,17 @@ namespace warpcoil
                     assert(pipeline.state == response_state::parsing_result);
                     if (!!ec)
                     {
+                        pipeline.on_error(ec);
+                        return;
+                    }
+                    if (pipeline.expected_responses.empty())
+                    {
                         pipeline.state = response_state::not_expecting_response;
                     }
                     else
                     {
-                        if (pipeline.expected_responses.empty())
-                        {
-                            pipeline.state = response_state::not_expecting_response;
-                        }
-                        else
-                        {
-                            pipeline.parse_header(handler);
-                            assert(pipeline.state == response_state::parsing_header);
-                        }
+                        pipeline.parse_header(handler);
+                        assert(pipeline.state == response_state::parsing_header);
                     }
                     handler(ec, std::move(result));
                 }
