@@ -9,34 +9,6 @@ namespace warpcoil
 {
     namespace cpp
     {
-        namespace detail
-        {
-            template <class ResultHandler, class Result>
-            struct response_parse_operation
-            {
-                explicit response_parse_operation(ResultHandler handler)
-                    : m_handler(std::move(handler))
-                {
-                }
-
-                void operator()(boost::system::error_code ec, std::tuple<request_id, Result> response)
-                {
-                    // TODO: use request_id
-                    m_handler(ec, std::get<1>(std::move(response)));
-                }
-
-            private:
-                ResultHandler m_handler;
-
-                template <class Function>
-                friend void asio_handler_invoke(Function &&f, response_parse_operation *operation)
-                {
-                    using boost::asio::asio_handler_invoke;
-                    asio_handler_invoke(f, &operation->m_handler);
-                }
-            };
-        }
-
         template <class AsyncWriteStream>
         struct buffered_writer
         {
