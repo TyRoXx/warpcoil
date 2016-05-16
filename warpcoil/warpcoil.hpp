@@ -203,6 +203,23 @@ namespace warpcoil
         struct interface_definition
         {
             std::map<expressions::identifier, method> methods;
+
+            auto add_method(expressions::identifier name, type result)
+            {
+                method &target =
+                    methods.insert(std::make_pair(std::move(name), method{std::move(result), {}})).first->second;
+                struct parameter_maker
+                {
+                    method &target;
+
+                    parameter_maker operator()(expressions::identifier name, type type_) const
+                    {
+                        target.parameters.emplace_back(parameter{std::move(name), std::move(type_)});
+                        return *this;
+                    }
+                };
+                return parameter_maker{target};
+            }
         };
     }
 

@@ -27,81 +27,57 @@ int main(int argc, char **argv)
         types::tuple parameters;
         parameters.elements.emplace_back(types::integer());
         parameters.elements.emplace_back(types::integer());
-        definition.methods.insert(std::make_pair(
-            "evaluate", types::method{types::integer(), make_vector<types::parameter>(types::parameter{
-                                                            "argument", Si::to_unique(std::move(parameters))})}));
+        definition.add_method("evaluate", types::integer())("argument", Si::to_unique(std::move(parameters)));
         cpp::indentation_level const top_level;
         cpp::async::generate_serializable_interface(code_writer, top_level,
                                                     Si::make_c_str_range("binary_integer_function"), definition);
     }
     {
         types::interface_definition definition;
-        definition.methods.insert(std::make_pair(
-            "no_result_no_parameter",
-            types::method{Si::to_unique(types::tuple()),
-                          make_vector<types::parameter>(types::parameter{"argument", Si::to_unique(types::tuple())})}));
+        definition.add_method("no_result_no_parameter", Si::to_unique(types::tuple()))("argument",
+                                                                                       Si::to_unique(types::tuple()));
         {
             types::tuple results;
             results.elements.emplace_back(types::integer());
             results.elements.emplace_back(types::integer());
-            definition.methods.insert(std::make_pair(
-                "two_results",
-                types::method{Si::to_unique(std::move(results)),
-                              make_vector<types::parameter>(types::parameter{"argument", types::integer()})}));
+            definition.add_method("two_results", Si::to_unique(std::move(results)))("argument", types::integer());
         }
+
         {
             types::tuple parameters;
             parameters.elements.emplace_back(types::integer());
             parameters.elements.emplace_back(types::integer());
-            definition.methods.insert(std::make_pair(
-                "two_parameters",
-                types::method{types::integer(), make_vector<types::parameter>(types::parameter{
-                                                    "argument", Si::to_unique(std::move(parameters))})}));
+            definition.add_method("two_parameters", types::integer())("argument", Si::to_unique(std::move(parameters)));
         }
-        definition.methods.insert(std::make_pair(
-            "vectors",
-            types::method{Si::to_unique(types::vector{types::integer(), types::integer()}),
-                          make_vector<types::parameter>(types::parameter{
-                              "argument", Si::to_unique(types::vector{types::integer(), types::integer()})})}));
-        definition.methods.insert(std::make_pair(
-            "vectors_256",
-            types::method{Si::to_unique(types::vector{types::integer{0, 255}, types::integer()}),
-                          make_vector<types::parameter>(types::parameter{
-                              "argument", Si::to_unique(types::vector{types::integer{0, 255}, types::integer()})})}));
+
+        definition.add_method("vectors", Si::to_unique(types::vector{types::integer(), types::integer()}))(
+            "argument", Si::to_unique(types::vector{types::integer(), types::integer()}));
+
+        definition.add_method("vectors_256", Si::to_unique(types::vector{types::integer{0, 255}, types::integer()}))(
+            "argument", Si::to_unique(types::vector{types::integer{0, 255}, types::integer()}));
+
         {
             types::tuple parameters;
             parameters.elements.emplace_back(types::integer{0, 0xff});
             parameters.elements.emplace_back(types::integer{0, 0xffff});
             parameters.elements.emplace_back(types::integer{0, 0xffffffff});
             parameters.elements.emplace_back(types::integer{0, 0xffffffffffffffff});
-            definition.methods.insert(std::make_pair(
-                "integer_sizes",
-                types::method{Si::to_unique(types::vector{types::integer{0, 0xff}, types::integer{0, 0xffff}}),
-                              make_vector<types::parameter>(
-                                  types::parameter{"argument", Si::to_unique(std::move(parameters))})}));
+            definition.add_method("integer_sizes",
+                                  Si::to_unique(types::vector{types::integer{0, 0xff}, types::integer{0, 0xffff}}))(
+                "argument", Si::to_unique(std::move(parameters)));
         }
-        definition.methods.insert(
-            std::make_pair("utf8", types::method{types::utf8{types::integer{0, 255}},
-                                                 make_vector<types::parameter>(types::parameter{
-                                                     "argument", types::utf8{types::integer{0, 255}}})}));
 
-        definition.methods.insert(std::make_pair(
-            "atypical_int", types::method{types::integer{1, 1000}, make_vector<types::parameter>(types::parameter{
-                                                                       "argument", types::integer{1, 1000}})}));
+        definition.add_method("utf8", types::utf8{types::integer{0, 255}})("argument",
+                                                                           types::utf8{types::integer{0, 255}});
+        definition.add_method("atypical_int", types::integer{1, 1000})("argument", types::integer{1, 1000});
 
-        definition.methods.insert(std::make_pair(
-            "real_multi_parameters",
-            types::method{types::integer{0, 255},
-                          make_vector<types::parameter>(types::parameter{"first", types::utf8{types::integer{0, 255}}},
-                                                        types::parameter{"second", types::integer{0, 0xffff}})}));
+        definition.add_method("real_multi_parameters", types::integer{0, 255})(
+            "first", types::utf8{types::integer{0, 255}})("second", types::integer{0, 0xffff});
 
-        definition.methods.insert(std::make_pair(
-            "variant", types::method{Si::to_unique(types::variant{warpcoil::make_vector<types::type>(
-                                         types::integer{0, 0xffff}, types::utf8{types::integer{0, 255}})}),
-                                     make_vector<types::parameter>(types::parameter{
-                                         "argument",
-                                         Si::to_unique(types::variant{warpcoil::make_vector<types::type>(
-                                             types::integer{1, 0xffffffff}, types::utf8{types::integer{0, 255}})})})}));
+        definition.add_method("variant", Si::to_unique(types::variant{warpcoil::make_vector<types::type>(
+                                             types::integer{0, 0xffff}, types::utf8{types::integer{0, 255}})}))(
+            "argument", Si::to_unique(types::variant{warpcoil::make_vector<types::type>(
+                            types::integer{1, 0xffffffff}, types::utf8{types::integer{0, 255}})}));
 
         cpp::indentation_level const top_level;
         cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),

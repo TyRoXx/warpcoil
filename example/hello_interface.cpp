@@ -24,10 +24,8 @@ int main(int argc, char **argv)
                             "\n");
     {
         types::interface_definition definition;
-        definition.methods.insert(
-            std::make_pair("hello", types::method{types::utf8{types::integer{0, 255}},
-                                                  make_vector<types::parameter>(
-                                                      types::parameter{"name", types::utf8{types::integer{0, 255}}})}));
+        definition.add_method("hello", types::utf8{types::integer{0, 255}})("name",
+                                                                            types::utf8{types::integer{0, 255}});
         cpp::indentation_level const top_level;
         cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("hello_as_a_service"),
                                                     definition);
