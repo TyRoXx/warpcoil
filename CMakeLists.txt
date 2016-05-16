@@ -139,7 +139,7 @@ endif()
 if(WARPCOIL_USE_CLANG_FORMAT AND WARPCOIL_CLANG_FORMAT)
     add_custom_target(generatedHeaderTarget
         COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
-        DEPENDS test_app_generate)
+        DEPENDS test_app_generate clang-format)
 else()
     add_custom_target(generatedHeaderTarget
         COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader}
@@ -149,4 +149,6 @@ endif()
 add_subdirectory("test")
 add_subdirectory("example")
 
-add_custom_target(clang-format COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${formatted} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+if(WARPCOIL_USE_CLANG_FORMAT)
+	add_custom_target(clang-format COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${formatted} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endif()
