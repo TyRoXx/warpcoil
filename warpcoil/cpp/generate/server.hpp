@@ -61,9 +61,9 @@ namespace warpcoil
                         start_line(code, in_class, "std::vector<std::uint8_t> response_buffer;\n");
                         start_line(code, in_class, "AsyncWriteStream &responses;\n\n");
                         start_line(code, in_class, "typedef ");
-                        generate_parser_type(
-                            code, Si::to_unique(types::tuple{make_vector<types::type>(
-                                      types::integer{0, 0xffffffffffffffffu}, types::utf8{types::integer{0, 255}})}));
+                        generate_parser_type(code, Si::to_unique(types::tuple{make_vector<types::type>(
+                                                       types::integer{0, 0xffu}, types::integer{0, 0xffffffffffffffffu},
+                                                       types::utf8{types::integer{0, 255}})}));
                         append(code, " request_header_parser;\n\n");
                         start_line(code, in_class, "template <class Handler>\n");
                         start_line(code, in_class, "void begin_receive_request_header(Handler &&handle_result)\n");
@@ -75,7 +75,8 @@ namespace warpcoil
                                              "request_buffer_used, request_header_parser(), "
                                              "warpcoil::cpp::make_handler_with_argument([this"
                                              "](boost::system::error_code ec, "
-                                             "std::tuple<warpcoil::request_id, std::string> request_header, "
+                                             "std::tuple<warpcoil::message_type_int, warpcoil::request_id, "
+                                             "std::string> request_header, "
                                              "Handler &handle_result)\n");
                                   block(code, in_method,
                                         [&](indentation_level const on_result)
@@ -83,6 +84,12 @@ namespace warpcoil
                                             start_line(
                                                 code, on_result,
                                                 "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
+                                            start_line(code, on_result, "if (std::get<0>(request_header) != "
+                                                                        "static_cast<warpcoil::message_type_int>("
+                                                                        "warpcoil::message_type::request)) { "
+                                                                        "std::forward<Handler>(handle_"
+                                                                        "result)(warpcoil::cpp::make_"
+                                                                        "invalid_input_error()); return; }\n");
                                             bool first = true;
                                             for (auto const &entry : definition.methods)
                                             {
@@ -95,7 +102,7 @@ namespace warpcoil
                                                 {
                                                     append(code, "else ");
                                                 }
-                                                append(code, "if (boost::range::equal(std::get<1>(request_header), "
+                                                append(code, "if (boost::range::equal(std::get<2>(request_header), "
                                                              "Si::make_c_str_range(\"");
                                                 append(code, entry.first);
                                                 append(code, "\")))\n");
@@ -105,7 +112,7 @@ namespace warpcoil
                                                           in_here.render(code);
                                                           append(code, "begin_receive_method_argument_of_");
                                                           append(code, entry.first);
-                                                          append(code, "(std::get<0>(request_header), "
+                                                          append(code, "(std::get<1>(request_header), "
                                                                        "std::forward<Handler>(handle_result));\n");
                                                       },
                                                       "\n");

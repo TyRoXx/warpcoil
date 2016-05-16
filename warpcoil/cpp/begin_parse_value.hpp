@@ -4,6 +4,7 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/handler_invoke_hook.hpp>
 #include <boost/system/error_code.hpp>
+#include <warpcoil/cpp/parse_result.hpp>
 
 namespace warpcoil
 {

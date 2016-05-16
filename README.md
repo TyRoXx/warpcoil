@@ -45,6 +45,7 @@ You can disable formatting with the CMake option `WARPCOIL_USE_CLANG_FORMAT`.
 ## client to server
 | part of the message | type |
 | --- | --- |
+| message type | 1 byte unsigned with value 0 |
 | request ID | 8 byte unsigned |
 | method | UTF-8, length 0-255 |
 | argument |  the parameters of the method being called |
@@ -52,5 +53,6 @@ You can disable formatting with the CMake option `WARPCOIL_USE_CLANG_FORMAT`.
 ## server to client
 | part of the message | type |
 | --- | --- |
+| message type (planned new field) | 1 byte unsigned with value 1 |
 | request ID | 8 byte unsigned |
 | result |  the result of the method being called |

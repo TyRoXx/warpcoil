@@ -41,6 +41,7 @@ namespace warpcoil
                                      });
                 }
                 auto sink = Si::Sink<std::uint8_t>::erase(writer.buffer_sink());
+                write_integer(sink, static_cast<message_type_int>(message_type::request));
                 request_id const current_id = next_request_id;
                 ++next_request_id;
                 write_integer(sink, current_id);
