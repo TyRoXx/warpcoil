@@ -1,3 +1,21 @@
+# warpcoil
+
+## goals
+* create network APIs with little effort
+* be as type safe as C++
+* don't waste developer time hunting down unnecessary encoding-related issues
+* don't waste bandwidth or CPU time for no reason
+* support many languages, not only C++
+* no coupling to a specific transport protocol
+  * support the most common ones by default though: TCP, TLS, Websocket, TLS Websocket
+* UTF-8 everywhere
+
+## non-goals
+* "human-readability"
+* support for inheritance or similar nonsense
+* support for ancient compilers, standards or Boost versions
+* reinventing Boost.Asio, TLS, authentication or Websockets
+
 # testing
 [![Build Status](https://travis-ci.org/TyRoXx/warpcoil.svg?branch=master)](https://travis-ci.org/TyRoXx/warpcoil)
 [![Build status](https://ci.appveyor.com/api/projects/status/tmygcx40pj2cupkg/branch/master?svg=true)](https://ci.appveyor.com/project/TyRoXx/warpcoil/branch/master)
