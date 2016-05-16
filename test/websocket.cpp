@@ -3,7 +3,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/test/unit_test.hpp>
 #include <silicium/error_or.hpp>
-#include <beast/websocket.hpp>
 #include <warpcoil/beast.hpp>
 #include "checkpoint.hpp"
 
