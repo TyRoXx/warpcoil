@@ -51,7 +51,7 @@ namespace warpcoil
                     current_id,
                     expected_response{[handler](boost::system::error_code const error) mutable
                                       {
-                                          handler(error, {});
+                                          handler(error, typename ResultParser::result_type{});
                                       },
                                       [this, handler]() mutable
                                       {
