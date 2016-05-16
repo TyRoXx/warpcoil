@@ -99,9 +99,9 @@ namespace warpcoil
             template <class DummyHandler>
             void parse_header(DummyHandler &handler)
             {
+                state = response_state::parsing_header;
                 begin_parse_value(responses, boost::asio::buffer(response_buffer), response_buffer_used,
                                   integer_parser<request_id>(), parse_header_operation<DummyHandler>(*this, handler));
-                state = response_state::parsing_header;
             }
 
             void on_error(boost::system::error_code ec)
