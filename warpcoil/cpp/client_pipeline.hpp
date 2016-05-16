@@ -22,15 +22,18 @@ namespace warpcoil
                 , response_buffer_used(0)
                 , state(response_state::not_expecting_response)
             {
-                writer.async_run([](boost::system::error_code)
-                                 {
-                                     // Can be ignored because begin_parse_value will fail if the connection goes away.
-                                 });
             }
 
             template <class ResultParser, class RequestBuilder, class ResultHandler>
             void request(RequestBuilder build_request, ResultHandler &handler)
             {
+                if (!writer.is_running())
+                {
+                    writer.async_run([this](boost::system::error_code ec)
+                                     {
+                                         on_error(ec);
+                                     });
+                }
                 auto sink = Si::Sink<std::uint8_t>::erase(writer.buffer_sink());
                 request_id const current_id = next_request_id;
                 ++next_request_id;

@@ -17,6 +17,11 @@ namespace warpcoil
             {
             }
 
+            bool is_running() const
+            {
+                return begin_write != nullptr;
+            }
+
             template <class CompletionToken>
             auto async_run(CompletionToken &&token)
             {
