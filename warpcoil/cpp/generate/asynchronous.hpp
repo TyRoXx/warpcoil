@@ -20,6 +20,23 @@ namespace warpcoil
                 generate_serialization_client(code, indentation, name, definition);
                 generate_serialization_server(code, indentation, name, definition);
             }
+
+            static char const headers[] = "#pragma once\n"
+                                          "#include <warpcoil/cpp/begin_parse_value.hpp>\n"
+                                          "#include <warpcoil/cpp/client_pipeline.hpp>\n"
+                                          "#include <warpcoil/cpp/handler_with_argument.hpp>\n"
+                                          "#include <warpcoil/cpp/utf8_parser.hpp>\n"
+                                          "#include <warpcoil/cpp/integer_parser.hpp>\n"
+                                          "#include <warpcoil/cpp/vector_parser.hpp>\n"
+                                          "#include <warpcoil/cpp/tuple_parser.hpp>\n"
+                                          "#include <warpcoil/cpp/variant_parser.hpp>\n"
+                                          "#include <silicium/source/source.hpp>\n"
+                                          "#include <silicium/sink/iterator_sink.hpp>\n"
+                                          "#include <silicium/sink/append.hpp>\n"
+                                          "#include <silicium/variant.hpp>\n"
+                                          "#include <boost/asio/write.hpp>\n"
+                                          "#include <boost/range/algorithm/equal.hpp>\n"
+                                          "#include <tuple>\n\n";
         }
     }
 }

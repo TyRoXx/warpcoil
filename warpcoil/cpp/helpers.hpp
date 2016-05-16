@@ -1,10 +1,6 @@
 #pragma once
 
-#include <warpcoil/cpp/integer_parser.hpp>
-#include <warpcoil/cpp/variant_parser.hpp>
-#include <warpcoil/cpp/vector_parser.hpp>
-#include <warpcoil/cpp/utf8_parser.hpp>
-#include <warpcoil/cpp/tuple_parser.hpp>
+#include <string>
 
 namespace warpcoil
 {
@@ -19,7 +15,5 @@ namespace warpcoil
             std::string name;
             std::size_t expected_length;
         };
-
-        typedef std::uint64_t request_id;
     }
 }

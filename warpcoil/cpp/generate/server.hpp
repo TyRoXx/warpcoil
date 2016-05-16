@@ -75,7 +75,7 @@ namespace warpcoil
                                              "request_buffer_used, request_header_parser(), "
                                              "warpcoil::cpp::make_handler_with_argument([this"
                                              "](boost::system::error_code ec, "
-                                             "std::tuple<warpcoil::cpp::request_id, std::string> request_header, "
+                                             "std::tuple<warpcoil::request_id, std::string> request_header, "
                                              "Handler &handle_result)\n");
                                   block(code, in_method,
                                         [&](indentation_level const on_result)
@@ -123,7 +123,7 @@ namespace warpcoil
                             start_line(code, in_class, "template <class Handler>\n");
                             start_line(code, in_class, "void begin_receive_method_argument_of_");
                             append(code, entry.first);
-                            append(code, "(warpcoil::cpp::request_id request_id, Handler &&handle_result)\n");
+                            append(code, "(warpcoil::request_id request_id, Handler &&handle_result)\n");
                             block(code, in_class,
                                   [&](indentation_level const in_method)
                                   {

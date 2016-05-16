@@ -1,5 +1,6 @@
 #pragma once
 
+#include <warpcoil/protocol.hpp>
 #include <warpcoil/cpp/buffered_writer.hpp>
 #include <map>
 
