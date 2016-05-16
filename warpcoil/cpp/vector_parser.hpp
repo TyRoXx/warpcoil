@@ -22,12 +22,13 @@ namespace warpcoil
                             length,
                             [this](typename Length::result_type const length) -> parse_result<result_type>
                             {
-                                result.resize(length);
-                                if (result.empty())
+                                if (length == 0)
                                 {
                                     return std::move(result);
                                 }
-                                step = parsing_element{{}, 0};
+                                result.reserve(length);
+                                assert(result.capacity() == length);
+                                step = parsing_element{};
                                 return need_more_input();
                             },
                             [](need_more_input)
@@ -46,12 +47,12 @@ namespace warpcoil
                             element,
                             [this, &parsing](typename Element::result_type element) -> parse_result<result_type>
                             {
-                                result[parsing.current_index] = std::move(element);
-                                if (parsing.current_index == (result.size() - 1))
+                                result.emplace_back(std::move(element));
+                                if (result.size() == result.capacity())
                                 {
                                     return std::move(result);
                                 }
-                                step = parsing_element{{}, parsing.current_index + 1};
+                                step = parsing_element{};
                                 return need_more_input();
                             },
                             [](need_more_input)
@@ -69,7 +70,6 @@ namespace warpcoil
             struct parsing_element
             {
                 Element parser;
-                std::size_t current_index;
             };
 
             Si::variant<Length, parsing_element> step;
