@@ -182,7 +182,6 @@ namespace warpcoil
                     else
                     {
                         pipeline.parse_header(handler);
-                        assert(pipeline.state == response_state::parsing_header);
                     }
                     handler(ec, std::move(result));
                 }
