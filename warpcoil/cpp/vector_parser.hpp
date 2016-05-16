@@ -28,7 +28,7 @@ namespace warpcoil
                                 }
                                 result.reserve(length);
                                 assert(result.capacity() == length);
-                                step = parsing_element{};
+                                step = parsing_element{{}};
                                 return need_more_input();
                             },
                             [](need_more_input)
@@ -52,7 +52,7 @@ namespace warpcoil
                                 {
                                     return std::move(result);
                                 }
-                                step = parsing_element{};
+                                step = parsing_element{{}};
                                 return need_more_input();
                             },
                             [](need_more_input)
