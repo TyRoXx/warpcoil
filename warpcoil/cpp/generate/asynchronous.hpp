@@ -24,7 +24,7 @@ namespace warpcoil
             static char const headers[] = "#pragma once\n"
                                           "#include <warpcoil/cpp/begin_parse_value.hpp>\n"
                                           "#include <warpcoil/cpp/client_pipeline.hpp>\n"
-                                          "#include <warpcoil/cpp/handler_with_argument.hpp>\n"
+                                          "#include <warpcoil/cpp/wrap_handler.hpp>\n"
                                           "#include <warpcoil/cpp/utf8_parser.hpp>\n"
                                           "#include <warpcoil/cpp/integer_parser.hpp>\n"
                                           "#include <warpcoil/cpp/vector_parser.hpp>\n"

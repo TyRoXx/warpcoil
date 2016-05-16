@@ -73,7 +73,7 @@ namespace warpcoil
                                   start_line(code, in_method,
                                              "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
                                              "request_buffer_used, request_header_parser(), "
-                                             "warpcoil::cpp::make_handler_with_argument([this"
+                                             "warpcoil::cpp::wrap_handler([this"
                                              "](boost::system::error_code ec, "
                                              "std::tuple<warpcoil::message_type_int, warpcoil::request_id, "
                                              "std::string> request_header, "
@@ -139,11 +139,9 @@ namespace warpcoil
                                                  "request_buffer_used, ");
                                       types::type const parameter_type = get_parameter_type(entry.second.parameters);
                                       generate_parser_type(code, parameter_type);
-                                      append(
-                                          code,
-                                          "{}, "
-                                          "warpcoil::cpp::make_handler_with_argument([this, request_id](boost::system::"
-                                          "error_code ec, ");
+                                      append(code, "{}, "
+                                                   "warpcoil::cpp::wrap_handler([this, request_id](boost::system::"
+                                                   "error_code ec, ");
                                       generate_type(code, parameter_type);
                                       append(code, " argument, Handler &handle_result)\n");
                                       block(
@@ -158,10 +156,8 @@ namespace warpcoil
                                               append(code, "(");
                                               move_arguments_out_of_tuple(code, Si::make_c_str_range("argument"),
                                                                           entry.second.parameters.size());
-                                              append(
-                                                  code,
-                                                  "warpcoil::cpp::make_handler_with_argument([this, request_id](boost::"
-                                                  "system::error_code ec, ");
+                                              append(code, "warpcoil::cpp::wrap_handler([this, request_id](boost::"
+                                                           "system::error_code ec, ");
                                               type_emptiness const result_empty =
                                                   generate_type(code, entry.second.result);
                                               switch (result_empty)
@@ -209,7 +205,7 @@ namespace warpcoil
                                                                    "boost::asio::async_write(responses,"
                                                                    " boost::asio::buffer(response_"
                                                                    "buffer), "
-                                                                   "warpcoil::cpp::make_handler_with_argument([]("
+                                                                   "warpcoil::cpp::wrap_handler([]("
                                                                    "boost::"
                                                                    "system::error_code ec, "
                                                                    "std::size_t, Handler &handle_result)\n");
