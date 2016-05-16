@@ -24,6 +24,11 @@ namespace warpcoil
             {
             }
 
+            std::size_t pending_requests() const
+            {
+                return expected_responses.size();
+            }
+
             template <class ResultParser, class RequestBuilder, class ResultHandler>
             void request(RequestBuilder build_request, ResultHandler &handler)
             {

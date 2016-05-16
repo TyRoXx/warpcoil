@@ -118,7 +118,9 @@ namespace warpcoil
 
                           start_line(code, indentation, "private:\n");
                           start_line(code, in_class,
-                                     "warpcoil::cpp::client_pipeline<AsyncWriteStream, AsyncReadStream> pipeline;\n");
+                                     "warpcoil::cpp::client_pipeline<AsyncWriteStream, AsyncReadStream> pipeline;\n\n");
+                          start_line(code, in_class, "friend std::size_t pending_requests(async_", name,
+                                     "_client const &client) { return client.pipeline.pending_requests(); }\n");
                       },
                       ";\n\n");
             }
