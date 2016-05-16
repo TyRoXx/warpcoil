@@ -8,7 +8,7 @@ set(generatedHeader ${CMAKE_BINARY_DIR}/hello_interfaces.hpp)
 if(WARPCOIL_USE_CLANG_FORMAT AND WARPCOIL_CLANG_FORMAT)
     add_custom_target(hello_interfaces_header
         COMMAND $<TARGET_FILE:hello_interfaces> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
-        DEPENDS hello_interfaces)
+        DEPENDS hello_interfaces clang-format)
 else()
     add_custom_target(hello_interfaces_header
         COMMAND $<TARGET_FILE:hello_interfaces> ${generatedHeader}

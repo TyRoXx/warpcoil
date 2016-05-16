@@ -136,16 +136,7 @@ if(WARPCOIL_USE_CLANG_FORMAT)
     find_program(WARPCOIL_CLANG_FORMAT NAMES clang-format clang-format-3.7 PATHS "C:/Program Files/LLVM/bin")
 endif()
 
-if(WARPCOIL_USE_CLANG_FORMAT AND WARPCOIL_CLANG_FORMAT)
-    add_custom_target(generatedHeaderTarget
-        COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader} ${WARPCOIL_CLANG_FORMAT} ${CMAKE_SOURCE_DIR}
-        DEPENDS test_app_generate clang-format)
-else()
-    add_custom_target(generatedHeaderTarget
-        COMMAND $<TARGET_FILE:test_app_generate> ${generatedHeader}
-        DEPENDS test_app_generate)
-endif()
-
+add_subdirectory("test_interfaces")
 add_subdirectory("test")
 add_subdirectory("example")
 
