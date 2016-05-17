@@ -12,7 +12,7 @@ install:
 build_script:
   - cmd: mkdir build
   - cmd: cd build
-  - cmd: conan install ..
+  - cmd: conan install --build=zlib ..
   - cmd: cmake ../ -G "Visual Studio 14 2015 Win64"
   - cmd: cmake --build . --config Release
 
