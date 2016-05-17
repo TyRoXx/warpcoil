@@ -6,6 +6,15 @@
 #include <silicium/exchange.hpp>
 #include <silicium/error_or.hpp>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
+#include <boost/test/data/test_case.hpp>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 namespace
 {
     template <class Result>
@@ -174,4 +183,17 @@ BOOST_AUTO_TEST_CASE(async_server_variant_second)
             {0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 'a', 'b', 'c', 'd'});
     Si::variant<std::uint16_t, std::string> const expected{std::string("abcd")};
     BOOST_CHECK(expected == result);
+}
+
+BOOST_DATA_TEST_CASE(async_server_integer, boost::unit_test::data::xrange<std::uint16_t>(1, 1000), number)
+{
+    std::uint16_t result = test_simple_request_response<std::uint16_t>(
+        [number](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
+        {
+            client.atypical_int(number, on_result);
+        },
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 'a', 't', 'y', 'p', 'i', 'c', 'a', 'l', '_', 'i', 'n', 't',
+         static_cast<std::uint8_t>(number / 256), static_cast<std::uint8_t>(number % 256)},
+        {0, 0, 0, 0, 0, 0, 0, 0, static_cast<std::uint8_t>(number / 256), static_cast<std::uint8_t>(number % 256)});
+    BOOST_CHECK_EQUAL(number, result);
 }
