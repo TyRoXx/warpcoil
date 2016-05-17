@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(async_server_variant_second)
     BOOST_CHECK(expected == result);
 }
 
-BOOST_DATA_TEST_CASE(async_server_integer, boost::unit_test::data::xrange<std::uint16_t>(1, 1000), number)
+BOOST_DATA_TEST_CASE(async_server_integer, boost::unit_test::data::xrange<std::uint16_t>(1, 1001), number)
 {
     std::uint16_t result = test_simple_request_response<std::uint16_t>(
         [number](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
