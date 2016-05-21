@@ -23,12 +23,12 @@ namespace warpcoil
 
         struct websocket_error_category : boost::system::error_category
         {
-            virtual const char *name() const BOOST_SYSTEM_NOEXCEPT override
+            const char *name() const BOOST_SYSTEM_NOEXCEPT override
             {
                 return "websocket_error";
             }
 
-            virtual std::string message(int ev) const override
+            std::string message(int ev) const override
             {
                 switch (static_cast<websocket_error>(ev))
                 {
