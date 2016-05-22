@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <cstdint>
+
 namespace warpcoil
 {
     typedef std::string identifier;
