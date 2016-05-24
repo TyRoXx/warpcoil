@@ -96,6 +96,8 @@ namespace warpcoil
                 std::function<void()> parse_result;
             };
 
+            typedef std::tuple<message_type_int, request_id> response_header;
+
             buffered_writer<AsyncWriteStream> writer;
             std::array<std::uint8_t, 512> response_buffer;
             AsyncReadStream &responses;
@@ -109,7 +111,8 @@ namespace warpcoil
             {
                 state = response_state::parsing_header;
                 begin_parse_value(responses, boost::asio::buffer(response_buffer), response_buffer_used,
-                                  integer_parser<request_id>(), parse_header_operation<DummyHandler>(*this, handler));
+                                  typename parser_for<response_header>::type(),
+                                  parse_header_operation<DummyHandler>(*this, handler));
             }
 
             void on_error(boost::system::error_code ec)
@@ -135,7 +138,7 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code ec, request_id const id) const
+                void operator()(boost::system::error_code ec, response_header const header) const
                 {
                     assert(pipeline.state == response_state::parsing_header);
                     if (!!ec)
@@ -143,7 +146,12 @@ namespace warpcoil
                         pipeline.on_error(ec);
                         return;
                     }
-                    auto const entry_found = pipeline.expected_responses.find(id);
+                    if (std::get<0>(header) != static_cast<message_type_int>(message_type::response))
+                    {
+                        pipeline.on_error(make_invalid_input_error());
+                        return;
+                    }
+                    auto const entry_found = pipeline.expected_responses.find(std::get<1>(header));
                     if (entry_found == pipeline.expected_responses.end())
                     {
                         pipeline.state = response_state::not_expecting_response;

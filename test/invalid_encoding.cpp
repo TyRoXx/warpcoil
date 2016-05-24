@@ -134,6 +134,11 @@ BOOST_AUTO_TEST_CASE(async_server_invalid_variant_request_b)
     test_invalid_server_request({0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 255, 0, 0, 0, 0});
 }
 
+BOOST_AUTO_TEST_CASE(async_server_invalid_message_type)
+{
+    test_invalid_server_request({1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'});
+}
+
 namespace
 {
     template <class Result>

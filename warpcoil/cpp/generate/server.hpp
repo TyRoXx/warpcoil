@@ -183,6 +183,10 @@ namespace warpcoil
                                                                                     "Si::success>::erase(Si::make_"
                                                                                     "container_sink(response_buffer));"
                                                                                     "\n");
+                                                        start_line(code, in_lambda,
+                                                                   "warpcoil::cpp::write_integer(response_writer, "
+                                                                   "static_cast<warpcoil::message_type_int>(warpcoil::"
+                                                                   "message_type::response));\n");
                                                         start_line(code, in_lambda, "warpcoil::cpp::write_integer("
                                                                                     "response_writer, request_id);\n");
                                                         switch (result_empty)

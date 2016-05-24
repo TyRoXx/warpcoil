@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(async_server_utf8)
             client.utf8("Name", on_result);
         },
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'},
-        {0, 0, 0, 0, 0, 0, 0, 0, 7, 'N', 'a', 'm', 'e', '1', '2', '3'});
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'N', 'a', 'm', 'e', '1', '2', '3'});
     BOOST_CHECK_EQUAL("Name123", result);
 }
 
@@ -119,8 +119,8 @@ BOOST_AUTO_TEST_CASE(async_server_vector)
         },
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'e', 'c', 't', 'o', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0,
          3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0,
-         0, 0, 3});
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0,
+         0, 0, 0, 3});
     std::vector<std::uint64_t> const expected = {1, 2, 3};
     BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(), result.begin(), result.end());
 }
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(async_server_tuple)
             },
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 't', 'w', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', 's', 0, 0, 0, 0, 0, 0, 0,
              123},
-            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0, 123});
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0, 123});
     std::tuple<std::uint64_t, std::uint64_t> const expected{123, 123};
     BOOST_CHECK(expected == result);
 }
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(async_server_multiple_parameters)
         },
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 'r', 'e', 'a', 'l', '_', 'm', 'u', 'l', 't', 'i', '_', 'p', 'a', 'r', 'a', 'm',
          'e', 't', 'e', 'r', 's', 3, 'a', 'b', 'c', 0, 123},
-        {0, 0, 0, 0, 0, 0, 0, 0, 126});
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 126});
     std::uint8_t const expected{126};
     BOOST_CHECK_EQUAL(expected, result);
 }
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(async_server_variant_first)
                 client.variant(static_cast<std::uint32_t>(0x11223344), on_result);
             },
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 0, 0x11, 0x22, 0x33, 0x44},
-            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0x33, 0x45});
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x33, 0x45});
     Si::variant<std::uint16_t, std::string> const expected{static_cast<std::uint16_t>(0x3345)};
     BOOST_CHECK(expected == result);
 }
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(async_server_variant_second)
                 client.variant(std::string("abc"), on_result);
             },
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 1, 3, 'a', 'b', 'c'},
-            {0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 'a', 'b', 'c', 'd'});
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 'a', 'b', 'c', 'd'});
     Si::variant<std::uint16_t, std::string> const expected{std::string("abcd")};
     BOOST_CHECK(expected == result);
 }
@@ -194,6 +194,6 @@ BOOST_DATA_TEST_CASE(async_server_integer, boost::unit_test::data::xrange<std::u
         },
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 'a', 't', 'y', 'p', 'i', 'c', 'a', 'l', '_', 'i', 'n', 't',
          static_cast<std::uint8_t>(number / 256), static_cast<std::uint8_t>(number % 256)},
-        {0, 0, 0, 0, 0, 0, 0, 0, static_cast<std::uint8_t>(number / 256), static_cast<std::uint8_t>(number % 256)});
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<std::uint8_t>(number / 256), static_cast<std::uint8_t>(number % 256)});
     BOOST_CHECK_EQUAL(number, result);
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <warpcoil/cpp/parse_result.hpp>
+#include <warpcoil/cpp/parser_for.hpp>
 #include <silicium/detail/integer_sequence.hpp>
 #include <boost/mpl/at.hpp>
 
@@ -113,6 +114,12 @@ namespace warpcoil
             {
                 SILICIUM_UNREACHABLE();
             }
+        };
+
+        template <class... T>
+        struct parser_for<std::tuple<T...>>
+        {
+            typedef tuple_parser<typename parser_for<T>::type...> type;
         };
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <warpcoil/cpp/parse_result.hpp>
+#include <warpcoil/cpp/parser_for.hpp>
 #include <silicium/source/source.hpp>
 #include <silicium/sink/sink.hpp>
 #include <silicium/sink/append.hpp>
@@ -58,6 +59,12 @@ namespace warpcoil
         private:
             result_type result = 0;
             std::size_t bytes_received = 0;
+        };
+
+        template <class T>
+        struct parser_for<T, std::enable_if_t<std::is_unsigned<T>::value>>
+        {
+            typedef integer_parser<T> type;
         };
     }
 }
