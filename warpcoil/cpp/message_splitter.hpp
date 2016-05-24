@@ -4,6 +4,7 @@
 #include <silicium/exchange.hpp>
 #include <warpcoil/protocol.hpp>
 #include <warpcoil/cpp/begin_parse_value.hpp>
+#include <warpcoil/cpp/integer_parser.hpp>
 
 namespace warpcoil
 {
