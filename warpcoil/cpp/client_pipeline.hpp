@@ -111,7 +111,7 @@ namespace warpcoil
             {
                 state = response_state::parsing_header;
                 begin_parse_value(responses, boost::asio::buffer(response_buffer), response_buffer_used,
-                                  typename parser_for<response_header>::type(),
+                                  tuple_parser<integer_parser<message_type_int>, integer_parser<request_id>>(),
                                   parse_header_operation<DummyHandler>(*this, handler));
             }
 
