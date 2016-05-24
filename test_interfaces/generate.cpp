@@ -9,7 +9,7 @@ int main(int argc, char **argv)
     using namespace warpcoil;
     std::vector<char> code;
     auto code_writer = Si::make_container_sink(code);
-    Si::append(code_writer, cpp::async::headers);
+    Si::append(code_writer, cpp::headers);
     {
         types::interface_definition definition;
         types::tuple parameters;
@@ -17,8 +17,8 @@ int main(int argc, char **argv)
         parameters.elements.emplace_back(types::integer());
         definition.add_method("evaluate", types::integer())("argument", Si::to_unique(std::move(parameters)));
         cpp::indentation_level const top_level;
-        cpp::async::generate_serializable_interface(code_writer, top_level,
-                                                    Si::make_c_str_range("binary_integer_function"), definition);
+        cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("binary_integer_function"),
+                                             definition);
     }
     {
         types::interface_definition definition;
@@ -68,8 +68,8 @@ int main(int argc, char **argv)
                             types::integer{1, 0xffffffff}, types::utf8{types::integer{0, 255}})}));
 
         cpp::indentation_level const top_level;
-        cpp::async::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
-                                                    definition);
+        cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
+                                             definition);
     }
     return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc), std::cerr,
                                                 Si::make_contiguous_range(code));
