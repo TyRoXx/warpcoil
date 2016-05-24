@@ -5,6 +5,7 @@
 #include <silicium/source/source.hpp>
 #include <silicium/sink/sink.hpp>
 #include <silicium/sink/append.hpp>
+#include <type_traits>
 
 namespace warpcoil
 {
