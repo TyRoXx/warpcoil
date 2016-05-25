@@ -80,12 +80,14 @@ namespace warpcoil
 
             buffered_read_stream<AsyncReadStream> &lock_input()
             {
+                assert(!locked);
                 locked = true;
                 return buffer;
             }
 
             void unlock_input()
             {
+                assert(locked);
                 locked = false;
                 if (!waiting_for_response)
                 {
