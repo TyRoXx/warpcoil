@@ -64,11 +64,12 @@ BOOST_AUTO_TEST_CASE(websocket)
                     websocket_connected.enter();
                     served.enable();
                     Si::throw_if_error(ec);
+                    auto splitter = std::make_shared<warpcoil::cpp::message_splitter<decltype(*session)>>(*session);
                     auto client = std::make_shared<async_test_interface_client<decltype(*session), decltype(*session)>>(
-                        *session, *session);
+                        *session, *splitter);
                     std::string name = "Alice";
-                    client->utf8(std::move(name),
-                                 [client, session, &received_response](boost::system::error_code ec, std::string result)
+                    client->utf8(std::move(name), [client, splitter, session,
+                                                   &received_response](boost::system::error_code ec, std::string result)
                                  {
                                      received_response.enter();
                                      Si::throw_if_error(ec);

@@ -17,9 +17,9 @@ namespace warpcoil
         template <class AsyncWriteStream, class AsyncReadStream>
         struct client_pipeline
         {
-            explicit client_pipeline(AsyncWriteStream &requests, AsyncReadStream &responses)
+            explicit client_pipeline(AsyncWriteStream &requests, message_splitter<AsyncReadStream> &incoming)
                 : writer(requests)
-                , responses(responses)
+                , responses(incoming)
             {
             }
 

@@ -40,7 +40,8 @@ int main()
 
     // client:
     ip::tcp::socket connecting_socket(io);
-    async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(connecting_socket, connecting_socket);
+    warpcoil::cpp::message_splitter<decltype(connecting_socket)> splitter(connecting_socket);
+    async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(connecting_socket, splitter);
     connecting_socket.async_connect(ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
                                     [&io, &client](boost::system::error_code ec)
                                     {

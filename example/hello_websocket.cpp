@@ -59,11 +59,13 @@ int main()
                 "localhost", "/", [session](boost::system::error_code ec)
                 {
                     Si::throw_if_error(ec);
+                    auto splitter = std::make_shared<warpcoil::cpp::message_splitter<decltype(*session)>>(*session);
                     auto client =
                         std::make_shared<async_hello_as_a_service_client<decltype(*session), decltype(*session)>>(
-                            *session, *session);
+                            *session, *splitter);
                     std::string name = "Alice";
-                    client->hello(std::move(name), [client, session](boost::system::error_code ec, std::string result)
+                    client->hello(std::move(name),
+                                  [client, session, splitter](boost::system::error_code ec, std::string result)
                                   {
                                       Si::throw_if_error(ec);
                                       std::cout << result << '\n';

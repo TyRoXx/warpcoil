@@ -41,8 +41,9 @@ namespace
 
         warpcoil::async_write_stream client_requests;
         warpcoil::async_read_stream client_responses;
+        warpcoil::cpp::message_splitter<decltype(client_responses)> splitter(client_responses);
         async_test_interface_client<warpcoil::async_write_stream, warpcoil::async_read_stream> client(client_requests,
-                                                                                                      client_responses);
+                                                                                                      splitter);
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
 

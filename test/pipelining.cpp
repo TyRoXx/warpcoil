@@ -37,7 +37,8 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_simple)
                                       });
         });
     boost::asio::ip::tcp::socket socket(io);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, socket);
+    warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, splitter);
     warpcoil::checkpoint got_0;
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
@@ -120,7 +121,8 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_sequence)
                               serve_n(server, request_count);
                           });
     boost::asio::ip::tcp::socket socket(io);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, socket);
+    warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, splitter);
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
         [&client, request_count](boost::system::error_code ec)
@@ -149,7 +151,8 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_parallel)
                               serve_n(server, request_count);
                           });
     boost::asio::ip::tcp::socket socket(io);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, socket);
+    warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, splitter);
     std::size_t got_responses = 0;
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),

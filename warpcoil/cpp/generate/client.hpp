@@ -23,7 +23,7 @@ namespace warpcoil
                       start_line(code, in_class, "explicit async_");
                       append(code, name);
                       append(code, "_client(AsyncWriteStream &requests, "
-                                   "AsyncReadStream "
+                                   "warpcoil::cpp::message_splitter<AsyncReadStream> "
                                    "&responses)\n");
                       start_line(code, in_class.deeper(), ": pipeline(requests, responses) {}\n\n");
 

@@ -11,8 +11,8 @@ namespace warpcoil
         template <class AsyncReadStream>
         struct expected_response_registry
         {
-            explicit expected_response_registry(AsyncReadStream &input)
-                : incoming(input)
+            explicit expected_response_registry(message_splitter<AsyncReadStream> &incoming)
+                : incoming(incoming)
                 , state(response_state::not_expecting_response)
             {
             }
@@ -80,7 +80,7 @@ namespace warpcoil
 
             typedef std::tuple<message_type_int, request_id> response_header;
 
-            message_splitter<AsyncReadStream> incoming;
+            message_splitter<AsyncReadStream> &incoming;
             response_state state;
             std::map<request_id, expected_response> expected_responses;
 

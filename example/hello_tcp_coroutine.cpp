@@ -42,8 +42,9 @@ int main()
     boost::asio::spawn(io, [&io, &acceptor](boost::asio::yield_context yield)
                        {
                            ip::tcp::socket connecting_socket(io);
+                           warpcoil::cpp::message_splitter<decltype(connecting_socket)> splitter(connecting_socket);
                            async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(connecting_socket,
-                                                                                                    connecting_socket);
+                                                                                                    splitter);
                            connecting_socket.async_connect(
                                ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()), yield);
                            std::string name = "Alice";
