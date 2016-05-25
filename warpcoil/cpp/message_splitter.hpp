@@ -4,7 +4,9 @@
 #include <silicium/exchange.hpp>
 #include <warpcoil/protocol.hpp>
 #include <warpcoil/cpp/begin_parse_value.hpp>
+#include <warpcoil/cpp/tuple_parser.hpp>
 #include <warpcoil/cpp/integer_parser.hpp>
+#include <warpcoil/cpp/utf8_parser.hpp>
 
 namespace warpcoil
 {
@@ -60,13 +62,13 @@ namespace warpcoil
             void wait_for_request(RequestHandler handler)
             {
                 assert(!waiting_for_request);
-                waiting_for_request = [handler](boost::system::error_code ec, request_id request) mutable
+                waiting_for_request = [handler](boost::system::error_code ec, request_id id, std::string method) mutable
                 {
                     using boost::asio::asio_handler_invoke;
                     asio_handler_invoke(
                         [&]
                         {
-                            handler(ec, request);
+                            handler(ec, id, std::move(method));
                         },
                         &handler);
                 };
@@ -100,7 +102,7 @@ namespace warpcoil
             buffered_read_stream<AsyncReadStream> buffer;
             bool locked;
             std::function<void()> begin_parse_message;
-            std::function<void(boost::system::error_code, request_id)> waiting_for_request;
+            std::function<void(boost::system::error_code, request_id, std::string)> waiting_for_request;
             std::function<void(boost::system::error_code, request_id)> waiting_for_response;
             bool parsing_header;
 
@@ -132,9 +134,11 @@ namespace warpcoil
                         break;
 
                     case message_type::request:
-                        begin_parse_value(pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.response_buffer),
-                                          pipeline.buffer.response_buffer_used, integer_parser<request_id>(),
-                                          parse_request_operation<DummyHandler>(pipeline, dummy));
+                        begin_parse_value(
+                            pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.response_buffer),
+                            pipeline.buffer.response_buffer_used,
+                            tuple_parser<integer_parser<request_id>, utf8_parser<integer_parser<std::uint8_t>>>(),
+                            parse_request_operation<DummyHandler>(pipeline, dummy));
                         break;
 
                     default:
@@ -163,7 +167,7 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code ec, request_id const request)
+                void operator()(boost::system::error_code ec, std::tuple<request_id, std::string> request)
                 {
                     if (!!ec)
                     {
@@ -177,7 +181,8 @@ namespace warpcoil
                     bool const continue_ = pipeline.waiting_for_response != nullptr;
 
                     assert(pipeline.waiting_for_request);
-                    Si::exchange(pipeline.waiting_for_request, nullptr)(ec, request);
+                    Si::exchange(pipeline.waiting_for_request, nullptr)(ec, std::get<0>(request),
+                                                                        std::move(std::get<1>(request)));
 
                     if (continue_ && !pipeline.parsing_header)
                     {
