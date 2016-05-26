@@ -7,70 +7,7 @@
 
 namespace warpcoil
 {
-    namespace expressions
-    {
-        typedef std::string identifier;
-
-        struct call;
-        struct tuple;
-        struct closure;
-        struct literal;
-        struct tuple_element;
-
-        typedef Si::variant<std::unique_ptr<call>, std::unique_ptr<tuple>, std::unique_ptr<closure>,
-                            std::unique_ptr<literal>, identifier, std::unique_ptr<tuple_element>> expression;
-
-        struct call
-        {
-            expression callee;
-            expression argument;
-        };
-
-        struct tuple
-        {
-            std::vector<expression> elements;
-        };
-
-        struct closure
-        {
-            expression result;
-        };
-
-        struct tuple_element
-        {
-            expression tuple;
-            std::size_t element;
-        };
-    }
-
-    namespace values
-    {
-        typedef std::uint64_t integer;
-
-        struct closure;
-        struct tuple;
-
-        typedef Si::variant<integer, std::unique_ptr<closure>, std::unique_ptr<tuple>> value;
-
-        struct closure
-        {
-            std::map<expressions::identifier, value> bound;
-            expressions::expression result;
-        };
-
-        struct tuple
-        {
-            std::vector<value> elements;
-        };
-    }
-
-    namespace expressions
-    {
-        struct literal
-        {
-            values::value value;
-        };
-    }
+    typedef std::string identifier;
 
     namespace types
     {
@@ -202,9 +139,9 @@ namespace warpcoil
 
         struct interface_definition
         {
-            std::map<expressions::identifier, method> methods;
+            std::map<identifier, method> methods;
 
-            auto add_method(expressions::identifier name, type result)
+            auto add_method(identifier name, type result)
             {
                 method &target =
                     methods.insert(std::make_pair(std::move(name), method{std::move(result), {}})).first->second;
@@ -212,7 +149,7 @@ namespace warpcoil
                 {
                     method &target;
 
-                    parameter_maker operator()(expressions::identifier name, type type_) const
+                    parameter_maker operator()(identifier name, type type_) const
                     {
                         target.parameters.emplace_back(parameter{std::move(name), std::move(type_)});
                         return *this;
