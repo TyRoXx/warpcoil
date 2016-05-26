@@ -36,10 +36,11 @@ int main()
                 [session, &server_impl](boost::system::error_code ec)
                 {
                     Si::throw_if_error(ec);
+                    auto splitter = std::make_shared<warpcoil::cpp::message_splitter<decltype(*session)>>(*session);
                     auto server = std::make_shared<
                         async_hello_as_a_service_server<decltype(server_impl), decltype(*session), decltype(*session)>>(
-                        server_impl, *session, *session);
-                    server->serve_one_request([server, session](boost::system::error_code ec)
+                        server_impl, *splitter, *session);
+                    server->serve_one_request([server, session, splitter](boost::system::error_code ec)
                                               {
                                                   Si::throw_if_error(ec);
                                               });

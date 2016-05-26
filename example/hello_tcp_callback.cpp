@@ -29,10 +29,11 @@ int main()
         accepted_socket, [&accepted_socket, &server_impl](boost::system::error_code ec)
         {
             Si::throw_if_error(ec);
+            auto splitter = std::make_shared<warpcoil::cpp::message_splitter<ip::tcp::socket>>(accepted_socket);
             auto server = std::make_shared<
                 async_hello_as_a_service_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket>>(
-                server_impl, accepted_socket, accepted_socket);
-            server->serve_one_request([server](boost::system::error_code ec)
+                server_impl, *splitter, accepted_socket);
+            server->serve_one_request([server, splitter](boost::system::error_code ec)
                                       {
                                           Si::throw_if_error(ec);
                                       });

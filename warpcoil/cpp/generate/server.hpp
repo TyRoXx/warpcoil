@@ -23,10 +23,11 @@ namespace warpcoil
                 {
                     start_line(code, in_class, "explicit async_");
                     append(code, name);
-                    append(code, "_server(Implementation &implementation, AsyncReadStream &requests, AsyncWriteStream "
+                    append(code, "_server(Implementation &implementation, "
+                                 "warpcoil::cpp::message_splitter<AsyncReadStream> &requests, AsyncWriteStream "
                                  "&responses)\n");
                     start_line(code, in_class.deeper(), ": implementation(implementation), requests(requests), "
-                                                        "request_buffer_used(0), responses(responses) {}\n\n");
+                                                        "responses(responses) {}\n\n");
 
                     start_line(code, in_class, "template <class "
                                                "CompletionToken>\n");
@@ -50,42 +51,26 @@ namespace warpcoil
                           "\n\n");
 
                     start_line(code, indentation, "private:\n");
-
                     start_line(code, in_class, "Implementation &implementation;\n");
-                    start_line(code, in_class, "AsyncReadStream &requests;\n");
-                    start_line(code, in_class, "std::array<std::uint8_t, 512> request_buffer;\n");
-                    start_line(code, in_class, "std::size_t request_buffer_used;\n");
+                    start_line(code, in_class, "warpcoil::cpp::message_splitter<AsyncReadStream> &requests;\n");
                     start_line(code, in_class, "std::vector<std::uint8_t> response_buffer;\n");
                     start_line(code, in_class, "AsyncWriteStream &responses;\n\n");
-                    start_line(code, in_class, "typedef ");
-                    generate_parser_type(code, Si::to_unique(types::tuple{make_vector<types::type>(
-                                                   types::integer{0, 0xffu}, types::integer{0, 0xffffffffffffffffu},
-                                                   types::utf8{types::integer{0, 255}})}));
-                    append(code, " request_header_parser;\n\n");
                     start_line(code, in_class, "template <class Handler>\n");
                     start_line(code, in_class, "void begin_receive_request_header(Handler &&handle_result)\n");
                     block(code, in_class,
                           [&](indentation_level const in_method)
                           {
-                              start_line(code, in_method,
-                                         "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
-                                         "request_buffer_used, request_header_parser(), "
-                                         "warpcoil::cpp::wrap_handler([this"
-                                         "](boost::system::error_code ec, "
-                                         "std::tuple<warpcoil::message_type_int, warpcoil::request_id, "
-                                         "std::string> request_header, "
-                                         "Handler &handle_result)\n");
+                              start_line(code, in_method, "requests.wait_for_request("
+                                                          "warpcoil::cpp::wrap_handler([this"
+                                                          "](boost::system::error_code ec, "
+                                                          "warpcoil::request_id const request_id, "
+                                                          "std::string const &method, "
+                                                          "Handler &handle_result)\n");
                               block(code, in_method,
                                     [&](indentation_level const on_result)
                                     {
                                         start_line(code, on_result,
                                                    "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
-                                        start_line(code, on_result, "if (std::get<0>(request_header) != "
-                                                                    "static_cast<warpcoil::message_type_int>("
-                                                                    "warpcoil::message_type::request)) { "
-                                                                    "std::forward<Handler>(handle_"
-                                                                    "result)(warpcoil::cpp::make_"
-                                                                    "invalid_input_error()); return; }\n");
                                         bool first = true;
                                         for (auto const &entry : definition.methods)
                                         {
@@ -98,7 +83,7 @@ namespace warpcoil
                                             {
                                                 append(code, "else ");
                                             }
-                                            append(code, "if (boost::range::equal(std::get<2>(request_header), "
+                                            append(code, "if (boost::range::equal(method, "
                                                          "Si::make_c_str_range(\"");
                                             append(code, entry.first);
                                             append(code, "\")))\n");
@@ -108,7 +93,7 @@ namespace warpcoil
                                                       in_here.render(code);
                                                       append(code, "begin_receive_method_argument_of_");
                                                       append(code, entry.first);
-                                                      append(code, "(std::get<1>(request_header), "
+                                                      append(code, "(requests.lock_input(), request_id, "
                                                                    "std::forward<Handler>(handle_result));\n");
                                                   },
                                                   "\n");
@@ -126,14 +111,17 @@ namespace warpcoil
                         start_line(code, in_class, "template <class Handler>\n");
                         start_line(code, in_class, "void begin_receive_method_argument_of_");
                         append(code, entry.first);
-                        append(code, "(warpcoil::request_id request_id, Handler &&handle_result)\n");
+                        append(
+                            code,
+                            "(warpcoil::cpp::buffered_read_stream<AsyncReadStream> &input, warpcoil::request_id const "
+                            "request_id, Handler &&handle_result)\n");
                         block(
                             code, in_class,
                             [&](indentation_level const in_method)
                             {
                                 start_line(code, in_method,
-                                           "begin_parse_value(requests, boost::asio::buffer(request_buffer), "
-                                           "request_buffer_used, ");
+                                           "begin_parse_value(input.input, boost::asio::buffer(input.buffer), "
+                                           "input.buffer_used, ");
                                 types::type const parameter_type = get_parameter_type(entry.second.parameters);
                                 generate_parser_type(code, parameter_type);
                                 append(code, "{}, "
@@ -145,6 +133,7 @@ namespace warpcoil
                                     code, in_method,
                                     [&](indentation_level const on_result)
                                     {
+                                        start_line(code, in_method, "requests.unlock_input();\n");
                                         start_line(code, in_method,
                                                    "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
                                         start_line(code, on_result, "implementation.");

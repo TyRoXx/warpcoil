@@ -31,8 +31,8 @@ namespace warpcoil
                                           assert(state == response_state::parsing_result);
                                           buffered_read_stream<AsyncReadStream> &input = incoming.lock_input();
                                           begin_parse_value(
-                                              input.input, boost::asio::buffer(input.response_buffer),
-                                              input.response_buffer_used, ResultParser(),
+                                              input.input, boost::asio::buffer(input.buffer), input.buffer_used,
+                                              ResultParser(),
                                               parse_result_operation<ResultHandler, typename ResultParser::result_type>(
                                                   *this, std::move(handler)));
                                       }}));

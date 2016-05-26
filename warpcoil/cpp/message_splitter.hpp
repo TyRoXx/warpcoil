@@ -16,12 +16,12 @@ namespace warpcoil
         struct buffered_read_stream
         {
             AsyncReadStream &input;
-            std::array<std::uint8_t, 512> response_buffer;
-            std::size_t response_buffer_used;
+            std::array<std::uint8_t, 512> buffer;
+            std::size_t buffer_used;
 
             explicit buffered_read_stream(AsyncReadStream &input)
                 : input(input)
-                , response_buffer_used(0)
+                , buffer_used(0)
             {
             }
         };
@@ -128,15 +128,25 @@ namespace warpcoil
                     switch (static_cast<message_type>(type))
                     {
                     case message_type::response:
-                        begin_parse_value(pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.response_buffer),
-                                          pipeline.buffer.response_buffer_used, integer_parser<request_id>(),
+                        if (!pipeline.waiting_for_response)
+                        {
+                            pipeline.on_error(make_invalid_input_error());
+                            return;
+                        }
+                        begin_parse_value(pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.buffer),
+                                          pipeline.buffer.buffer_used, integer_parser<request_id>(),
                                           parse_response_operation<DummyHandler>(pipeline, dummy));
                         break;
 
                     case message_type::request:
+                        if (!pipeline.waiting_for_request)
+                        {
+                            pipeline.on_error(make_invalid_input_error());
+                            return;
+                        }
                         begin_parse_value(
-                            pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.response_buffer),
-                            pipeline.buffer.response_buffer_used,
+                            pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.buffer),
+                            pipeline.buffer.buffer_used,
                             tuple_parser<integer_parser<request_id>, utf8_parser<integer_parser<std::uint8_t>>>(),
                             parse_request_operation<DummyHandler>(pipeline, dummy));
                         break;
@@ -242,9 +252,16 @@ namespace warpcoil
 
             void on_error(boost::system::error_code const ec)
             {
+                bool const is_waiting_for_request = waiting_for_request != nullptr;
                 if (waiting_for_response)
                 {
                     Si::exchange(waiting_for_response, nullptr)(ec, 0);
+                }
+                //"this" might be destroyed at this point if "waiting_for_request" was empty, so we cannot dereference
+                //"this" here.
+                if (is_waiting_for_request)
+                {
+                    Si::exchange(waiting_for_request, nullptr)(ec, 0, "");
                 }
             }
 
@@ -259,8 +276,8 @@ namespace warpcoil
                         return;
                     }
                     parsing_header = true;
-                    begin_parse_value(buffer.input, boost::asio::buffer(buffer.response_buffer),
-                                      buffer.response_buffer_used, integer_parser<message_type_int>(),
+                    begin_parse_value(buffer.input, boost::asio::buffer(buffer.buffer), buffer.buffer_used,
+                                      integer_parser<message_type_int>(),
                                       parse_message_type_operation<DummyHandler>(*this, handler));
                 };
             }

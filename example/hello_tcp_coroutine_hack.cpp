@@ -203,8 +203,9 @@ int main()
             ip::tcp::socket accepted_socket(io);
             server::my_hello_service server_impl;
             acceptor.async_accept(accepted_socket, yield);
+            warpcoil::cpp::message_splitter<decltype(accepted_socket)> splitter(accepted_socket);
             async_hello_as_a_service_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket> server(
-                server_impl, accepted_socket, accepted_socket);
+                server_impl, splitter, accepted_socket);
             server.serve_one_request(yield);
         });
     // client:
