@@ -63,9 +63,7 @@ int main()
                     auto client =
                         std::make_shared<async_hello_as_a_service_client<decltype(*session), decltype(*session)>>(
                             *session, *splitter);
-                    std::string name = "Alice";
-                    client->hello(std::move(name),
-                                  [client, session, splitter](boost::system::error_code ec, std::string result)
+                    client->hello("Alice", [client, session, splitter](boost::system::error_code ec, std::string result)
                                   {
                                       Si::throw_if_error(ec);
                                       std::cout << result << '\n';

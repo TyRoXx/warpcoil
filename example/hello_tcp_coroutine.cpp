@@ -47,8 +47,7 @@ int main()
                                                                                                     splitter);
                            connecting_socket.async_connect(
                                ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()), yield);
-                           std::string name = "Alice";
-                           std::string result = client.hello(std::move(name), yield);
+                           std::string result = client.hello("Alice", yield);
                            std::cout << result << '\n';
                        });
 
