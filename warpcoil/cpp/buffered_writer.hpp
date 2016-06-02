@@ -40,14 +40,12 @@ namespace warpcoil
 
             auto buffer_sink()
             {
-                assert(begin_write);
                 return Si::make_container_sink(buffer);
             }
 
             template <class ErrorHandler>
             void send_buffer(ErrorHandler on_result)
             {
-                assert(begin_write);
                 assert(!buffer.empty());
                 this->on_result =
                     [ next_on_result = this->on_result, on_result ](boost::system::error_code const ec) mutable
@@ -58,6 +56,10 @@ namespace warpcoil
                     }
                     on_result(ec);
                 };
+                if (!begin_write)
+                {
+                    return;
+                }
                 if (being_written.empty())
                 {
                     being_written = std::move(buffer);
