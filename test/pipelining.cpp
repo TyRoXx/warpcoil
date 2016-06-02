@@ -20,23 +20,29 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_simple)
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
             auto splitter =
                 std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(accepted_socket);
+            auto writer =
+                std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
+            writer->async_run([writer](boost::system::error_code const)
+                              {
+                                  BOOST_FAIL("Unexpected error");
+                              });
             auto server =
                 std::make_shared<async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl, *splitter,
-                                                                                            accepted_socket);
-            server->serve_one_request([server, splitter, &served_0, &served_1, &got_1](boost::system::error_code ec)
-                                      {
-                                          BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                                          served_0.enter();
-                                          served_1.enable();
-                                          got_1.enable();
-                                          server->serve_one_request(
-                                              [server, splitter, &served_1](boost::system::error_code ec)
+                                                                                            *writer);
+            server->serve_one_request(
+                [server, writer, splitter, &served_0, &served_1, &got_1](boost::system::error_code ec)
+                {
+                    BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
+                    served_0.enter();
+                    served_1.enable();
+                    got_1.enable();
+                    server->serve_one_request([server, splitter, &served_1](boost::system::error_code ec)
                                               {
                                                   BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
                                                   served_1.enter();
                                               });
-                                      });
+                });
         });
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
@@ -79,16 +85,17 @@ namespace
     template <class ServerPtr>
     void serve_n(ServerPtr server,
                  std::shared_ptr<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>> server_splitter,
+                 std::shared_ptr<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>> writer,
                  std::size_t const n)
     {
         if (n == 0)
         {
             return;
         }
-        server->serve_one_request([server, server_splitter, n](boost::system::error_code ec)
+        server->serve_one_request([server, server_splitter, writer, n](boost::system::error_code ec)
                                   {
                                       BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                                      serve_n(server, server_splitter, n - 1);
+                                      serve_n(server, server_splitter, writer, n - 1);
                                   });
     }
 
@@ -127,11 +134,17 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_sequence)
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
             auto splitter =
                 std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(accepted_socket);
+            auto writer =
+                std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
+            writer->async_run([writer](boost::system::error_code const)
+                              {
+                                  BOOST_FAIL("Unexpected error");
+                              });
             auto server =
                 std::make_shared<async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl, *splitter,
-                                                                                            accepted_socket);
-            serve_n(server, splitter, request_count);
+                                                                                            *writer);
+            serve_n(server, splitter, writer, request_count);
         });
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
@@ -166,11 +179,17 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_parallel)
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
             auto splitter =
                 std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(accepted_socket);
+            auto writer =
+                std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
+            writer->async_run([writer](boost::system::error_code const)
+                              {
+                                  BOOST_FAIL("Unexpected error");
+                              });
             auto server =
                 std::make_shared<async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl, *splitter,
-                                                                                            accepted_socket);
-            serve_n(server, splitter, request_count);
+                                                                                            *writer);
+            serve_n(server, splitter, writer, request_count);
         });
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);

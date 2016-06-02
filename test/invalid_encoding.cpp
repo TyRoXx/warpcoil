@@ -83,7 +83,7 @@ namespace
             BOOST_FAIL("unexpected call");
         }
 
-        virtual void variant(
+        void variant(
             Si::variant<std::uint32_t, std::string> argument,
             std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result) override
         {
@@ -99,8 +99,13 @@ namespace
         warpcoil::async_read_stream server_requests;
         warpcoil::async_write_stream server_responses;
         warpcoil::cpp::message_splitter<decltype(server_requests)> splitter(server_requests);
+        warpcoil::cpp::buffered_writer<decltype(server_responses)> writer(server_responses);
+        writer.async_run([](boost::system::error_code const)
+                         {
+                             BOOST_FAIL("Unexpected error");
+                         });
         async_test_interface_server<decltype(server_impl), warpcoil::async_read_stream, warpcoil::async_write_stream>
-            server(server_impl, splitter, server_responses);
+            server(server_impl, splitter, writer);
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
         warpcoil::checkpoint request_served;

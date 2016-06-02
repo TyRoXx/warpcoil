@@ -40,7 +40,7 @@ namespace warpcoil
             void wait_for_response(ResponseHandler handler)
             {
                 assert(!waiting_for_response);
-                waiting_for_response = [handler](boost::system::error_code ec, request_id request) mutable
+                waiting_for_response = [handler](boost::system::error_code const ec, request_id const request) mutable
                 {
                     using boost::asio::asio_handler_invoke;
                     asio_handler_invoke(
@@ -62,7 +62,8 @@ namespace warpcoil
             void wait_for_request(RequestHandler handler)
             {
                 assert(!waiting_for_request);
-                waiting_for_request = [handler](boost::system::error_code ec, request_id id, std::string method) mutable
+                waiting_for_request = [handler](boost::system::error_code const ec, request_id const id,
+                                                std::string method) mutable
                 {
                     using boost::asio::asio_handler_invoke;
                     asio_handler_invoke(
@@ -118,7 +119,7 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code ec, message_type_int const type)
+                void operator()(boost::system::error_code const ec, message_type_int const type)
                 {
                     if (!!ec)
                     {
@@ -177,7 +178,7 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code ec, std::tuple<request_id, std::string> request)
+                void operator()(boost::system::error_code const ec, std::tuple<request_id, std::string> request)
                 {
                     if (!!ec)
                     {
@@ -220,7 +221,7 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code ec, request_id const request)
+                void operator()(boost::system::error_code const ec, request_id const request)
                 {
                     if (!!ec)
                     {

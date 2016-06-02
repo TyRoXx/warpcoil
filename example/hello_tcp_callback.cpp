@@ -30,10 +30,15 @@ int main()
         {
             Si::throw_if_error(ec);
             auto splitter = std::make_shared<warpcoil::cpp::message_splitter<ip::tcp::socket>>(accepted_socket);
+            auto writer = std::make_shared<warpcoil::cpp::buffered_writer<ip::tcp::socket>>(accepted_socket);
+            writer->async_run([writer](boost::system::error_code const ec)
+                              {
+                                  Si::throw_if_error(ec);
+                              });
             auto server = std::make_shared<
                 async_hello_as_a_service_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket>>(
-                server_impl, *splitter, accepted_socket);
-            server->serve_one_request([server, splitter](boost::system::error_code ec)
+                server_impl, *splitter, *writer);
+            server->serve_one_request([server, splitter, writer](boost::system::error_code ec)
                                       {
                                           Si::throw_if_error(ec);
                                       });

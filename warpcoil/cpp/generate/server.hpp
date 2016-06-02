@@ -24,7 +24,8 @@ namespace warpcoil
                     start_line(code, in_class, "explicit async_");
                     append(code, name);
                     append(code, "_server(Implementation &implementation, "
-                                 "warpcoil::cpp::message_splitter<AsyncReadStream> &requests, AsyncWriteStream "
+                                 "warpcoil::cpp::message_splitter<AsyncReadStream> &requests, "
+                                 "warpcoil::cpp::buffered_writer<AsyncWriteStream> "
                                  "&responses)\n");
                     start_line(code, in_class.deeper(), ": implementation(implementation), requests(requests), "
                                                         "responses(responses) {}\n\n");
@@ -53,8 +54,7 @@ namespace warpcoil
                     start_line(code, indentation, "private:\n");
                     start_line(code, in_class, "Implementation &implementation;\n");
                     start_line(code, in_class, "warpcoil::cpp::message_splitter<AsyncReadStream> &requests;\n");
-                    start_line(code, in_class, "std::vector<std::uint8_t> response_buffer;\n");
-                    start_line(code, in_class, "AsyncWriteStream &responses;\n\n");
+                    start_line(code, in_class, "warpcoil::cpp::buffered_writer<AsyncWriteStream> &responses;\n\n");
                     start_line(code, in_class, "template <class Handler>\n");
                     start_line(code, in_class, "void begin_receive_request_header(Handler &&handle_result)\n");
                     block(code, in_class,
@@ -161,12 +161,10 @@ namespace warpcoil
                                                              "if (!!ec) { "
                                                              "std::forward<Handler>(handle_result)(ec); "
                                                              "return; }\n");
-                                                  start_line(code, in_lambda, "response_buffer.clear();\n");
                                                   start_line(code, in_lambda, "auto response_writer = "
                                                                               "Si::Sink<std::uint8_t, "
-                                                                              "Si::success>::erase(Si::make_"
-                                                                              "container_sink(response_buffer));"
-                                                                              "\n");
+                                                                              "Si::success>::erase("
+                                                                              "responses.buffer_sink());\n");
                                                   start_line(code, in_lambda, "warpcoil::cpp::write_integer(response_"
                                                                               "writer, "
                                                                               "static_cast<warpcoil::message_type_int>("
@@ -187,13 +185,11 @@ namespace warpcoil
                                                                                "invalid_input_error())"));
                                                       break;
                                                   }
-                                                  start_line(code, in_lambda, "boost::asio::async_write(responses,"
-                                                                              " boost::asio::buffer(response_"
-                                                                              "buffer), "
-                                                                              "warpcoil::cpp::wrap_handler([]("
-                                                                              "boost::"
-                                                                              "system::error_code ec, "
-                                                                              "std::size_t, Handler &handle_result)\n");
+                                                  start_line(code, in_lambda,
+                                                             "responses.send_buffer(warpcoil::cpp::wrap_handler([]("
+                                                             "boost::"
+                                                             "system::error_code ec, "
+                                                             "Handler &handle_result)\n");
                                                   block(code, in_lambda,
                                                         [&](indentation_level const in_read)
                                                         {

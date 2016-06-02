@@ -44,10 +44,20 @@ namespace warpcoil
                 return Si::make_container_sink(buffer);
             }
 
-            void send_buffer()
+            template <class ErrorHandler>
+            void send_buffer(ErrorHandler on_result)
             {
                 assert(begin_write);
                 assert(!buffer.empty());
+                this->on_result =
+                    [ next_on_result = this->on_result, on_result ](boost::system::error_code const ec) mutable
+                {
+                    if (next_on_result)
+                    {
+                        next_on_result(ec);
+                    }
+                    on_result(ec);
+                };
                 if (being_written.empty())
                 {
                     being_written = std::move(buffer);
@@ -59,6 +69,7 @@ namespace warpcoil
         private:
             AsyncWriteStream &destination;
             std::function<void()> begin_write;
+            std::function<void(boost::system::error_code)> on_result;
             std::vector<std::uint8_t> being_written;
             std::vector<std::uint8_t> buffer;
 
@@ -76,6 +87,8 @@ namespace warpcoil
 
                 void operator()(boost::system::error_code ec, std::size_t)
                 {
+                    auto local_on_result = std::move(writer.on_result);
+                    local_on_result(ec);
                     if (!!ec)
                     {
                         handler(ec);
@@ -84,7 +97,9 @@ namespace warpcoil
                     writer.being_written.clear();
                     if (!writer.buffer.empty())
                     {
-                        writer.send_buffer();
+                        writer.send_buffer([](boost::system::error_code const)
+                                           {
+                                           });
                     }
                 }
 

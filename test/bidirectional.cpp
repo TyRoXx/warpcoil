@@ -6,9 +6,6 @@
 
 BOOST_AUTO_TEST_CASE(bidirectional)
 {
-    // TODO
-    return;
-
     boost::asio::io_service io;
     boost::asio::ip::tcp::acceptor acceptor(io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v6(), 0), true);
     acceptor.listen();
@@ -26,19 +23,20 @@ BOOST_AUTO_TEST_CASE(bidirectional)
                               {
                                   BOOST_FAIL("Unexpected error");
                               });
-            async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client_a(
-                *writer, *splitter_a);
-            client_a.utf8("Y", [splitter_a, writer](boost::system::error_code ec, std::string result)
-                          {
-                              BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                              BOOST_CHECK_EQUAL("Y123", result);
-                          });
-            BOOST_CHECK_EQUAL(1u, pending_requests(client_a));
+            auto client_a = std::make_shared<
+                async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket>>(*writer,
+                                                                                                         *splitter_a);
+            client_a->utf8("Y", [splitter_a, client_a, writer](boost::system::error_code ec, std::string result)
+                           {
+                               BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
+                               BOOST_CHECK_EQUAL("Y123", result);
+                           });
+            BOOST_CHECK_EQUAL(1u, pending_requests(*client_a));
             auto server_a =
                 std::make_shared<async_test_interface_server<decltype(server_impl_a), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl_a, *splitter_a,
-                                                                                            accepted_socket);
-            server_a->serve_one_request([server_a, splitter_a, writer](boost::system::error_code ec)
+                                                                                            *writer);
+            server_a->serve_one_request([server_a, client_a, splitter_a, writer](boost::system::error_code ec)
                                         {
                                             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
                                         });
@@ -47,21 +45,21 @@ BOOST_AUTO_TEST_CASE(bidirectional)
     warpcoil::cpp::message_splitter<decltype(connecting_socket)> splitter_b(connecting_socket);
     warpcoil::impl_test_interface server_impl_b;
     warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket> writer(connecting_socket);
-    writer.async_run([](boost::system::error_code const)
-                     {
-                         BOOST_FAIL("Unexpected error");
-                     });
     async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter_b);
     connecting_socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
-        [&client, &server_impl_b, &splitter_b, &connecting_socket](boost::system::error_code ec)
+        [&client, &server_impl_b, &splitter_b, &writer, &connecting_socket](boost::system::error_code ec)
         {
-            BOOST_CHECK_EQUAL(0u, pending_requests(client));
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
+            BOOST_CHECK_EQUAL(0u, pending_requests(client));
+            writer.async_run([](boost::system::error_code const)
+                             {
+                                 BOOST_FAIL("Unexpected error");
+                             });
             auto server_b =
                 std::make_shared<async_test_interface_server<decltype(server_impl_b), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl_b, splitter_b,
-                                                                                            connecting_socket);
+                                                                                            writer);
             client.utf8("X", [](boost::system::error_code ec, std::string result)
                         {
                             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);

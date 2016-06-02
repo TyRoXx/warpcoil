@@ -45,7 +45,14 @@ namespace warpcoil
                 case client_pipeline_request_status::failure:
                     return;
                 }
-                requests.send_buffer();
+                requests.send_buffer([this](boost::system::error_code const ec)
+                                     {
+                                         if (!ec)
+                                         {
+                                             return;
+                                         }
+                                         responses.on_error(ec);
+                                     });
                 responses.template expect_response<ResultParser>(current_id, handler);
             }
 
