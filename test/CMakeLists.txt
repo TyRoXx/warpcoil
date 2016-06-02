@@ -1,3 +1,4 @@
+add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
 file(GLOB sources "*.hpp" "*.cpp")
 file(GLOB_RECURSE headers "../warpcoil/*.hpp")
 set(allSources ${sources} ${headers})
