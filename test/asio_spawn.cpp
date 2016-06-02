@@ -33,7 +33,12 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
         });
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, splitter);
+    warpcoil::cpp::buffered_writer<decltype(socket)> writer(socket);
+    writer.async_run([](boost::system::error_code const)
+                     {
+                         BOOST_FAIL("Unexpected error");
+                     });
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter);
     bool ok2 = false;
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),

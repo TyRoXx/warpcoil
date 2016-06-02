@@ -42,7 +42,12 @@ int main()
     // client:
     ip::tcp::socket connecting_socket(io);
     warpcoil::cpp::message_splitter<decltype(connecting_socket)> splitter(connecting_socket);
-    async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(connecting_socket, splitter);
+    warpcoil::cpp::buffered_writer<ip::tcp::socket> writer(connecting_socket);
+    writer.async_run([](boost::system::error_code const ec)
+                     {
+                         Si::throw_if_error(ec);
+                     });
+    async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(writer, splitter);
     connecting_socket.async_connect(ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
                                     [&io, &client](boost::system::error_code ec)
                                     {

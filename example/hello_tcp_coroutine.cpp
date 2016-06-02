@@ -2,6 +2,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/spawn.hpp>
 #include <iostream>
+#include <silicium/error_or.hpp>
 
 namespace server
 {
@@ -42,11 +43,16 @@ int main()
     // client:
     boost::asio::spawn(io, [&io, &acceptor](boost::asio::yield_context yield)
                        {
-                           ip::tcp::socket connecting_socket(io);
-                           warpcoil::cpp::message_splitter<decltype(connecting_socket)> splitter(connecting_socket);
-                           async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(connecting_socket,
-                                                                                                    splitter);
-                           connecting_socket.async_connect(
+                           auto connecting_socket = std::make_shared<ip::tcp::socket>(io);
+                           warpcoil::cpp::message_splitter<ip::tcp::socket> splitter(*connecting_socket);
+                           auto writer =
+                               std::make_shared<warpcoil::cpp::buffered_writer<ip::tcp::socket>>(*connecting_socket);
+                           writer->async_run([connecting_socket, writer](boost::system::error_code const ec)
+                                             {
+                                                 Si::throw_if_error(ec);
+                                             });
+                           async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(*writer, splitter);
+                           connecting_socket->async_connect(
                                ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()), yield);
                            std::string result = client.hello("Alice", yield);
                            std::cout << result << '\n';

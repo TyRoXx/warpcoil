@@ -40,14 +40,19 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_simple)
         });
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, splitter);
+    warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket> writer(socket);
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter);
     warpcoil::checkpoint got_0;
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
-        [&client, &got_0, &got_1](boost::system::error_code ec)
+        [&client, &writer, &got_0, &got_1](boost::system::error_code ec)
         {
             BOOST_CHECK_EQUAL(0u, pending_requests(client));
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
+            writer.async_run([](boost::system::error_code const)
+                             {
+                                 BOOST_FAIL("Unexpected error");
+                             });
             client.utf8("X", [&got_0](boost::system::error_code ec, std::string result)
                         {
                             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
@@ -130,7 +135,12 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_sequence)
         });
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, splitter);
+    warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket> writer(socket);
+    writer.async_run([](boost::system::error_code const)
+                     {
+                         BOOST_FAIL("Unexpected error");
+                     });
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter);
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
         [&client, request_count](boost::system::error_code ec)
@@ -164,13 +174,18 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_parallel)
         });
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(socket, splitter);
+    warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket> writer(socket);
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter);
     std::size_t got_responses = 0;
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
-        [&client, request_count, &got_responses](boost::system::error_code ec)
+        [&client, &writer, request_count, &got_responses](boost::system::error_code ec)
         {
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
+            writer.async_run([](boost::system::error_code const)
+                             {
+                                 BOOST_FAIL("Unexpected error");
+                             });
             for (std::size_t i = 1; i <= request_count; ++i)
             {
                 BOOST_CHECK_EQUAL(i - 1, pending_requests(client));

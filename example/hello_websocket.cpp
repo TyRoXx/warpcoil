@@ -61,10 +61,16 @@ int main()
                 {
                     Si::throw_if_error(ec);
                     auto splitter = std::make_shared<warpcoil::cpp::message_splitter<decltype(*session)>>(*session);
+                    auto writer = std::make_shared<warpcoil::cpp::buffered_writer<decltype(*session)>>(*session);
+                    writer->async_run([writer](boost::system::error_code const ec)
+                                      {
+                                          Si::throw_if_error(ec);
+                                      });
                     auto client =
                         std::make_shared<async_hello_as_a_service_client<decltype(*session), decltype(*session)>>(
-                            *session, *splitter);
-                    client->hello("Alice", [client, session, splitter](boost::system::error_code ec, std::string result)
+                            *writer, *splitter);
+                    client->hello("Alice",
+                                  [client, writer, session, splitter](boost::system::error_code ec, std::string result)
                                   {
                                       Si::throw_if_error(ec);
                                       std::cout << result << '\n';

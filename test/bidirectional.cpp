@@ -6,7 +6,8 @@
 
 BOOST_AUTO_TEST_CASE(bidirectional)
 {
-    return; // TODO: sending both requests and responses on the same socket
+    // TODO
+    return;
 
     boost::asio::io_service io;
     boost::asio::ip::tcp::acceptor acceptor(io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v6(), 0), true);
@@ -19,9 +20,15 @@ BOOST_AUTO_TEST_CASE(bidirectional)
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
             auto splitter_a =
                 std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(accepted_socket);
+            auto writer =
+                std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
+            writer->async_run([writer](boost::system::error_code const)
+                              {
+                                  BOOST_FAIL("Unexpected error");
+                              });
             async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client_a(
-                accepted_socket, *splitter_a);
-            client_a.utf8("Y", [splitter_a](boost::system::error_code ec, std::string result)
+                *writer, *splitter_a);
+            client_a.utf8("Y", [splitter_a, writer](boost::system::error_code ec, std::string result)
                           {
                               BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
                               BOOST_CHECK_EQUAL("Y123", result);
@@ -31,7 +38,7 @@ BOOST_AUTO_TEST_CASE(bidirectional)
                 std::make_shared<async_test_interface_server<decltype(server_impl_a), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl_a, *splitter_a,
                                                                                             accepted_socket);
-            server_a->serve_one_request([server_a, splitter_a](boost::system::error_code ec)
+            server_a->serve_one_request([server_a, splitter_a, writer](boost::system::error_code ec)
                                         {
                                             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
                                         });
@@ -39,8 +46,12 @@ BOOST_AUTO_TEST_CASE(bidirectional)
     boost::asio::ip::tcp::socket connecting_socket(io);
     warpcoil::cpp::message_splitter<decltype(connecting_socket)> splitter_b(connecting_socket);
     warpcoil::impl_test_interface server_impl_b;
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(connecting_socket,
-                                                                                                   splitter_b);
+    warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket> writer(connecting_socket);
+    writer.async_run([](boost::system::error_code const)
+                     {
+                         BOOST_FAIL("Unexpected error");
+                     });
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter_b);
     connecting_socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
         [&client, &server_impl_b, &splitter_b, &connecting_socket](boost::system::error_code ec)

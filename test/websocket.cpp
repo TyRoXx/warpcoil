@@ -66,10 +66,15 @@ BOOST_AUTO_TEST_CASE(websocket)
                     served.enable();
                     Si::throw_if_error(ec);
                     auto splitter = std::make_shared<warpcoil::cpp::message_splitter<decltype(*session)>>(*session);
+                    auto writer = std::make_shared<warpcoil::cpp::buffered_writer<decltype(*session)>>(*session);
+                    writer->async_run([writer, session](boost::system::error_code const ec)
+                                      {
+                                          Si::throw_if_error(ec);
+                                      });
                     auto client = std::make_shared<async_test_interface_client<decltype(*session), decltype(*session)>>(
-                        *session, *splitter);
-                    client->utf8("Alice", [client, splitter, session, &received_response](boost::system::error_code ec,
-                                                                                          std::string result)
+                        *writer, *splitter);
+                    client->utf8("Alice", [client, writer, splitter, session,
+                                           &received_response](boost::system::error_code ec, std::string result)
                                  {
                                      received_response.enter();
                                      Si::throw_if_error(ec);

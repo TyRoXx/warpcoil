@@ -150,8 +150,12 @@ namespace
         warpcoil::async_write_stream client_requests;
         warpcoil::async_read_stream client_responses;
         warpcoil::cpp::message_splitter<decltype(client_responses)> splitter(client_responses);
-        async_test_interface_client<warpcoil::async_write_stream, warpcoil::async_read_stream> client(client_requests,
-                                                                                                      splitter);
+        warpcoil::cpp::buffered_writer<decltype(client_requests)> writer(client_requests);
+        writer.async_run([](boost::system::error_code const)
+                         {
+                             BOOST_FAIL("Unexpected error");
+                         });
+        async_test_interface_client<warpcoil::async_write_stream, warpcoil::async_read_stream> client(writer, splitter);
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};

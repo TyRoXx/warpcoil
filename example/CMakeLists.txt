@@ -33,15 +33,6 @@ target_link_libraries(hello_tcp_coroutine ${CONAN_LIBS} ${CMAKE_THREAD_LIBS_INIT
 add_dependencies(hello_tcp_coroutine hello_interfaces_header)
 target_include_directories(hello_tcp_coroutine PRIVATE ${CMAKE_BINARY_DIR})
 
-set(demoSources "hello_tcp_coroutine_hack.cpp")
-if(EXISTS ${generatedHeader})
-    set(demoSources ${demoSources} ${generatedHeader})
-endif()
-add_executable(hello_tcp_coroutine_hack ${demoSources})
-target_link_libraries(hello_tcp_coroutine_hack ${CONAN_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-add_dependencies(hello_tcp_coroutine_hack hello_interfaces_header)
-target_include_directories(hello_tcp_coroutine_hack PRIVATE ${CMAKE_BINARY_DIR})
-    
 set(demoSources "hello_websocket.cpp")
 if(EXISTS ${generatedHeader})
     set(demoSources ${demoSources} ${generatedHeader})
