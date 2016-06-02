@@ -1,6 +1,7 @@
 #include "memory.hpp"
 #include <new>
 #include <atomic>
+#include <cstdlib>
 
 namespace warpcoil
 {
