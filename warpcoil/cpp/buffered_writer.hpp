@@ -88,6 +88,7 @@ namespace warpcoil
                 void operator()(boost::system::error_code ec, std::size_t)
                 {
                     auto local_on_result = std::move(writer.on_result);
+                    assert(!writer.on_result);
                     local_on_result(ec);
                     if (!!ec)
                     {
