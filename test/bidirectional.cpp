@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(bidirectional)
                     std::make_shared<async_test_interface_server<decltype(server_impl_a), boost::asio::ip::tcp::socket,
                                                                  boost::asio::ip::tcp::socket>>(server_impl_a,
                                                                                                 *splitter_a, *writer);
-                server_a->serve_one_request([server_a, client_a, splitter_a, writer](boost::system::error_code ec)
+                server_a->serve_one_request([server_a, splitter_a, writer](boost::system::error_code ec)
                                             {
                                                 BOOST_TEST_MESSAGE("Served request A");
                                                 BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
