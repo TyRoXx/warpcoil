@@ -101,7 +101,8 @@ namespace warpcoil
                         if (entry_found == expected_responses.end())
                         {
                             state = response_state::not_expecting_response;
-                            throw std::logic_error("TODO handle protocol violation");
+                            on_error(make_invalid_input_error());
+                            return;
                         }
                         std::function<void()> parse_result = std::move(entry_found->second.parse_result);
                         expected_responses.erase(entry_found);
