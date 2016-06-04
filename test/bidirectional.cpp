@@ -95,5 +95,5 @@ BOOST_AUTO_TEST_CASE(bidirectional)
         BOOST_CHECK_EQUAL(0u, pending_requests(client_b));
     }
     auto const allocations_after = warpcoil::number_of_allocations();
-    BOOST_CHECK_LE((allocations_after - allocations_before), 188u);
+    BOOST_CHECK_LE((allocations_after - allocations_before), 189u);
 }
