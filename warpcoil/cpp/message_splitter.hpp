@@ -92,7 +92,7 @@ namespace warpcoil
             {
                 assert(locked);
                 locked = false;
-                if (!waiting_for_response)
+                if (!waiting_for_response && !waiting_for_request)
                 {
                     return;
                 }
@@ -180,6 +180,7 @@ namespace warpcoil
 
                 void operator()(boost::system::error_code const ec, std::tuple<request_id, std::string> request)
                 {
+                    assert(pipeline.waiting_for_request);
                     if (!!ec)
                     {
                         pipeline.on_error(ec);
@@ -223,6 +224,7 @@ namespace warpcoil
 
                 void operator()(boost::system::error_code const ec, request_id const request)
                 {
+                    assert(pipeline.waiting_for_response);
                     if (!!ec)
                     {
                         pipeline.on_error(ec);
@@ -272,6 +274,7 @@ namespace warpcoil
                 begin_parse_message = [this, handler]()
                 {
                     assert(!parsing_header);
+                    assert(waiting_for_response || waiting_for_request);
                     if (locked)
                     {
                         return;
