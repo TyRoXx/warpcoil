@@ -38,7 +38,7 @@ script:
  - CXX=$CPP CC=$GCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DWARPCOIL_WARNING_IS_ERROR=ON -DWARPCOIL_USE_CLANG_FORMAT=OFF -DWARPCOIL_COVERAGE=$COVERAGE || exit 1
  - cmake --build . -- -j2 || exit 1
  - pushd bin
- - valgrind --leak-check=full ./tests --run_test=bidirectional* --log_level=all || exit 1
+ - valgrind --leak-check=full ./tests --log_level=all || exit 1
  - if [ $COVERAGE == "YES" ]; then
      curl -s https://codecov.io/bash > codecov.sh || exit 1;
      chmod +x codecov.sh || exit 1;
