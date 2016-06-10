@@ -3,22 +3,11 @@
 #include "checkpoint.hpp"
 #include "test_streams.hpp"
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/steady_timer.hpp>
 #include <boost/test/unit_test.hpp>
-#include <chrono>
 
 BOOST_AUTO_TEST_CASE(bidirectional_with_sockets)
 {
     boost::asio::io_service io;
-#ifdef __linux__
-    boost::asio::steady_timer timeout(io);
-    timeout.expires_from_now(std::chrono::seconds(1));
-    timeout.async_wait([&io](boost::system::error_code)
-                       {
-                           io.stop();
-                           BOOST_FAIL("Deadlock detected");
-                       });
-#endif
     boost::asio::ip::tcp::acceptor acceptor(io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v6(), 0), true);
     acceptor.listen();
     boost::asio::ip::tcp::socket accepted_socket(io);
