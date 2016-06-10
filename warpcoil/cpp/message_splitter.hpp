@@ -86,6 +86,7 @@ namespace warpcoil
 
             buffered_read_stream<AsyncReadStream> &lock_input()
             {
+                assert(!parsing_header);
                 assert(!locked);
                 locked = true;
                 return buffer;
@@ -93,6 +94,7 @@ namespace warpcoil
 
             void unlock_input()
             {
+                assert(!parsing_header);
                 assert(locked);
                 locked = false;
                 if (!waiting_for_response && !waiting_for_request)
