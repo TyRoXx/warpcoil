@@ -7,6 +7,7 @@
 #include <warpcoil/cpp/tuple_parser.hpp>
 #include <warpcoil/cpp/integer_parser.hpp>
 #include <warpcoil/cpp/utf8_parser.hpp>
+#include <iostream>
 
 namespace warpcoil
 {
@@ -55,6 +56,7 @@ namespace warpcoil
                     return;
                 }
                 set_begin_parse_message(handler);
+                std::cerr << "begin_parse_message in wait_for_response\n";
                 begin_parse_message();
             }
 
@@ -78,6 +80,7 @@ namespace warpcoil
                     return;
                 }
                 set_begin_parse_message(handler);
+                std::cerr << "begin_parse_message in wait_for_request\n";
                 begin_parse_message();
             }
 
@@ -96,6 +99,7 @@ namespace warpcoil
                 {
                     return;
                 }
+                std::cerr << "begin_parse_message after unlock_input\n";
                 begin_parse_message();
             }
 
@@ -197,6 +201,7 @@ namespace warpcoil
 
                     if (continue_ && !pipeline.parsing_header)
                     {
+                        std::cerr << "begin_parse_message after request\n";
                         pipeline.begin_parse_message();
                     }
                 }
@@ -239,6 +244,7 @@ namespace warpcoil
 
                     if (continue_ && !pipeline.parsing_header)
                     {
+                        std::cerr << "begin_parse_message after response\n";
                         pipeline.begin_parse_message();
                     }
                 }
