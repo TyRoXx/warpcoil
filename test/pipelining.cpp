@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_sequence)
     acceptor.listen();
     boost::asio::ip::tcp::socket accepted_socket(io);
     warpcoil::impl_test_interface server_impl;
-    std::uint16_t const request_count = 1000;
+    std::uint16_t const request_count = 50;
     acceptor.async_accept(
         accepted_socket, [&accepted_socket, &server_impl, request_count](boost::system::error_code ec)
         {
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_parallel)
     acceptor.listen();
     boost::asio::ip::tcp::socket accepted_socket(io);
     warpcoil::impl_test_interface server_impl;
-    std::uint16_t const request_count = 1000;
+    std::uint16_t const request_count = 50;
     acceptor.async_accept(
         accepted_socket, [&accepted_socket, &server_impl, request_count](boost::system::error_code ec)
         {
