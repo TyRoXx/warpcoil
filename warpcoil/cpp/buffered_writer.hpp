@@ -1,8 +1,10 @@
 #pragma once
 
+#include <warpcoil/cpp/helpers.hpp>
 #include <boost/asio/handler_invoke_hook.hpp>
 #include <boost/asio/write.hpp>
 #include <silicium/sink/iterator_sink.hpp>
+#include <iostream>
 
 namespace warpcoil
 {
@@ -31,6 +33,11 @@ namespace warpcoil
                 boost::asio::async_result<handler_type> result(handler);
                 begin_write = [this, handler]()
                 {
+                    for (std::uint8_t b : being_written)
+                    {
+                        std::cerr << static_cast<unsigned>(b) << ' ';
+                    }
+                    std::cerr << '\n';
                     boost::asio::async_write(destination, boost::asio::buffer(being_written),
                                              write_operation<decltype(handler)>(*this, handler));
                 };
