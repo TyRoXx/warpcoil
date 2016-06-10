@@ -199,7 +199,7 @@ namespace warpcoil
                     Si::exchange(pipeline.waiting_for_request, nullptr)(ec, std::get<0>(request),
                                                                         std::move(std::get<1>(request)));
 
-                    if (continue_ && !pipeline.parsing_header)
+                    if (continue_ && pipeline.waiting_for_response && !pipeline.parsing_header)
                     {
                         std::cerr << "begin_parse_message after request\n";
                         pipeline.begin_parse_message();
@@ -242,7 +242,7 @@ namespace warpcoil
                     assert(pipeline.waiting_for_response);
                     Si::exchange(pipeline.waiting_for_response, nullptr)(ec, request);
 
-                    if (continue_ && !pipeline.parsing_header)
+                    if (continue_ && pipeline.waiting_for_request && !pipeline.parsing_header)
                     {
                         std::cerr << "begin_parse_message after response\n";
                         pipeline.begin_parse_message();
