@@ -24,3 +24,87 @@ BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_single)
     got_request.require_crossed();
     BOOST_REQUIRE(!stream.respond);
 }
+
+BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_and_response)
+{
+    warpcoil::async_read_stream stream;
+    warpcoil::cpp::message_splitter<warpcoil::async_read_stream> splitter(stream);
+    BOOST_REQUIRE(!stream.respond);
+    warpcoil::checkpoint got_request;
+    splitter.wait_for_request(
+        [&got_request](boost::system::error_code const ec, warpcoil::request_id const request, std::string const method)
+        {
+            got_request.enter();
+            BOOST_REQUIRE(!ec);
+            BOOST_CHECK_EQUAL(123u, request);
+            BOOST_CHECK_EQUAL("Method", method);
+        });
+    BOOST_REQUIRE(stream.respond);
+    warpcoil::checkpoint got_response;
+    splitter.wait_for_response([&got_response](boost::system::error_code const ec, warpcoil::request_id const request)
+                               {
+                                   got_response.enter();
+                                   BOOST_REQUIRE(!ec);
+                                   BOOST_CHECK_EQUAL(99u, request);
+                               });
+    std::array<std::uint8_t, 16 + 9> const input = {
+        {0, 0, 0, 0, 0, 0, 0, 0, 123, 6, 'M', 'e', 't', 'h', 'o', 'd', 1, 0, 0, 0, 0, 0, 0, 0, 99}};
+    got_request.enable();
+    got_response.enable();
+    Si::exchange(stream.respond, nullptr)(Si::make_memory_range(input));
+    got_request.require_crossed();
+    got_response.require_crossed();
+    BOOST_REQUIRE(!stream.respond);
+}
+
+BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_and_response_single_bytes)
+{
+    warpcoil::async_read_stream stream;
+    warpcoil::cpp::message_splitter<warpcoil::async_read_stream> splitter(stream);
+    BOOST_REQUIRE(!stream.respond);
+    warpcoil::checkpoint got_request;
+    splitter.wait_for_request(
+        [&got_request](boost::system::error_code const ec, warpcoil::request_id const request, std::string const method)
+        {
+            got_request.enter();
+            BOOST_REQUIRE(!ec);
+            BOOST_CHECK_EQUAL(123u, request);
+            BOOST_CHECK_EQUAL("Method", method);
+        });
+    BOOST_REQUIRE(stream.respond);
+    warpcoil::checkpoint got_response;
+    splitter.wait_for_response([&got_response](boost::system::error_code const ec, warpcoil::request_id const request)
+                               {
+                                   got_response.enter();
+                                   BOOST_REQUIRE(!ec);
+                                   BOOST_CHECK_EQUAL(99u, request);
+                               });
+    const size_t request_size = 16;
+    std::array<std::uint8_t, request_size + 9> const input = {
+        {0, 0, 0, 0, 0, 0, 0, 0, 123, 6, 'M', 'e', 't', 'h', 'o', 'd', 1, 0, 0, 0, 0, 0, 0, 0, 99}};
+    for (size_t i = 0; i < input.size(); ++i)
+    {
+        if (i == (request_size - 1))
+        {
+            got_request.enable();
+        }
+        if (i == (input.size() - 1))
+        {
+            got_response.enable();
+        }
+        Si::exchange(stream.respond, nullptr)(Si::make_memory_range(input.data() + i, input.data() + i + 1));
+        if (i == (request_size - 1))
+        {
+            got_request.require_crossed();
+        }
+        if (i == (input.size() - 1))
+        {
+            BOOST_REQUIRE(!stream.respond);
+            got_response.require_crossed();
+        }
+        else
+        {
+            BOOST_REQUIRE(stream.respond);
+        }
+    }
+}

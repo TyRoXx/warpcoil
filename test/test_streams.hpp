@@ -53,6 +53,7 @@ namespace warpcoil
                 {
                     std::size_t const bytes = boost::asio::buffer_copy(
                         buffers, boost::asio::buffer(response.get().begin(), response.get().size()));
+                    BOOST_REQUIRE_EQUAL(static_cast<size_t>(response.get().size()), bytes);
                     std::move(handler)({}, bytes);
                 }
             };
