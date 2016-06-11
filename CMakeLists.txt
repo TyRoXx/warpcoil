@@ -138,7 +138,11 @@ endif()
 
 add_subdirectory("test_interfaces")
 add_subdirectory("test")
-add_subdirectory("example")
+
+option(WARPCOIL_BUILD_EXAMPLES "" ON)
+if(WARPCOIL_BUILD_EXAMPLES)
+	add_subdirectory("example")
+endif()
 
 if(WARPCOIL_USE_CLANG_FORMAT)
 	add_custom_target(clang-format COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${formatted} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
