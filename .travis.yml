@@ -38,7 +38,7 @@ script:
  - CXX=$CPP CC=$GCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DWARPCOIL_WARNING_IS_ERROR=ON -DWARPCOIL_USE_CLANG_FORMAT=OFF -DWARPCOIL_COVERAGE=$COVERAGE || exit 1
  - cmake --build . -- -j2 || exit 1
  - pushd bin
- - valgrind --leak-check=full ./tests || exit 1
+ - valgrind --leak-check=full --error-exitcode=1 ./tests || exit 1
  - if [$(./hello_tcp_callback) !== "Hello, Alice!\n" ]; then
      exit 1;
    fi
