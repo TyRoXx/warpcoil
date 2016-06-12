@@ -26,10 +26,6 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
                             accepted_socket);
                     auto writer =
                         std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
-                    writer->async_run([writer](boost::system::error_code const)
-                                      {
-                                          BOOST_FAIL("Unexpected error");
-                                      });
                     async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                 boost::asio::ip::tcp::socket> server(server_impl, *server_splitter,
                                                                                      *writer);
@@ -49,10 +45,6 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
         [&io, &writer, &client, &ok2](boost::system::error_code ec)
         {
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-            writer.async_run([](boost::system::error_code const)
-                             {
-                                 BOOST_FAIL("Unexpected error");
-                             });
             boost::asio::spawn(
                 io, [&client, &ok2](boost::asio::yield_context yield)
                 {

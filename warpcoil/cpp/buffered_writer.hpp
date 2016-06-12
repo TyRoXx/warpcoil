@@ -1,8 +1,11 @@
 #pragma once
 
-#include <boost/asio/handler_invoke_hook.hpp>
 #include <boost/asio/write.hpp>
 #include <silicium/sink/iterator_sink.hpp>
+#include <silicium/variant.hpp>
+#include <warpcoil/cpp/wrap_handler.hpp>
+#include <silicium/memory_range.hpp>
+#include <silicium/make_unique.hpp>
 
 namespace warpcoil
 {
@@ -16,27 +19,6 @@ namespace warpcoil
             {
             }
 
-            bool is_running() const
-            {
-                return begin_write != nullptr;
-            }
-
-            template <class CompletionToken>
-            auto async_run(CompletionToken &&token)
-            {
-                assert(!begin_write);
-                using handler_type =
-                    typename boost::asio::handler_type<decltype(token), void(boost::system::error_code)>::type;
-                handler_type handler(std::forward<CompletionToken>(token));
-                boost::asio::async_result<handler_type> result(handler);
-                begin_write = [this, handler]()
-                {
-                    boost::asio::async_write(destination, boost::asio::buffer(being_written),
-                                             write_operation<decltype(handler)>(*this, handler));
-                };
-                return result.get();
-            }
-
             auto buffer_sink()
             {
                 return Si::make_container_sink(buffer);
@@ -46,72 +28,193 @@ namespace warpcoil
             void send_buffer(ErrorHandler on_result)
             {
                 assert(!buffer.empty());
-                this->on_result =
-                    [ next_on_result = this->on_result, on_result ](boost::system::error_code const ec) mutable
-                {
-                    if (next_on_result)
+                return Si::visit<void>(
+                    state,
+                    [this, &on_result](not_sending &)
                     {
-                        next_on_result(ec);
-                    }
-                    on_result(ec);
-                };
-                if (!begin_write)
-                {
-                    return;
-                }
-                if (being_written.empty())
-                {
-                    being_written = std::move(buffer);
-                    assert(buffer.empty());
-                    begin_write();
-                }
+                        std::tuple<std::shared_ptr<std::unique_ptr<result_handler_base>>, Si::memory_range> prepared =
+                            prepare_send_state();
+                        auto const sent =
+                            boost::asio::buffer(std::get<1>(prepared).begin(), std::get<1>(prepared).size());
+                        boost::asio::async_write(
+                            destination, sent,
+                            wrap_handler([ this, buffer_handler_queue = std::get<0>(prepared) ](
+                                             boost::system::error_code const ec, std::size_t, ErrorHandler &on_result)
+                                         {
+                                             finish_send(ec, buffer_handler_queue, on_result);
+                                         },
+                                         on_result));
+                    },
+                    [&on_result](sending &current_state)
+                    {
+                        std::shared_ptr<std::unique_ptr<result_handler_base>> buffer_handler_queue =
+                            current_state.buffer_handler_queue.lock();
+                        assert(buffer_handler_queue);
+                        std::unique_ptr<result_handler_base> next_handler = std::move(*buffer_handler_queue);
+                        if (next_handler)
+                        {
+                            *buffer_handler_queue =
+                                Si::make_unique<result_handler<ErrorHandler>>(on_result, std::move(next_handler));
+                        }
+                        else
+                        {
+                            *buffer_handler_queue = Si::make_unique<result_handler<ErrorHandler>>(on_result);
+                        }
+                    });
             }
 
         private:
-            AsyncWriteStream &destination;
-            std::function<void()> begin_write;
-            std::function<void(boost::system::error_code)> on_result;
-            std::vector<std::uint8_t> being_written;
-            std::vector<std::uint8_t> buffer;
-
-            template <class ErrorHandler>
-            struct write_operation
+            struct result_handler_base
             {
-                buffered_writer &writer;
-                ErrorHandler handler;
-
-                explicit write_operation(buffered_writer &writer, ErrorHandler handler)
-                    : writer(writer)
-                    , handler(std::move(handler))
+                virtual ~result_handler_base()
                 {
                 }
-
-                void operator()(boost::system::error_code ec, std::size_t)
-                {
-                    auto local_on_result = std::move(writer.on_result);
-                    assert(!writer.on_result);
-                    local_on_result(ec);
-                    if (!!ec)
-                    {
-                        handler(ec);
-                        return;
-                    }
-                    writer.being_written.clear();
-                    if (!writer.buffer.empty())
-                    {
-                        writer.send_buffer([](boost::system::error_code const)
-                                           {
-                                           });
-                    }
-                }
-
-                template <class Function>
-                friend void asio_handler_invoke(Function &&f, write_operation *operation)
-                {
-                    using boost::asio::asio_handler_invoke;
-                    asio_handler_invoke(f, &operation->handler);
-                }
+                virtual void handle_result(boost::system::error_code ec) = 0;
+                virtual void async_send(buffered_writer &writer,
+                                        std::shared_ptr<std::unique_ptr<result_handler_base>> buffer_handler_queue,
+                                        Si::memory_range data,
+                                        std::unique_ptr<result_handler_base> ownership_of_this) = 0;
             };
+
+            template <class Handler>
+            struct result_handler : result_handler_base
+            {
+                explicit result_handler(Handler handler, std::unique_ptr<result_handler_base> next)
+                    : handler(std::move(handler))
+                    , next(std::move(next))
+                {
+                    assert(this->next);
+                }
+
+                explicit result_handler(Handler handler)
+                    : handler(std::move(handler))
+                {
+                }
+
+                void handle_result(boost::system::error_code ec) override
+                {
+                    if (next)
+                    {
+                        next->handle_result(ec);
+                    }
+                    handler(ec);
+                }
+
+                void async_send(buffered_writer &writer,
+                                std::shared_ptr<std::unique_ptr<result_handler_base>> buffer_handler_queue,
+                                Si::memory_range data, std::unique_ptr<result_handler_base> ownership_of_this) override
+                {
+                    assert(!data.empty());
+                    assert(ownership_of_this);
+                    boost::asio::async_write(
+                        writer.destination, boost::asio::buffer(data.begin(), data.size()),
+                        wrap_handler(
+                            [
+                              this,
+                              &writer,
+                              buffer_handler_queue,
+                              ownership_of_this = std::shared_ptr<result_handler_base>(std::move(ownership_of_this))
+                            ](boost::system::error_code const ec, std::size_t, Handler &)
+                            {
+                                writer.finish_send(ec, buffer_handler_queue, [this](boost::system::error_code const ec)
+                                                   {
+                                                       this->handle_result(ec);
+                                                   });
+                            },
+                            handler));
+                }
+
+            private:
+                Handler handler;
+                std::unique_ptr<result_handler_base> next;
+            };
+
+            struct not_sending
+            {
+            };
+
+            struct sending
+            {
+                std::vector<std::uint8_t> being_written;
+                std::weak_ptr<std::unique_ptr<result_handler_base>> buffer_handler_queue;
+
+                sending(std::vector<std::uint8_t> being_written,
+                        std::weak_ptr<std::unique_ptr<result_handler_base>> buffer_handler_queue)
+                    : being_written(std::move(being_written))
+                    , buffer_handler_queue(std::move(buffer_handler_queue))
+                {
+                }
+
+                sending(sending &&) BOOST_NOEXCEPT = default;
+                sending &operator=(sending &&) BOOST_NOEXCEPT = default;
+                sending(sending const &) BOOST_NOEXCEPT = delete;
+                sending &operator=(sending const &) BOOST_NOEXCEPT = delete;
+            };
+
+            AsyncWriteStream &destination;
+            std::vector<std::uint8_t> buffer;
+            Si::variant<not_sending, sending> state;
+
+            std::tuple<std::shared_ptr<std::unique_ptr<result_handler_base>>, Si::memory_range> prepare_send_state()
+            {
+                assert(!buffer.empty());
+                std::shared_ptr<std::unique_ptr<result_handler_base>> buffer_handler_queue =
+                    std::make_shared<std::unique_ptr<result_handler_base>>();
+                sending new_state(std::move(buffer), buffer_handler_queue);
+                buffer = std::vector<std::uint8_t>();
+                assert(buffer.empty());
+                Si::memory_range const being_written = Si::make_memory_range(new_state.being_written);
+                assert(!new_state.being_written.empty());
+                new_state.buffer_handler_queue = buffer_handler_queue;
+                state = std::move(new_state);
+                return std::make_tuple(buffer_handler_queue, being_written);
+            }
+
+            void continue_send(sending &current_state, std::unique_ptr<result_handler_base> handlers)
+            {
+                assert(handlers);
+                assert(!buffer.empty());
+                assert(!current_state.being_written.empty());
+                std::tuple<std::shared_ptr<std::unique_ptr<result_handler_base>>, Si::memory_range> prepared =
+                    prepare_send_state();
+                assert(std::get<0>(prepared));
+                assert(!*std::get<0>(prepared));
+                assert(!std::get<1>(prepared).empty());
+                current_state.buffer_handler_queue = std::get<0>(prepared);
+                result_handler_base &sender = *handlers;
+                sender.async_send(*this, std::get<0>(prepared), std::get<1>(prepared), std::move(handlers));
+            }
+
+            template <class ErrorCodeHandler>
+            void finish_send(boost::system::error_code const ec,
+                             std::shared_ptr<std::unique_ptr<result_handler_base>> buffer_handler_queue,
+                             ErrorCodeHandler &&on_result)
+            {
+                assert(buffer_handler_queue);
+                if (buffer.empty())
+                {
+                    state = not_sending();
+                    on_result(ec);
+                }
+                else
+                {
+                    if (*buffer_handler_queue)
+                    {
+                        // there were calls to send_buffer in the meantime
+                        on_result(ec);
+                        sending *const current_state = Si::try_get_ptr<sending>(state);
+                        assert(current_state);
+                        continue_send(*current_state, std::move(*buffer_handler_queue));
+                    }
+                    else
+                    {
+                        // the buffer was appended to, but send_buffer has not been called
+                        // for the new data yet
+                        state = not_sending();
+                        on_result(ec);
+                    }
+                }
+            }
         };
     }
 }

@@ -22,10 +22,6 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_simple)
                 std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(accepted_socket);
             auto writer =
                 std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
-            writer->async_run([writer](boost::system::error_code const)
-                              {
-                                  BOOST_FAIL("Unexpected error");
-                              });
             auto server =
                 std::make_shared<async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl, *splitter,
@@ -37,7 +33,7 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_simple)
                     served_0.enter();
                     served_1.enable();
                     got_1.enable();
-                    server->serve_one_request([server, splitter, &served_1](boost::system::error_code ec)
+                    server->serve_one_request([server, writer, splitter, &served_1](boost::system::error_code ec)
                                               {
                                                   BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
                                                   served_1.enter();
@@ -55,10 +51,6 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_simple)
         {
             BOOST_CHECK_EQUAL(0u, pending_requests(client));
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-            writer.async_run([](boost::system::error_code const)
-                             {
-                                 BOOST_FAIL("Unexpected error");
-                             });
             client.utf8("X", [&got_0](boost::system::error_code ec, std::string result)
                         {
                             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
@@ -136,10 +128,6 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_sequence)
                 std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(accepted_socket);
             auto writer =
                 std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
-            writer->async_run([writer](boost::system::error_code const)
-                              {
-                                  BOOST_FAIL("Unexpected error");
-                              });
             auto server =
                 std::make_shared<async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl, *splitter,
@@ -149,10 +137,6 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_sequence)
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
     warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket> writer(socket);
-    writer.async_run([](boost::system::error_code const)
-                     {
-                         BOOST_FAIL("Unexpected error");
-                     });
     async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter);
     socket.async_connect(
         boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
@@ -181,10 +165,6 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_parallel)
                 std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(accepted_socket);
             auto writer =
                 std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
-            writer->async_run([writer](boost::system::error_code const)
-                              {
-                                  BOOST_FAIL("Unexpected error");
-                              });
             auto server =
                 std::make_shared<async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl, *splitter,
@@ -201,10 +181,6 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_parallel)
         [&client, &writer, request_count, &got_responses](boost::system::error_code ec)
         {
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-            writer.async_run([](boost::system::error_code const)
-                             {
-                                 BOOST_FAIL("Unexpected error");
-                             });
             for (std::size_t i = 1; i <= request_count; ++i)
             {
                 BOOST_CHECK_EQUAL(i - 1, pending_requests(client));

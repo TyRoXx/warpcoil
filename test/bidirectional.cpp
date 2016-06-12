@@ -30,10 +30,6 @@ BOOST_AUTO_TEST_CASE(bidirectional_with_sockets)
                 std::make_shared<async_test_interface_server<decltype(server_impl_a), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl_a, *splitter_a,
                                                                                             *writer);
-            writer->async_run([writer, splitter_a, client_a, server_a](boost::system::error_code const)
-                              {
-                                  BOOST_FAIL("Unexpected error");
-                              });
             client_a->utf8("Y", [splitter_a, &request_answered_a, client_a, writer,
                                  server_a](boost::system::error_code ec, std::string result)
                            {
@@ -68,10 +64,6 @@ BOOST_AUTO_TEST_CASE(bidirectional_with_sockets)
                 std::make_shared<async_test_interface_server<decltype(server_impl_b), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl_b, splitter_b,
                                                                                             writer);
-            writer.async_run([server_b](boost::system::error_code const)
-                             {
-                                 BOOST_FAIL("Unexpected error");
-                             });
             client_b.utf8("X", [&request_answered_b, server_b](boost::system::error_code ec, std::string result)
                           {
                               BOOST_TEST_MESSAGE("Got answer on B");
@@ -106,10 +98,6 @@ BOOST_AUTO_TEST_CASE(bidirectional)
     auto server_a = std::make_shared<
         async_test_interface_server<decltype(server_impl_a), decltype(a_reading), decltype(a_writing)>>(
         server_impl_a, *splitter_a, *writer_a);
-    writer_a->async_run([writer_a, splitter_a, client_a, server_a](boost::system::error_code const)
-                        {
-                            BOOST_FAIL("Unexpected error");
-                        });
     client_a->utf8("Y", [splitter_a, &request_answered_a, client_a, writer_a, server_a](boost::system::error_code ec,
                                                                                         std::string result)
                    {
@@ -137,10 +125,6 @@ BOOST_AUTO_TEST_CASE(bidirectional)
         auto server_b = std::make_shared<
             async_test_interface_server<decltype(server_impl_b), decltype(b_reading), decltype(b_writing)>>(
             server_impl_b, splitter_b, writer_b);
-        writer_b.async_run([server_b](boost::system::error_code const)
-                           {
-                               BOOST_FAIL("Unexpected error");
-                           });
         client_b.utf8("X", [&request_answered_b, server_b](boost::system::error_code ec, std::string result)
                       {
                           BOOST_TEST_MESSAGE("Got answer on B");
@@ -213,10 +197,6 @@ BOOST_AUTO_TEST_CASE(bidirectional_request_merged_with_response_regression_test)
     auto server_a = std::make_shared<
         async_test_interface_server<decltype(server_impl_a), decltype(a_reading), decltype(a_writing)>>(
         server_impl_a, *splitter_a, *writer_a);
-    writer_a->async_run([writer_a, splitter_a, client_a, server_a](boost::system::error_code const)
-                        {
-                            BOOST_FAIL("Unexpected error");
-                        });
     client_a->utf8("Y", [splitter_a, &request_answered_a, client_a, writer_a, server_a](boost::system::error_code ec,
                                                                                         std::string result)
                    {
@@ -244,10 +224,6 @@ BOOST_AUTO_TEST_CASE(bidirectional_request_merged_with_response_regression_test)
         auto server_b = std::make_shared<
             async_test_interface_server<decltype(server_impl_b), decltype(b_reading), decltype(b_writing)>>(
             server_impl_b, splitter_b, writer_b);
-        writer_b.async_run([server_b](boost::system::error_code const)
-                           {
-                               BOOST_FAIL("Unexpected error");
-                           });
         client_b.utf8("X", [&request_answered_b, server_b](boost::system::error_code ec, std::string result)
                       {
                           BOOST_TEST_MESSAGE("Got answer on B");
