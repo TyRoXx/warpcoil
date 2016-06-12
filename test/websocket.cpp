@@ -4,6 +4,9 @@
 #include <boost/test/unit_test.hpp>
 #include <silicium/error_or.hpp>
 #include <warpcoil/beast.hpp>
+#include <warpcoil/beast_push_warnings.hpp>
+#include <beast/websocket/stream.hpp>
+#include <warpcoil/pop_warnings.hpp>
 #include "checkpoint.hpp"
 
 BOOST_AUTO_TEST_CASE(websocket)

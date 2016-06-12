@@ -1,15 +1,11 @@
 #pragma once
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100 4701 4127 4706 4267 4324)
-#endif
-#include <beast/websocket.hpp>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
+#include <warpcoil/beast_push_warnings.hpp>
+#include <beast/websocket/rfc6455.hpp>
+#include <beast/core/streambuf.hpp>
+#include <warpcoil/pop_warnings.hpp>
 #include <silicium/config.hpp>
+#include <boost/system/error_code.hpp>
 
 namespace warpcoil
 {

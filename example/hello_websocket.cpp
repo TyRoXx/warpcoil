@@ -3,6 +3,9 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <silicium/error_or.hpp>
 #include <iostream>
+#include <warpcoil/beast_push_warnings.hpp>
+#include <beast/websocket/stream.hpp>
+#include <warpcoil/pop_warnings.hpp>
 
 namespace server
 {
