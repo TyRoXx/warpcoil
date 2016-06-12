@@ -2,7 +2,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/spawn.hpp>
 #include <iostream>
-#include <silicium/error_or.hpp>
 
 namespace server
 {
