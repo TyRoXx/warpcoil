@@ -15,7 +15,7 @@ if(UNIX)
         endif()
     endif()
 
-    add_definitions("-Wall -Wextra -Wconversion -Wsign-conversion -Wvla")
+    add_definitions("-Wall -Wextra -Wconversion -Wvla")
 
     if(WARPCOIL_WARNING_IS_ERROR)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
