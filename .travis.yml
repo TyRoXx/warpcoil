@@ -39,9 +39,15 @@ script:
  - cmake --build . -- -j2 || exit 1
  - pushd bin
  - valgrind --leak-check=full ./tests --log_level=all || exit 1
- - ./hello_tcp_callback || exit 1
- - ./hello_tcp_coroutine || exit 1
- - ./hello_websocket || exit 1
+ - if [$(./hello_tcp_callback) !== "Hello, Alice!\n" ];
+     exit 1;
+   fi
+ - if [$(./hello_tcp_coroutine) !== "Hello, Alice!\n" ];
+     exit 1;
+   fi
+ - if [$(./hello_websocket) !== "Hello, Alice!\n" ];
+     exit 1;
+   fi
  - if [ $COVERAGE == "YES" ]; then
      curl -s https://codecov.io/bash > codecov.sh || exit 1;
      chmod +x codecov.sh || exit 1;
