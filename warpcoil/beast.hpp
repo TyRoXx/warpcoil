@@ -7,6 +7,7 @@
 #include <warpcoil/pop_warnings.hpp>
 #include <silicium/config.hpp>
 #include <boost/system/error_code.hpp>
+#include <boost/asio/handler_invoke_hook.hpp>
 
 namespace warpcoil
 {
