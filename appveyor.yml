@@ -19,3 +19,6 @@ build_script:
 test_script:
   - cmd: cd bin
   - cmd: tests.exe
+  - cmd: hello_tcp_callback.exe
+  - cmd: hello_tcp_coroutine.exe
+  - cmd: hello_websocket.exe
