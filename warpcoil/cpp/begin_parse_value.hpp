@@ -4,19 +4,19 @@
 #include <boost/asio/handler_invoke_hook.hpp>
 #include <boost/system/error_code.hpp>
 #include <warpcoil/cpp/parse_result.hpp>
+#include <beast/core/streambuf.hpp>
 
 namespace warpcoil
 {
     namespace cpp
     {
-        template <class AsyncReadStream, class Buffer, class Parser, class ResultHandler>
+        template <class AsyncReadStream, class Parser, class ResultHandler>
         struct parse_operation
         {
-            explicit parse_operation(AsyncReadStream &input, Buffer receive_buffer, std::size_t &receive_buffer_used,
-                                     Parser parser, ResultHandler on_result)
+            explicit parse_operation(AsyncReadStream &input, ::beast::streambuf &receive_buffer, Parser parser,
+                                     ResultHandler on_result)
                 : m_input(input)
                 , m_receive_buffer(receive_buffer)
-                , m_receive_buffer_used(receive_buffer_used)
                 , m_parser(std::move(parser))
                 , m_on_result(std::move(on_result))
             {
@@ -26,51 +26,57 @@ namespace warpcoil
             void start() &&
             {
                 using boost::asio::asio_handler_invoke;
-                for (std::size_t i = 0; i < m_receive_buffer_used; ++i)
+                std::size_t consumed = 0;
+                for (auto const &buffer_piece : m_receive_buffer.data())
                 {
-                    std::uint8_t *const data = boost::asio::buffer_cast<std::uint8_t *>(m_receive_buffer);
-                    parse_result<typename Parser::result_type> response = m_parser.parse_byte(data[i]);
-                    if (Si::visit<bool>(
-                            response,
-                            [&](typename Parser::result_type &message)
-                            {
-                                std::copy(data + i + 1, data + m_receive_buffer_used, data);
-                                m_receive_buffer_used -= 1 + i;
-                                if (IsSurelyCalledInHandlerContext)
-                                {
-                                    m_on_result(boost::system::error_code(), std::move(message));
-                                }
-                                else
-                                {
-                                    asio_handler_invoke(std::bind(std::ref(m_on_result), boost::system::error_code(),
-                                                                  std::move(message)),
-                                                        &m_on_result);
-                                }
-                                return true;
-                            },
-                            [](need_more_input)
-                            {
-                                return false;
-                            },
-                            [&](invalid_input)
-                            {
-                                if (IsSurelyCalledInHandlerContext)
-                                {
-                                    m_on_result(make_invalid_input_error(), typename Parser::result_type{});
-                                }
-                                else
-                                {
-                                    asio_handler_invoke(std::bind(std::ref(m_on_result), make_invalid_input_error(),
-                                                                  typename Parser::result_type{}),
-                                                        &m_on_result);
-                                }
-                                return true;
-                            }))
+                    std::uint8_t const *const data = boost::asio::buffer_cast<std::uint8_t const *>(buffer_piece);
+                    for (std::size_t i = 0, c = boost::asio::buffer_size(buffer_piece); i < c; ++i)
                     {
-                        return;
+                        parse_result<typename Parser::result_type> response = m_parser.parse_byte(data[i]);
+                        if (Si::visit<bool>(
+                                response,
+                                [&](typename Parser::result_type &message)
+                                {
+                                    ++consumed;
+                                    m_receive_buffer.consume(consumed);
+                                    if (IsSurelyCalledInHandlerContext)
+                                    {
+                                        m_on_result(boost::system::error_code(), std::move(message));
+                                    }
+                                    else
+                                    {
+                                        asio_handler_invoke(std::bind(std::ref(m_on_result),
+                                                                      boost::system::error_code(), std::move(message)),
+                                                            &m_on_result);
+                                    }
+                                    return true;
+                                },
+                                [&consumed](need_more_input)
+                                {
+                                    ++consumed;
+                                    return false;
+                                },
+                                [&](invalid_input)
+                                {
+                                    if (IsSurelyCalledInHandlerContext)
+                                    {
+                                        m_on_result(make_invalid_input_error(), typename Parser::result_type{});
+                                    }
+                                    else
+                                    {
+                                        asio_handler_invoke(std::bind(std::ref(m_on_result), make_invalid_input_error(),
+                                                                      typename Parser::result_type{}),
+                                                            &m_on_result);
+                                    }
+                                    return true;
+                                }))
+                        {
+                            return;
+                        }
                     }
                 }
-                m_input.async_read_some(m_receive_buffer, std::move(*this));
+                m_receive_buffer.consume(consumed);
+                m_input.async_read_some(m_receive_buffer.prepare(512), std::move(*this));
             }
 
             void operator()(boost::system::error_code ec, std::size_t read)
@@ -82,7 +88,7 @@ namespace warpcoil
                     m_on_result(ec, typename Parser::result_type{});
                     return;
                 }
-                m_receive_buffer_used = read;
+                m_receive_buffer.commit(read);
                 std::move(*this).template start<true>();
             }
 
@@ -95,18 +101,17 @@ namespace warpcoil
 
         private:
             AsyncReadStream &m_input;
-            Buffer m_receive_buffer;
-            std::size_t &m_receive_buffer_used;
+            ::beast::streambuf &m_receive_buffer;
             Parser m_parser;
             ResultHandler m_on_result;
         };
 
-        template <class AsyncReadStream, class Buffer, class Parser, class ResultHandler>
-        void begin_parse_value(AsyncReadStream &input, Buffer receive_buffer, std::size_t &receive_buffer_used,
-                               Parser parser, ResultHandler &&on_result)
+        template <class AsyncReadStream, class Parser, class ResultHandler>
+        void begin_parse_value(AsyncReadStream &input, ::beast::streambuf &receive_buffer, Parser parser,
+                               ResultHandler &&on_result)
         {
-            parse_operation<AsyncReadStream, Buffer, Parser, typename std::decay<ResultHandler>::type> operation(
-                input, receive_buffer, receive_buffer_used, std::move(parser), std::forward<ResultHandler>(on_result));
+            parse_operation<AsyncReadStream, Parser, typename std::decay<ResultHandler>::type> operation(
+                input, receive_buffer, std::move(parser), std::forward<ResultHandler>(on_result));
             std::move(operation).template start<false>();
         }
     }

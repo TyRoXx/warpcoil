@@ -16,12 +16,10 @@ namespace warpcoil
         struct buffered_read_stream
         {
             AsyncReadStream &input;
-            std::array<std::uint8_t, 512> buffer;
-            std::size_t buffer_used;
+            ::beast::streambuf buffer;
 
             explicit buffered_read_stream(AsyncReadStream &input)
                 : input(input)
-                , buffer_used(0)
             {
             }
         };
@@ -141,8 +139,7 @@ namespace warpcoil
                             pipeline.on_error(make_invalid_input_error());
                             return;
                         }
-                        begin_parse_value(pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.buffer),
-                                          pipeline.buffer.buffer_used, integer_parser<request_id>(),
+                        begin_parse_value(pipeline.buffer.input, pipeline.buffer.buffer, integer_parser<request_id>(),
                                           parse_response_operation<DummyHandler>(pipeline, dummy));
                         break;
 
@@ -153,8 +150,7 @@ namespace warpcoil
                             return;
                         }
                         begin_parse_value(
-                            pipeline.buffer.input, boost::asio::buffer(pipeline.buffer.buffer),
-                            pipeline.buffer.buffer_used,
+                            pipeline.buffer.input, pipeline.buffer.buffer,
                             tuple_parser<integer_parser<request_id>, utf8_parser<integer_parser<std::uint8_t>>>(),
                             parse_request_operation<DummyHandler>(pipeline, dummy));
                         break;
@@ -290,8 +286,7 @@ namespace warpcoil
                         return;
                     }
                     parsing_header = true;
-                    begin_parse_value(buffer.input, boost::asio::buffer(buffer.buffer), buffer.buffer_used,
-                                      integer_parser<message_type_int>(),
+                    begin_parse_value(buffer.input, buffer.buffer, integer_parser<message_type_int>(),
                                       parse_message_type_operation<DummyHandler>(*this, handler));
                 };
             }

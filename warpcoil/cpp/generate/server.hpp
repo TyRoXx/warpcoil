@@ -119,9 +119,7 @@ namespace warpcoil
                             code, in_class,
                             [&](indentation_level const in_method)
                             {
-                                start_line(code, in_method,
-                                           "begin_parse_value(input.input, boost::asio::buffer(input.buffer), "
-                                           "input.buffer_used, ");
+                                start_line(code, in_method, "begin_parse_value(input.input, input.buffer, ");
                                 types::type const parameter_type = get_parameter_type(entry.second.parameters);
                                 generate_parser_type(code, parameter_type);
                                 append(code, "{}, "
