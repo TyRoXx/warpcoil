@@ -39,13 +39,13 @@ script:
  - cmake --build . -- -j2 || exit 1
  - pushd bin
  - valgrind --leak-check=full ./tests --log_level=all || exit 1
- - if [$(./hello_tcp_callback) !== "Hello, Alice!\n" ];
+ - if [$(./hello_tcp_callback) !== "Hello, Alice!\n" ]; then
      exit 1;
    fi
- - if [$(./hello_tcp_coroutine) !== "Hello, Alice!\n" ];
+ - if [$(./hello_tcp_coroutine) !== "Hello, Alice!\n" ]; then
      exit 1;
    fi
- - if [$(./hello_websocket) !== "Hello, Alice!\n" ];
+ - if [$(./hello_websocket) !== "Hello, Alice!\n" ]; then
      exit 1;
    fi
  - if [ $COVERAGE == "YES" ]; then
