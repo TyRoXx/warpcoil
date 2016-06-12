@@ -50,12 +50,14 @@ namespace warpcoil
                         },
                         &handler);
                 };
+                begin_parse_message = nullptr;
+                set_begin_parse_message(handler);
+                assert(begin_parse_message);
                 if (parsing_header)
                 {
                     return;
                 }
-                set_begin_parse_message(handler);
-                begin_parse_message();
+                Si::exchange(begin_parse_message, nullptr)();
             }
 
             template <class RequestHandler>
@@ -73,12 +75,14 @@ namespace warpcoil
                         },
                         &handler);
                 };
+                begin_parse_message = nullptr;
+                set_begin_parse_message(handler);
+                assert(begin_parse_message);
                 if (parsing_header)
                 {
                     return;
                 }
-                set_begin_parse_message(handler);
-                begin_parse_message();
+                Si::exchange(begin_parse_message, nullptr)();
             }
 
             buffered_read_stream<AsyncReadStream> &lock_input()
@@ -98,7 +102,8 @@ namespace warpcoil
                 {
                     return;
                 }
-                begin_parse_message();
+                assert(begin_parse_message);
+                Si::exchange(begin_parse_message, nullptr)();
             }
 
         private:
@@ -200,7 +205,8 @@ namespace warpcoil
 
                     if (continue_ && pipeline.waiting_for_response && !pipeline.parsing_header)
                     {
-                        pipeline.begin_parse_message();
+                        assert(pipeline.begin_parse_message);
+                        Si::exchange(pipeline.begin_parse_message, nullptr)();
                     }
                 }
 
@@ -243,7 +249,8 @@ namespace warpcoil
 
                     if (continue_ && pipeline.waiting_for_request && !pipeline.parsing_header)
                     {
-                        pipeline.begin_parse_message();
+                        assert(pipeline.begin_parse_message);
+                        Si::exchange(pipeline.begin_parse_message, nullptr)();
                     }
                 }
 
@@ -273,6 +280,7 @@ namespace warpcoil
             template <class DummyHandler>
             void set_begin_parse_message(DummyHandler &handler)
             {
+                assert(!begin_parse_message);
                 begin_parse_message = [this, handler]()
                 {
                     assert(!parsing_header);
