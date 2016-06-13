@@ -2,7 +2,7 @@
 
 #include <warpcoil/cpp/expected_response_registry.hpp>
 #include <warpcoil/cpp/buffered_writer.hpp>
-#include <warpcoil/cpp/integer_parser.hpp>
+#include <warpcoil/cpp/write_integer.hpp>
 
 namespace warpcoil
 {
