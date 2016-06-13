@@ -77,8 +77,6 @@ namespace warpcoil
                 std::function<void()> parse_result;
             };
 
-            typedef std::tuple<message_type_int, request_id> response_header;
-
             message_splitter<AsyncReadStream> &incoming;
             response_state state;
             std::map<request_id, expected_response> expected_responses;
