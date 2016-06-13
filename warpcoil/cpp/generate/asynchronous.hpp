@@ -28,6 +28,7 @@ namespace warpcoil
                                       "#include <warpcoil/cpp/vector_parser.hpp>\n"
                                       "#include <warpcoil/cpp/tuple_parser.hpp>\n"
                                       "#include <warpcoil/cpp/variant_parser.hpp>\n"
+                                      "#include <warpcoil/cpp/write_integer.hpp>\n"
                                       "#include <silicium/source/source.hpp>\n"
                                       "#include <silicium/sink/iterator_sink.hpp>\n"
                                       "#include <silicium/sink/append.hpp>\n"
