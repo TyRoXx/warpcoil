@@ -66,10 +66,6 @@ if(MSVC)
 
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
     
-    if(MSVC14 AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
-        set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MDd /Zi /Ob0 /Od")
-    endif()
-
     add_definitions("/bigobj")
 endif()
 
