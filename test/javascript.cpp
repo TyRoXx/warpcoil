@@ -55,8 +55,8 @@ BOOST_AUTO_TEST_CASE(javascript)
         "content", warpcoil::types::utf8{warpcoil::types::integer{0, 2000}});
     server_definition.add_method("disconnect", Si::to_unique(warpcoil::types::tuple{{}}));
 
-    Si::append(code_writer, "var make_parser = ");
-    warpcoil::javascript::generate_input_parser(code_writer, warpcoil::indentation_level());
+    Si::append(code_writer, "var make_receiver = ");
+    warpcoil::javascript::generate_input_receiver(code_writer, warpcoil::indentation_level());
     Si::append(code_writer, ";\n");
 
     Si::append(code_writer, "var make_client = ");
@@ -65,8 +65,9 @@ BOOST_AUTO_TEST_CASE(javascript)
 
     Si::append(code_writer, "var pending_requests = {};\n");
     Si::append(code_writer, "var server = { on_event: function (content) {} };\n");
-    Si::append(code_writer, "var parser = make_parser(pending_requests, server);\n");
-    Si::append(code_writer, "var client = make_client(pending_requests);\n");
+    Si::append(code_writer, "var send_bytes = function (bytes, callback) {};\n");
+    Si::append(code_writer, "var receiver = make_receiver(pending_requests, server, send_bytes);\n");
+    Si::append(code_writer, "var client = make_client(pending_requests, send_bytes);\n");
     Si::append(code_writer, "client.send(\"abc\", function (error) {});\n");
 
     evaluate(*interpreter, Si::make_memory_range(code));

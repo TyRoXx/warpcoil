@@ -177,9 +177,9 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_input_parser(CharSink &&code, indentation_level indentation)
+        void generate_input_receiver(CharSink &&code, indentation_level indentation)
         {
-            start_line(code, indentation, "function (pending_requests, server_implementation)\n");
+            start_line(code, indentation, "function (pending_requests, server_implementation, send_bytes)\n");
             block(code, indentation,
                   [&](indentation_level const in_function)
                   {
@@ -234,7 +234,7 @@ namespace warpcoil
         void generate_client(CharSink &&code, indentation_level indentation,
                              types::interface_definition const &definition)
         {
-            start_line(code, indentation, "function (pending_requests)\n");
+            start_line(code, indentation, "function (pending_requests, send_bytes)\n");
             block(code, indentation,
                   [&](indentation_level const in_function)
                   {
