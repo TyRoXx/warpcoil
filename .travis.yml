@@ -34,7 +34,7 @@ install:
 script:
  - mkdir build
  - pushd build
- - CXX=$CPP CC=$GCC conan install --build=ventura -s compiler=gcc $CONAN .. || exit 1
+ - CXX=$CPP CC=$GCC conan install --build=ventura --build=duktape -s compiler=gcc $CONAN .. || exit 1
  - CXX=$CPP CC=$GCC cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DWARPCOIL_WARNING_IS_ERROR=ON -DWARPCOIL_USE_CLANG_FORMAT=OFF -DWARPCOIL_COVERAGE=$COVERAGE || exit 1
  - cmake --build . -- -j2 || exit 1
  - pushd bin
