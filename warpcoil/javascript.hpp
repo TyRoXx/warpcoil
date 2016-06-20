@@ -2,6 +2,7 @@
 
 #include <warpcoil/block.hpp>
 #include <warpcoil/warpcoil.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace warpcoil
 {
