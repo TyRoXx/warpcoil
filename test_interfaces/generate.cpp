@@ -16,7 +16,7 @@ int main(int argc, char **argv)
         parameters.elements.emplace_back(types::integer());
         parameters.elements.emplace_back(types::integer());
         definition.add_method("evaluate", types::integer())("argument", Si::to_unique(std::move(parameters)));
-        cpp::indentation_level const top_level;
+        indentation_level const top_level;
         cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("binary_integer_function"),
                                              definition);
     }
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
             "argument", Si::to_unique(types::variant{warpcoil::make_vector<types::type>(
                             types::integer{1, 0xffffffff}, types::utf8{types::integer{0, 255}})}));
 
-        cpp::indentation_level const top_level;
+        indentation_level const top_level;
         cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
                                              definition);
     }

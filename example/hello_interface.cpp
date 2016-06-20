@@ -14,7 +14,7 @@ int main(int argc, char **argv)
         types::interface_definition definition;
         definition.add_method("hello", types::utf8{types::integer{0, 255}})("name",
                                                                             types::utf8{types::integer{0, 255}});
-        cpp::indentation_level const top_level;
+        indentation_level const top_level;
         cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("hello_as_a_service"),
                                              definition);
     }
