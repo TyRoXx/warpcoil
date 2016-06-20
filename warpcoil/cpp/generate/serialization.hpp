@@ -1,5 +1,6 @@
 #pragma once
 
+#include <warpcoil/block.hpp>
 #include <warpcoil/cpp/generate/basics.hpp>
 
 namespace warpcoil

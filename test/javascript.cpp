@@ -320,13 +320,13 @@ BOOST_AUTO_TEST_CASE(javascript)
     Si::append(code_writer, ";\n");
 
     warpcoil::types::interface_definition client_definition;
-    client_definition.add_method("on_event", Si::to_unique(warpcoil::types::tuple{}))(
+    client_definition.add_method("on_event", Si::to_unique(warpcoil::types::tuple{{}}))(
         "content", warpcoil::types::utf8{warpcoil::types::integer{0, 2000}});
 
     warpcoil::types::interface_definition server_definition;
-    server_definition.add_method("send", Si::to_unique(warpcoil::types::tuple{}))(
+    server_definition.add_method("send", Si::to_unique(warpcoil::types::tuple{{}}))(
         "content", warpcoil::types::utf8{warpcoil::types::integer{0, 2000}});
-    server_definition.add_method("disconnect", Si::to_unique(warpcoil::types::tuple{}));
+    server_definition.add_method("disconnect", Si::to_unique(warpcoil::types::tuple{{}}));
 
     Si::append(code_writer, "var make_parser = ");
     warpcoil::javascript::generate_input_parser(code_writer, warpcoil::indentation_level(), server_definition);
