@@ -420,7 +420,10 @@ namespace warpcoil
                                                                    Si::make_c_str_range("{high: 123, low: 456}"),
                                                                    Si::make_c_str_range("request_buffer"),
                                                                    Si::make_c_str_range("1"), library);
-                                            start_line(code, in_method, "var write_pointer = 1 + 8;\n");
+                                            if (!method.second.parameters.empty())
+                                            {
+                                                start_line(code, in_method, "var write_pointer = 1 + 8;\n");
+                                            }
                                             for (types::parameter const &parameter : method.second.parameters)
                                             {
                                                 generate_serialization(code, in_method, parameter.type_,
