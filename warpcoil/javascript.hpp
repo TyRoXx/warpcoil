@@ -31,11 +31,11 @@ namespace warpcoil
             bool const return_64_bit = (number_of_bytes > 4);
             if (return_64_bit)
             {
-                start_line(code, indentation, "function (minimum_high, minimum_low, maximum_high, maximum_low)\n");
+                Si::append(code, "function (minimum_high, minimum_low, maximum_high, maximum_low)\n");
             }
             else
             {
-                start_line(code, indentation, "function (minimum, maximum)\n");
+                Si::append(code, "function (minimum, maximum)\n");
             }
             block(code, indentation,
                   [&](indentation_level const in_function)
@@ -77,6 +77,7 @@ namespace warpcoil
                                 {
                                     start_line(code, in_result, "result <<= 8;\n");
                                 }
+                                start_line(code, in_result, "++parsed;\n");
                                 start_line(code, in_result, "if (parsed === ",
                                            boost::lexical_cast<std::string>(number_of_bytes), ")\n");
                                 block(code, in_result,
@@ -109,9 +110,11 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_response_parsing(CharSink &&code, indentation_level indentation)
+        void generate_response_parsing(CharSink &&code, indentation_level indentation,
+                                       Si::memory_range const common_library)
         {
-            start_line(code, indentation, "var request_id_parser = parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
+            start_line(code, indentation, "var request_id_parser = ", common_library,
+                       ".parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
             start_line(code, indentation, "state = function (input)\n");
             block(code, indentation,
                   [&](indentation_level const in_state)
@@ -158,9 +161,11 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_request_parsing(CharSink &&code, indentation_level indentation)
+        void generate_request_parsing(CharSink &&code, indentation_level indentation,
+                                      Si::memory_range const common_library)
         {
-            start_line(code, indentation, "var request_id_parser = parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
+            start_line(code, indentation, "var request_id_parser = ", common_library,
+                       ".parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
             start_line(code, indentation, "state = function (input)\n");
             block(code, indentation,
                   [&](indentation_level const in_state)
@@ -178,7 +183,8 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_input_receiver(CharSink &&code, indentation_level indentation)
+        void generate_input_receiver(CharSink &&code, indentation_level indentation,
+                                     Si::memory_range const common_library)
         {
             start_line(code, indentation, "function (pending_requests, server_implementation, send_bytes)\n");
             block(code, indentation,
@@ -193,14 +199,14 @@ namespace warpcoil
                                 block(code, in_first_state,
                                       [&](indentation_level const in_if)
                                       {
-                                          generate_request_parsing(code, in_if);
+                                          generate_request_parsing(code, in_if, common_library);
                                       },
                                       "\n");
                                 start_line(code, in_first_state, "else if (input === 1)\n");
                                 block(code, in_first_state,
                                       [&](indentation_level const in_if)
                                       {
-                                          generate_response_parsing(code, in_if);
+                                          generate_response_parsing(code, in_if, common_library);
                                       },
                                       "\n");
                                 start_line(code, in_first_state, "else\n");
@@ -270,6 +276,31 @@ namespace warpcoil
                                          ";\n");
                   },
                   "");
+        }
+
+        template <class CharSink>
+        void generate_common_library(CharSink &&code, indentation_level indentation)
+        {
+            Si::append(code, "{\n");
+            {
+                indentation_level const in_object = indentation.deeper();
+                start_line(code, in_object, "parse_int_1: ");
+                warpcoil::javascript::generate_integer_parser(code, in_object, 1);
+                Si::append(code, ",\n");
+
+                start_line(code, in_object, "parse_int_2: ");
+                warpcoil::javascript::generate_integer_parser(code, in_object, 2);
+                Si::append(code, ",\n");
+
+                start_line(code, in_object, "parse_int_4: ");
+                warpcoil::javascript::generate_integer_parser(code, in_object, 4);
+                Si::append(code, ",\n");
+
+                start_line(code, in_object, "parse_int_8: ");
+                warpcoil::javascript::generate_integer_parser(code, in_object, 8);
+                Si::append(code, "\n");
+            }
+            start_line(code, indentation, "}");
         }
     }
 }

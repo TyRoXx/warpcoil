@@ -30,20 +30,8 @@ BOOST_AUTO_TEST_CASE(javascript)
     auto code_writer = Si::make_container_sink(code);
     Si::append(code_writer, "\"use strict\";\n");
 
-    Si::append(code_writer, "var parse_int_1 = ");
-    warpcoil::javascript::generate_integer_parser(code_writer, warpcoil::indentation_level(), 1);
-    Si::append(code_writer, ";\n");
-
-    Si::append(code_writer, "var parse_int_2 = ");
-    warpcoil::javascript::generate_integer_parser(code_writer, warpcoil::indentation_level(), 2);
-    Si::append(code_writer, ";\n");
-
-    Si::append(code_writer, "var parse_int_4 = ");
-    warpcoil::javascript::generate_integer_parser(code_writer, warpcoil::indentation_level(), 4);
-    Si::append(code_writer, ";\n");
-
-    Si::append(code_writer, "var parse_int_8 = ");
-    warpcoil::javascript::generate_integer_parser(code_writer, warpcoil::indentation_level(), 8);
+    Si::append(code_writer, "var library = ");
+    warpcoil::javascript::generate_common_library(code_writer, warpcoil::indentation_level());
     Si::append(code_writer, ";\n");
 
     warpcoil::types::interface_definition client_definition;
@@ -56,7 +44,8 @@ BOOST_AUTO_TEST_CASE(javascript)
     server_definition.add_method("disconnect", Si::to_unique(warpcoil::types::tuple{{}}));
 
     Si::append(code_writer, "var make_receiver = ");
-    warpcoil::javascript::generate_input_receiver(code_writer, warpcoil::indentation_level());
+    warpcoil::javascript::generate_input_receiver(code_writer, warpcoil::indentation_level(),
+                                                  Si::make_c_str_range("library"));
     Si::append(code_writer, ";\n");
 
     Si::append(code_writer, "var make_client = ");
