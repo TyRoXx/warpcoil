@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(javascript)
     server_definition.add_method("disconnect", Si::to_unique(warpcoil::types::tuple{{}}));
 
     Si::append(code_writer, "var make_parser = ");
-    warpcoil::javascript::generate_input_parser(code_writer, warpcoil::indentation_level(), server_definition);
+    warpcoil::javascript::generate_input_parser(code_writer, warpcoil::indentation_level());
     Si::append(code_writer, ";\n");
 
     Si::append(code_writer, "var make_client = ");

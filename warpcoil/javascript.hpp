@@ -157,8 +157,7 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_request_parsing(CharSink &&code, indentation_level indentation,
-                                      types::interface_definition const &server)
+        void generate_request_parsing(CharSink &&code, indentation_level indentation)
         {
             start_line(code, indentation, "var request_id_parser = parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
             start_line(code, indentation, "state = function (input)\n");
@@ -178,8 +177,7 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_input_parser(CharSink &&code, indentation_level indentation,
-                                   types::interface_definition const &server)
+        void generate_input_parser(CharSink &&code, indentation_level indentation)
         {
             start_line(code, indentation, "function (pending_requests, server_implementation)\n");
             block(code, indentation,
@@ -194,7 +192,7 @@ namespace warpcoil
                                 block(code, in_first_state,
                                       [&](indentation_level const in_if)
                                       {
-                                          generate_request_parsing(code, in_if, server);
+                                          generate_request_parsing(code, in_if);
                                       },
                                       "\n");
                                 start_line(code, in_first_state, "else if (input === 1)\n");
@@ -258,6 +256,7 @@ namespace warpcoil
                                                  block(code, in_result,
                                                        [&](indentation_level const in_method)
                                                        {
+                                                           Si::ignore_unused_variable_warning(in_method);
                                                        },
                                                        "");
                                                  if (std::next(i, 1) != definition.methods.end())
