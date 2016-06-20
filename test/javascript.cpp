@@ -43,13 +43,13 @@ BOOST_AUTO_TEST_CASE(javascript)
         "content", warpcoil::types::utf8{warpcoil::types::integer{0, 2000}});
     server_definition.add_method("disconnect", Si::to_unique(warpcoil::types::tuple{{}}));
 
+    Si::memory_range const library = Si::make_c_str_range("library");
     Si::append(code_writer, "var make_receiver = ");
-    warpcoil::javascript::generate_input_receiver(code_writer, warpcoil::indentation_level(),
-                                                  Si::make_c_str_range("library"));
+    warpcoil::javascript::generate_input_receiver(code_writer, warpcoil::indentation_level(), library);
     Si::append(code_writer, ";\n");
 
     Si::append(code_writer, "var make_client = ");
-    warpcoil::javascript::generate_client(code_writer, warpcoil::indentation_level(), server_definition);
+    warpcoil::javascript::generate_client(code_writer, warpcoil::indentation_level(), server_definition, library);
     Si::append(code_writer, ";\n");
 
     Si::append(code_writer, "var pending_requests = {};\n");
