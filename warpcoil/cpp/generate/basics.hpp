@@ -74,9 +74,9 @@ namespace warpcoil
         }
 
         template <class CharSink, class ContentGenerator>
-        void block(CharSink &&code, indentation_level indentation, ContentGenerator &&content, char const *end)
+        void continuation_block(CharSink &&code, indentation_level indentation, ContentGenerator &&content,
+                                char const *end)
         {
-            indentation.render(code);
             Si::append(code, "{\n");
             {
                 indentation_level const in_block = indentation.deeper();
@@ -85,6 +85,13 @@ namespace warpcoil
             indentation.render(code);
             Si::append(code, "}");
             Si::append(code, end);
+        }
+
+        template <class CharSink, class ContentGenerator>
+        void block(CharSink &&code, indentation_level indentation, ContentGenerator &&content, char const *end)
+        {
+            indentation.render(code);
+            continuation_block(code, indentation, content, end);
         }
 
         inline Si::memory_range find_suitable_uint_cpp_type(types::integer range)
