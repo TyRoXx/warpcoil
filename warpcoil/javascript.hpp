@@ -3,6 +3,7 @@
 #include <warpcoil/block.hpp>
 #include <warpcoil/warpcoil.hpp>
 #include <boost/lexical_cast.hpp>
+#include "cpp/generate/basics.hpp"
 
 namespace warpcoil
 {
@@ -56,7 +57,7 @@ namespace warpcoil
                             {
                                 if (return_64_bit)
                                 {
-                                    start_line(code, in_result, "if (parsed > 4)\n");
+                                    start_line(code, in_result, "if (parsed < 4)\n");
                                     block(code, in_result,
                                           [&](indentation_level const in_if)
                                           {
@@ -73,9 +74,13 @@ namespace warpcoil
                                           },
                                           "\n");
                                 }
-                                else if (number_of_bytes > 1)
+                                else
                                 {
-                                    start_line(code, in_result, "result <<= 8;\n");
+                                    if (number_of_bytes > 1)
+                                    {
+                                        start_line(code, in_result, "result <<= 8;\n");
+                                    }
+                                    start_line(code, in_result, "result |= input;\n");
                                 }
                                 start_line(code, in_result, "++parsed;\n");
                                 start_line(code, in_result, "if (parsed === ",
@@ -95,14 +100,16 @@ namespace warpcoil
                                               block(code, in_if,
                                                     [&](indentation_level const in_check)
                                                     {
-                                                        start_line(code, in_check, "return undefined;\n");
+                                                        start_line(
+                                                            code, in_check,
+                                                            "throw new Error(\"received integer out of range\");\n");
                                                     },
                                                     "\n");
                                               start_line(code, in_if, "return result;\n");
                                           }
                                       },
                                       "\n");
-                                start_line(code, in_result, "return \"more\";\n");
+                                start_line(code, in_result, "return undefined;\n");
                             },
                             ";\n");
                   },
@@ -120,11 +127,11 @@ namespace warpcoil
                   [&](indentation_level const in_state)
                   {
                       start_line(code, in_state, "var status = request_id_parser(input);\n");
-                      start_line(code, in_state, "if (status === \"more\")\n");
+                      start_line(code, in_state, "if (status === undefined)\n");
                       block(code, in_state,
                             [&](indentation_level const in_if)
                             {
-                                start_line(code, in_if, "return state;\n");
+                                start_line(code, in_if, "return undefined;\n");
                             },
                             "\n");
                       start_line(code, in_state, "var pending_request = pendings_requests[status];\n");
@@ -136,22 +143,29 @@ namespace warpcoil
                             },
                             "\n");
                       start_line(code, in_state, "delete pendings_requests[status];\n");
-                      start_line(code, in_state, "return function (input)\n");
+                      start_line(code, in_state, "state = function (input)\n");
                       block(code, in_state,
                             [&](indentation_level const in_state)
                             {
-                                start_line(code, in_state, "if (pending_request(input))\n");
+                                start_line(code, in_state, "var argument_parser = pending_request.argument_parser;\n");
+                                // empty tuple requires no parser, so the field is undefined
+                                start_line(code, in_state, "if (argument_parser === undefined)\n");
                                 block(code, in_state,
                                       [&](indentation_level const in_if)
                                       {
-                                          start_line(code, in_if, "return initial_state;\n");
+                                          start_line(code, in_if, "state = initial_state;\n");
+                                          start_line(code, in_if, "pending_request.on_result([]);\n");
+                                          start_line(code, in_if, "return;\n");
                                       },
                                       "\n");
-                                start_line(code, in_state, "else\n");
+                                start_line(code, in_state, "var parsed = argument_parser(input);\n");
+                                start_line(code, in_state, "if (parsed !== undefined)\n");
                                 block(code, in_state,
-                                      [&](indentation_level const in_else)
+                                      [&](indentation_level const in_if)
                                       {
-                                          start_line(code, in_else, "return state;\n");
+                                          start_line(code, in_if, "state = initial_state;\n");
+                                          start_line(code, in_if, "pending_request.on_result(parsed);\n");
+                                          start_line(code, in_if, "return;\n");
                                       },
                                       "\n");
                             },
@@ -161,29 +175,281 @@ namespace warpcoil
         }
 
         template <class CharSink>
+        void generate_parser_creation(CharSink &&code, indentation_level const indentation, types::type const &parsed,
+                                      Si::memory_range const library)
+        {
+            Si::visit<void>(
+                parsed,
+                [&](types::integer const range)
+                {
+                    Si::append(code, library);
+                    switch (find_number_of_bytes_required(range.maximum))
+                    {
+                    case 1:
+                        Si::append(code, ".parse_int_1(");
+                        Si::append(code, boost::lexical_cast<std::string>(range.minimum));
+                        Si::append(code, ", ");
+                        Si::append(code, boost::lexical_cast<std::string>(range.maximum));
+                        break;
+
+                    case 2:
+                        Si::append(code, ".parse_int_2(");
+                        Si::append(code, boost::lexical_cast<std::string>(range.minimum));
+                        Si::append(code, ", ");
+                        Si::append(code, boost::lexical_cast<std::string>(range.maximum));
+                        break;
+
+                    case 4:
+                        Si::append(code, ".parse_int_4(");
+                        Si::append(code, boost::lexical_cast<std::string>(range.minimum));
+                        Si::append(code, ", ");
+                        Si::append(code, boost::lexical_cast<std::string>(range.maximum));
+                        break;
+
+                    case 8:
+                        Si::append(code, ".parse_int_8(");
+                        Si::append(code, boost::lexical_cast<std::string>(range.minimum >> 32u));
+                        Si::append(code, ", ");
+                        Si::append(code, boost::lexical_cast<std::string>(range.minimum & 0xffffffffu));
+                        Si::append(code, ", ");
+                        Si::append(code, boost::lexical_cast<std::string>(range.maximum >> 32u));
+                        Si::append(code, ", ");
+                        Si::append(code, boost::lexical_cast<std::string>(range.maximum & 0xffffffffu));
+                        break;
+
+                    default:
+                        SILICIUM_UNREACHABLE();
+                    }
+                    Si::append(code, ")");
+                },
+                [&](std::unique_ptr<types::variant> const &)
+                {
+                    throw std::logic_error("todo");
+                },
+                [&](std::unique_ptr<types::tuple> const &root)
+                {
+                    if (root->elements.empty())
+                    {
+                        Si::append(code, "undefined");
+                    }
+                    else
+                    {
+                        Si::append(code, "function ()\n");
+                        block(code, indentation,
+                              [&](indentation_level const in_function)
+                              {
+                                  start_line(code, in_function, "var elements = [];\n");
+                                  start_line(code, in_function, "var current_parser = ");
+                                  generate_parser_creation(code, in_function, root->elements[0], library);
+                                  Si::append(code, ";\n");
+                                  start_line(code, in_function, "return function (input)\n");
+                                  block(code, in_function,
+                                        [&](indentation_level const in_function_2)
+                                        {
+                                            start_line(code, in_function_2, "switch (elements.length)\n");
+                                            block(code, in_function_2,
+                                                  [&](indentation_level const in_switch)
+                                                  {
+                                                      for (size_t i = 0; i < root->elements.size(); ++i)
+                                                      {
+                                                          start_line(code, in_switch, "case ",
+                                                                     boost::lexical_cast<std::string>(i), ":\n");
+                                                          block(code, in_switch,
+                                                                [&](indentation_level const in_case)
+                                                                {
+                                                                    start_line(code, in_case,
+                                                                               "var status = current_parser(input);\n");
+                                                                    start_line(code, in_case,
+                                                                               "if (status === undefined)\n");
+                                                                    block(code, in_case,
+                                                                          [&](indentation_level const in_if)
+                                                                          {
+                                                                              start_line(code, in_if,
+                                                                                         "return undefined;\n");
+                                                                          },
+                                                                          "\n");
+                                                                    start_line(code, in_case,
+                                                                               "elements.push(status);\n");
+                                                                    if (i == (root->elements.size() - 1))
+                                                                    {
+                                                                        start_line(code, in_case, "return elements;\n");
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        start_line(code, in_case, "current_parser = ");
+                                                                        generate_parser_creation(code, in_case,
+                                                                                                 root->elements[i + 1],
+                                                                                                 library);
+                                                                        Si::append(code, ";\n");
+                                                                        start_line(code, in_case, "break;\n");
+                                                                    }
+                                                                },
+                                                                "\n");
+                                                      }
+                                                  },
+                                                  "\n");
+                                        },
+                                        ";\n");
+                              },
+                              "()");
+                    }
+                },
+                [&](std::unique_ptr<types::vector> const &)
+                {
+                    throw std::logic_error("todo");
+                },
+                [&](types::utf8 const text)
+                {
+                    Si::append(code, "function ()\n");
+                    block(code, indentation,
+                          [&](indentation_level const in_function)
+                          {
+                              start_line(code, in_function, "var length = ");
+                              generate_parser_creation(code, in_function, text.code_units, library);
+                              Si::append(code, ";\n");
+                              start_line(code, in_function, "var content;\n");
+                              start_line(code, in_function, "var received_content = 0;\n");
+                              start_line(code, in_function, "return function (input)\n");
+                              block(code, in_function,
+                                    [&](indentation_level const in_function_2)
+                                    {
+                                        start_line(code, in_function_2, "if (content === undefined)\n");
+                                        block(code, in_function_2,
+                                              [&](indentation_level const in_if)
+                                              {
+                                                  start_line(code, in_if, "var status = length(input);\n");
+                                                  start_line(code, in_if, "if (status === undefined) { return; }\n");
+                                                  start_line(code, in_if, "content = new ArrayBuffer(status);\n");
+                                              },
+                                              "\n");
+                                        start_line(code, in_function_2, "else\n");
+                                        block(code, in_function_2,
+                                              [&](indentation_level const in_else)
+                                              {
+                                                  start_line(code, in_else,
+                                                             "new Uint8Array(content)[received_content] = input;\n");
+                                                  start_line(code, in_else, "++received_content;\n");
+                                                  start_line(code, in_else,
+                                                             "if (received_content !== content.length) { return; }\n");
+                                                  start_line(code, in_else, "var result = \"\";\n");
+                                                  // TODO: parse UTF-8
+                                                  start_line(code, in_else, "for (var i = 0; i < content.length; ++i) "
+                                                                            "{ result += String.fromCharCode(new "
+                                                                            "Uint8Array(content)[i]); }\n");
+                                                  start_line(code, in_else, "return result;\n");
+                                              },
+                                              "\n");
+                                    },
+                                    ";\n");
+                          },
+                          "()");
+                });
+        }
+
+        template <class CharSink>
         void generate_request_parsing(CharSink &&code, indentation_level indentation,
+                                      types::interface_definition const &interface,
                                       Si::memory_range const common_library)
         {
             start_line(code, indentation, "var request_id_parser = ", common_library,
                        ".parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
             start_line(code, indentation, "state = function (input)\n");
-            block(code, indentation,
-                  [&](indentation_level const in_state)
-                  {
-                      start_line(code, in_state, "var status = request_id_parser(input);\n");
-                      start_line(code, in_state, "if (status === \"more\")\n");
-                      block(code, in_state,
-                            [&](indentation_level const in_if)
+            block(
+                code, indentation,
+                [&](indentation_level const in_state)
+                {
+                    start_line(code, in_state, "var status = request_id_parser(input);\n");
+                    start_line(code, in_state, "if (status === undefined)\n");
+                    block(code, in_state,
+                          [&](indentation_level const in_if)
+                          {
+                              start_line(code, in_if, "return;\n");
+                          },
+                          "\n");
+                    start_line(code, in_state, "var request_id = status;\n");
+                    start_line(code, in_state, "var method_name_parser = ");
+                    generate_parser_creation(code, in_state, types::utf8{types::integer{0, 255}}, common_library);
+                    Si::append(code, ";\n");
+                    start_line(code, in_state, "state = function (input)\n");
+                    block(
+                        code, in_state,
+                        [&](indentation_level const in_if)
+                        {
+                            start_line(code, in_if, "var status = method_name_parser(input);\n");
+                            start_line(code, in_if, "if (status === undefined)\n");
+                            block(code, in_if,
+                                  [&](indentation_level const in_if_2)
+                                  {
+                                      start_line(code, in_if_2, "return;\n");
+                                  },
+                                  "\n");
+                            for (auto const &method : interface.methods)
                             {
-                                start_line(code, in_if, "return state;\n");
-                            },
-                            "\n");
-                  },
-                  ";\n");
+                                start_line(code, in_if, "if (status === \"", method.first, "\")\n");
+                                block(
+                                    code, in_if,
+                                    [&](indentation_level const in_if_2)
+                                    {
+                                        {
+                                            types::tuple parameters;
+                                            for (types::parameter const &parameter : method.second.parameters)
+                                            {
+                                                parameters.elements.emplace_back(clone(parameter.type_));
+                                            }
+                                            start_line(code, in_if_2, "var parameters = ");
+                                            types::type const parameters_erased = Si::to_unique(std::move(parameters));
+                                            generate_parser_creation(code, in_if_2, parameters_erased, common_library);
+                                            Si::append(code, ";\n");
+                                        }
+                                        start_line(code, in_if_2, "state = function (input)\n");
+                                        block(
+                                            code, in_if_2,
+                                            [&](indentation_level const in_function)
+                                            {
+                                                start_line(code, in_function, "var status = parameters(input);\n");
+                                                start_line(code, in_function,
+                                                           "if (status === undefined) { return undefined; }\n");
+                                                start_line(code, in_function, "state = initial_state;\n");
+                                                start_line(code, in_function, "server_implementation.", method.first,
+                                                           "(");
+                                                auto comma = cpp::make_comma_separator(Si::ref_sink(code));
+                                                for (size_t i = 0; i < method.second.parameters.size(); ++i)
+                                                {
+                                                    comma.add_element();
+                                                    Si::append(code, "status[");
+                                                    Si::append(code, boost::lexical_cast<std::string>(i));
+                                                    Si::append(code, "]");
+                                                }
+                                                comma.add_element();
+                                                Si::append(code, "function (result)\n");
+                                                block(
+                                                    code, in_function,
+                                                    [&](indentation_level const in_callback)
+                                                    {
+                                                        start_line(code, in_callback, "var response_size = 1 + 8");
+                                                        Si::append(code, ";\n");
+                                                        start_line(
+                                                            code, in_callback,
+                                                            "var response_buffer = new ArrayBuffer(response_size);\n");
+                                                    },
+                                                    "");
+                                                Si::append(code, ");\n");
+                                            },
+                                            ";\n");
+                                        start_line(code, in_if_2, "return;\n");
+                                    },
+                                    "\n");
+                            }
+                            start_line(code, in_if, "throw new Error(\"unknown method: \" + status);\n");
+                        },
+                        ";\n");
+                },
+                ";\n");
         }
 
         template <class CharSink>
         void generate_input_receiver(CharSink &&code, indentation_level indentation,
+                                     types::interface_definition const &interface,
                                      Si::memory_range const common_library)
         {
             start_line(code, indentation, "function (pending_requests, server_implementation, send_bytes)\n");
@@ -199,7 +465,7 @@ namespace warpcoil
                                 block(code, in_first_state,
                                       [&](indentation_level const in_if)
                                       {
-                                          generate_request_parsing(code, in_if, common_library);
+                                          generate_request_parsing(code, in_if, interface, common_library);
                                       },
                                       "\n");
                                 start_line(code, in_first_state, "else if (input === 1)\n");
@@ -213,26 +479,19 @@ namespace warpcoil
                                 block(code, in_first_state,
                                       [&](indentation_level const in_else)
                                       {
-                                          start_line(code, in_else, "return undefined;\n");
+                                          start_line(code, in_else, "throw new Error(\"unknown message type\");\n");
                                       },
                                       "\n");
                             },
                             ";\n");
                       start_line(code, in_function, "state = initial_state;\n");
-                      start_line(code, in_function, "return ");
-                      continuation_block(code, in_function,
-                                         [&](indentation_level const in_object)
-                                         {
-                                             start_line(code, in_object, "parse: function (input)\n");
-                                             block(code, in_object,
-                                                   [&](indentation_level const in_parse)
-                                                   {
-                                                       start_line(code, in_parse, "state = state(input);\n");
-                                                       start_line(code, in_parse, "return (state !== undefined);\n");
-                                                   },
-                                                   "\n");
-                                         },
-                                         ";\n");
+                      start_line(code, in_function, "return function (input)\n");
+                      block(code, in_function,
+                            [&](indentation_level const in_parse)
+                            {
+                                start_line(code, in_parse, common_library, ".assert(undefined === state(input));\n");
+                            },
+                            ";\n");
                   },
                   "");
         }
@@ -383,6 +642,7 @@ namespace warpcoil
             block(code, indentation,
                   [&](indentation_level const in_function)
                   {
+                      start_line(code, in_function, "var next_request_id = 0;\n");
                       start_line(code, in_function, "return ");
                       continuation_block(
                           code, in_function,
@@ -415,26 +675,39 @@ namespace warpcoil
                                                                    Si::make_c_str_range("0"),
                                                                    Si::make_c_str_range("request_buffer"),
                                                                    Si::make_c_str_range("0"), library);
+                                            start_line(code, in_method, "var request_id = next_request_id;\n");
+                                            // TODO: support more than 32 bit request IDs
+                                            start_line(code, in_method, "++next_request_id;\n");
                                             generate_serialization(code, in_method,
                                                                    types::integer{0, 0xffffffffffffffffu},
-                                                                   Si::make_c_str_range("{high: 123, low: 456}"),
+                                                                   Si::make_c_str_range("{high: 0, low: request_id}"),
                                                                    Si::make_c_str_range("request_buffer"),
                                                                    Si::make_c_str_range("1"), library);
                                             if (!method.second.parameters.empty())
                                             {
                                                 start_line(code, in_method, "var write_pointer = 1 + 8;\n");
                                             }
-                                            for (types::parameter const &parameter : method.second.parameters)
+                                            for (size_t k = 0; k < method.second.parameters.size(); ++k)
                                             {
+                                                types::parameter const &parameter = method.second.parameters[k];
                                                 generate_serialization(code, in_method, parameter.type_,
                                                                        Si::make_memory_range(parameter.name),
                                                                        Si::make_c_str_range("request_buffer"),
                                                                        Si::make_c_str_range("write_pointer"), library);
-                                                start_line(code, in_method, "write_pointer += ");
-                                                generate_size_of_value(code, in_method, parameter.type_,
-                                                                       Si::make_memory_range(parameter.name), library);
-                                                Si::append(code, ";\n");
+                                                if (k != (method.second.parameters.size() - 1))
+                                                {
+                                                    start_line(code, in_method, "write_pointer += ");
+                                                    generate_size_of_value(code, in_method, parameter.type_,
+                                                                           Si::make_memory_range(parameter.name),
+                                                                           library);
+                                                    Si::append(code, ";\n");
+                                                }
                                             }
+                                            start_line(code, in_method, "send_bytes(request_buffer);\n");
+                                            start_line(code, in_method,
+                                                       "pending_requests[request_id] = {argument_parser: ");
+                                            generate_parser_creation(code, in_method, method.second.result, library);
+                                            Si::append(code, ", on_result: on_result};\n");
                                         },
                                         "");
                                   if (std::next(i, 1) != definition.methods.end())
@@ -489,7 +762,13 @@ namespace warpcoil
 
                 start_line(code, in_object, "parse_int_8: ");
                 warpcoil::javascript::generate_integer_parser(code, in_object, 8);
-                Si::append(code, "\n");
+                Si::append(code, ",\n");
+
+                start_line(code, in_object, "assert: ");
+                Si::append(code, "function (x) { if (!(x)) { throw new Error(\"assertion failed\"); } },\n");
+
+                start_line(code, in_object, "require_type: ");
+                Si::append(code, "function (type, value) { assert(typeof(value) === type); }\n");
             }
             start_line(code, indentation, "}");
         }
