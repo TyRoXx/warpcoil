@@ -7,6 +7,7 @@
 #include <beast/websocket/stream.hpp>
 #include <beast/http/read.hpp>
 #include <warpcoil/pop_warnings.hpp>
+#include <ventura/read_file.hpp>
 
 namespace
 {
@@ -78,11 +79,65 @@ namespace
         }
     };
 
-    void begin_serve(std::shared_ptr<http_client> client, my_service &server_impl)
+    void begin_serve(std::shared_ptr<http_client> client, my_service &server_impl,
+                     ventura::absolute_path const &document_root);
+
+    void serve_static_file(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
+                           ventura::absolute_path const &document_root, ventura::absolute_path const &served_document)
+    {
+        client->response.version = 11;
+
+        Si::visit<void>(ventura::read_file(ventura::safe_c_str(ventura::to_os_string(served_document))),
+                        [&](std::vector<char> content)
+                        {
+                            // TODO: avoid the copy of the content
+                            client->response.body.assign(content.begin(), content.end());
+                            client->response.reason = "OK";
+                            client->response.status = 200;
+
+                        },
+                        [&](boost::system::error_code const ec)
+                        {
+                            std::cerr << "Could not read file " << served_document << ": " << ec << '\n';
+                            client->response.reason = "Internal Server Error";
+                            client->response.status = 500;
+                            client->response.body = client->response.reason;
+                        },
+                        [&](ventura::read_file_problem const problem)
+                        {
+                            std::cerr << "Could not read file " << served_document << " due to problem "
+                                      << static_cast<int>(problem) << '\n';
+                            client->response.reason = "Internal Server Error";
+                            client->response.status = 500;
+                            client->response.body = client->response.reason;
+                        });
+
+        client->response.headers.insert("Content-Length",
+                                        boost::lexical_cast<std::string>(client->response.body.size()));
+        client->response.headers.insert("Content-Type", "text/html");
+        beast::http::async_write(client->socket, client->response, [client, is_keep_alive, &server_impl,
+                                                                    document_root](boost::system::error_code const ec)
+                                 {
+                                     Si::throw_if_error(ec);
+                                     if (is_keep_alive)
+                                     {
+                                         auto http_client_again = std::make_shared<http_client>(
+                                             std::move(client->socket), std::move(client->receive_buffer));
+                                         begin_serve(http_client_again, server_impl, document_root);
+                                     }
+                                     else
+                                     {
+                                         client->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+                                     }
+                                 });
+    }
+
+    void begin_serve(std::shared_ptr<http_client> client, my_service &server_impl,
+                     ventura::absolute_path const &document_root)
     {
         beast::http::async_read(
             client->socket, client->receive_buffer, client->request,
-            [client, &server_impl](boost::system::error_code const ec)
+            [client, &server_impl, document_root](boost::system::error_code const ec)
             {
                 Si::throw_if_error(ec);
                 if (beast::http::is_upgrade(client->request))
@@ -99,43 +154,31 @@ namespace
                 {
                     auto new_client =
                         std::make_shared<file_client>(std::move(client->socket), std::move(client->receive_buffer));
-                    new_client->response.version = 11;
-                    new_client->response.body = "Hello!";
-                    new_client->response.reason = "OK";
-                    new_client->response.status = 200;
-                    new_client->response.headers.insert(
-                        "Content-Length", boost::lexical_cast<std::string>(new_client->response.body.size()));
-                    new_client->response.headers.insert("Content-Type", "text/html");
-                    bool keep_alive = beast::http::is_keep_alive(client->request);
-                    beast::http::async_write(
-                        new_client->socket, new_client->response,
-                        [new_client, keep_alive, &server_impl](boost::system::error_code const ec)
-                        {
-                            Si::throw_if_error(ec);
-                            if (keep_alive)
-                            {
-                                auto http_client_again = std::make_shared<http_client>(
-                                    std::move(new_client->socket), std::move(new_client->receive_buffer));
-                                begin_serve(http_client_again, server_impl);
-                            }
-                            else
-                            {
-                                new_client->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-                            }
-                        });
+                    if (client->request.url == "/index.js")
+                    {
+                        serve_static_file(new_client, beast::http::is_keep_alive(client->request), server_impl,
+                                          document_root, document_root / ventura::relative_path("index.js"));
+                    }
+                    else
+                    {
+                        serve_static_file(new_client, beast::http::is_keep_alive(client->request), server_impl,
+                                          document_root, document_root / ventura::relative_path("index.html"));
+                    }
                 }
             });
     }
 
-    void begin_accept(boost::asio::ip::tcp::acceptor &acceptor, my_service &server_impl)
+    void begin_accept(boost::asio::ip::tcp::acceptor &acceptor, my_service &server_impl,
+                      ventura::absolute_path const &document_root)
     {
         auto client =
             std::make_shared<http_client>(boost::asio::ip::tcp::socket(acceptor.get_io_service()), beast::streambuf());
-        acceptor.async_accept(client->socket, [&acceptor, client, &server_impl](boost::system::error_code const ec)
+        acceptor.async_accept(client->socket,
+                              [&acceptor, client, &server_impl, document_root](boost::system::error_code const ec)
                               {
                                   Si::throw_if_error(ec);
-                                  begin_accept(acceptor, server_impl);
-                                  begin_serve(client, server_impl);
+                                  begin_accept(acceptor, server_impl, document_root);
+                                  begin_serve(client, server_impl, document_root);
                               });
     }
 }
@@ -149,13 +192,15 @@ int main()
 
     boost::uint16_t const port = 8080;
 
+    ventura::absolute_path const document_root = *ventura::parent(*ventura::absolute_path::create(__FILE__));
+
     ip::tcp::acceptor acceptor_v6(io, ip::tcp::endpoint(ip::tcp::v6(), port), true);
     acceptor_v6.listen();
-    begin_accept(acceptor_v6, server_impl);
+    begin_accept(acceptor_v6, server_impl, document_root);
 
     ip::tcp::acceptor acceptor_v4(io, ip::tcp::endpoint(ip::tcp::v4(), port), true);
     acceptor_v4.listen();
-    begin_accept(acceptor_v4, server_impl);
+    begin_accept(acceptor_v4, server_impl, document_root);
 
     while (!io.stopped())
     {
