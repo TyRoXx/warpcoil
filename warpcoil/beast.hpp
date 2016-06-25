@@ -48,9 +48,14 @@ namespace warpcoil
         template <class WebsocketStream>
         struct async_stream_adaptor
         {
-            template <class... Args>
-            explicit async_stream_adaptor(Args &&... args)
-                : m_websocket(std::forward<Args>(args)...)
+            explicit async_stream_adaptor(WebsocketStream websocket)
+                : m_websocket(std::forward<WebsocketStream>(websocket))
+            {
+            }
+
+            explicit async_stream_adaptor(WebsocketStream websocket, ::beast::streambuf receive_buffer)
+                : m_websocket(std::forward<WebsocketStream>(websocket))
+                , m_receive_buffer(std::move(receive_buffer))
             {
             }
 
@@ -79,7 +84,7 @@ namespace warpcoil
                 else
                 {
                     typedef read_operation<decltype(completion.handler), MutableBufferSequence> my_handler;
-                    m_websocket.async_read(m_receivedOpcode, m_receiveBuffer,
+                    m_websocket.async_read(m_received_opcode, m_receive_buffer,
                                            my_handler{std::move(completion.handler), buffers, *this});
                 }
                 return completion.result.get();
@@ -98,8 +103,8 @@ namespace warpcoil
 
         private:
             WebsocketStream m_websocket;
-            ::beast::websocket::opcode m_receivedOpcode;
-            ::beast::streambuf m_receiveBuffer;
+            ::beast::websocket::opcode m_received_opcode;
+            ::beast::streambuf m_receive_buffer;
 
             template <class Handler, class MutableBufferSequence>
             struct read_operation
@@ -122,7 +127,7 @@ namespace warpcoil
                         std::move(handler)(ec, 0);
                         return;
                     }
-                    switch (parent.m_receivedOpcode)
+                    switch (parent.m_received_opcode)
                     {
                     case ::beast::websocket::opcode::binary:
                     case ::beast::websocket::opcode::text:
@@ -187,8 +192,8 @@ namespace warpcoil
             template <class MutableBufferSequence>
             std::size_t read_from_receive_buffer(MutableBufferSequence buffers)
             {
-                std::size_t const copied = boost::asio::buffer_copy(buffers, m_receiveBuffer.data());
-                m_receiveBuffer.consume(copied);
+                std::size_t const copied = boost::asio::buffer_copy(buffers, m_receive_buffer.data());
+                m_receive_buffer.consume(copied);
                 return copied;
             }
         };
