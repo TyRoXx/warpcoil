@@ -83,7 +83,8 @@ namespace
                      ventura::absolute_path const &document_root);
 
     void serve_static_file(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
-                           ventura::absolute_path const &document_root, ventura::absolute_path const &served_document)
+                           ventura::absolute_path const &document_root, ventura::absolute_path const &served_document,
+                           boost::string_ref const content_type)
     {
         client->response.version = 11;
 
@@ -114,7 +115,7 @@ namespace
 
         client->response.headers.insert("Content-Length",
                                         boost::lexical_cast<std::string>(client->response.body.size()));
-        client->response.headers.insert("Content-Type", "text/html");
+        client->response.headers.insert("Content-Type", content_type);
         beast::http::async_write(client->socket, client->response, [client, is_keep_alive, &server_impl,
                                                                     document_root](boost::system::error_code const ec)
                                  {
@@ -157,12 +158,14 @@ namespace
                     if (client->request.url == "/index.js")
                     {
                         serve_static_file(new_client, beast::http::is_keep_alive(client->request), server_impl,
-                                          document_root, document_root / ventura::relative_path("index.js"));
+                                          document_root, document_root / ventura::relative_path("index.js"),
+                                          "text/javascript");
                     }
                     else
                     {
                         serve_static_file(new_client, beast::http::is_keep_alive(client->request), server_impl,
-                                          document_root, document_root / ventura::relative_path("index.html"));
+                                          document_root, document_root / ventura::relative_path("index.html"),
+                                          "text/html");
                     }
                 }
             });
