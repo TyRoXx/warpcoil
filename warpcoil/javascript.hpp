@@ -348,156 +348,6 @@ namespace warpcoil
         }
 
         template <class CharSink>
-        void generate_request_parsing(CharSink &&code, indentation_level indentation,
-                                      types::interface_definition const &interface,
-                                      Si::memory_range const common_library)
-        {
-            start_line(code, indentation, "var request_id_parser = ", common_library,
-                       ".parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
-            start_line(code, indentation, "state = function (input)\n");
-            block(
-                code, indentation,
-                [&](indentation_level const in_state)
-                {
-                    start_line(code, in_state, "var status = request_id_parser(input);\n");
-                    start_line(code, in_state, "if (status === undefined)\n");
-                    block(code, in_state,
-                          [&](indentation_level const in_if)
-                          {
-                              start_line(code, in_if, "return;\n");
-                          },
-                          "\n");
-                    start_line(code, in_state, "var request_id = status;\n");
-                    start_line(code, in_state, "var method_name_parser = ");
-                    generate_parser_creation(code, in_state, types::utf8{types::integer{0, 255}}, common_library);
-                    Si::append(code, ";\n");
-                    start_line(code, in_state, "state = function (input)\n");
-                    block(
-                        code, in_state,
-                        [&](indentation_level const in_if)
-                        {
-                            start_line(code, in_if, "var status = method_name_parser(input);\n");
-                            start_line(code, in_if, "if (status === undefined)\n");
-                            block(code, in_if,
-                                  [&](indentation_level const in_if_2)
-                                  {
-                                      start_line(code, in_if_2, "return;\n");
-                                  },
-                                  "\n");
-                            for (auto const &method : interface.methods)
-                            {
-                                start_line(code, in_if, "if (status === \"", method.first, "\")\n");
-                                block(
-                                    code, in_if,
-                                    [&](indentation_level const in_if_2)
-                                    {
-                                        {
-                                            types::tuple parameters;
-                                            for (types::parameter const &parameter : method.second.parameters)
-                                            {
-                                                parameters.elements.emplace_back(clone(parameter.type_));
-                                            }
-                                            start_line(code, in_if_2, "var parameters = ");
-                                            types::type const parameters_erased = Si::to_unique(std::move(parameters));
-                                            generate_parser_creation(code, in_if_2, parameters_erased, common_library);
-                                            Si::append(code, ";\n");
-                                        }
-                                        start_line(code, in_if_2, "state = function (input)\n");
-                                        block(
-                                            code, in_if_2,
-                                            [&](indentation_level const in_function)
-                                            {
-                                                start_line(code, in_function, "var status = parameters(input);\n");
-                                                start_line(code, in_function,
-                                                           "if (status === undefined) { return undefined; }\n");
-                                                start_line(code, in_function, "state = initial_state;\n");
-                                                start_line(code, in_function, "server_implementation.", method.first,
-                                                           "(");
-                                                auto comma = cpp::make_comma_separator(Si::ref_sink(code));
-                                                for (size_t i = 0; i < method.second.parameters.size(); ++i)
-                                                {
-                                                    comma.add_element();
-                                                    Si::append(code, "status[");
-                                                    Si::append(code, boost::lexical_cast<std::string>(i));
-                                                    Si::append(code, "]");
-                                                }
-                                                comma.add_element();
-                                                Si::append(code, "function (result)\n");
-                                                block(
-                                                    code, in_function,
-                                                    [&](indentation_level const in_callback)
-                                                    {
-                                                        start_line(code, in_callback, "var response_size = 1 + 8");
-                                                        Si::append(code, ";\n");
-                                                        start_line(
-                                                            code, in_callback,
-                                                            "var response_buffer = new ArrayBuffer(response_size);\n");
-                                                    },
-                                                    "");
-                                                Si::append(code, ");\n");
-                                            },
-                                            ";\n");
-                                        start_line(code, in_if_2, "return;\n");
-                                    },
-                                    "\n");
-                            }
-                            start_line(code, in_if, "throw new Error(\"unknown method: \" + status);\n");
-                        },
-                        ";\n");
-                },
-                ";\n");
-        }
-
-        template <class CharSink>
-        void generate_input_receiver(CharSink &&code, indentation_level indentation,
-                                     types::interface_definition const &interface,
-                                     Si::memory_range const common_library)
-        {
-            start_line(code, indentation, "function (pending_requests, server_implementation, send_bytes)\n");
-            block(code, indentation,
-                  [&](indentation_level const in_function)
-                  {
-                      start_line(code, in_function, "var state;\n");
-                      start_line(code, in_function, "var initial_state = function (input)\n");
-                      block(code, in_function,
-                            [&](indentation_level const in_first_state)
-                            {
-                                start_line(code, in_first_state, "if (input === 0)\n");
-                                block(code, in_first_state,
-                                      [&](indentation_level const in_if)
-                                      {
-                                          generate_request_parsing(code, in_if, interface, common_library);
-                                      },
-                                      "\n");
-                                start_line(code, in_first_state, "else if (input === 1)\n");
-                                block(code, in_first_state,
-                                      [&](indentation_level const in_if)
-                                      {
-                                          generate_response_parsing(code, in_if, common_library);
-                                      },
-                                      "\n");
-                                start_line(code, in_first_state, "else\n");
-                                block(code, in_first_state,
-                                      [&](indentation_level const in_else)
-                                      {
-                                          start_line(code, in_else, "throw new Error(\"unknown message type\");\n");
-                                      },
-                                      "\n");
-                            },
-                            ";\n");
-                      start_line(code, in_function, "state = initial_state;\n");
-                      start_line(code, in_function, "return function (input)\n");
-                      block(code, in_function,
-                            [&](indentation_level const in_parse)
-                            {
-                                start_line(code, in_parse, common_library, ".assert(undefined === state(input));\n");
-                            },
-                            ";\n");
-                  },
-                  "");
-        }
-
-        template <class CharSink>
         void generate_size_of_value(CharSink &&code, indentation_level indentation, types::type const &type,
                                     Si::memory_range const value, Si::memory_range const library)
         {
@@ -591,7 +441,11 @@ namespace warpcoil
                             },
                             [&](std::unique_ptr<types::tuple> const &root)
                             {
-                                start_line(code, indentation, "function ()\n");
+                                if (root->elements.empty())
+                                {
+                                    return;
+                                }
+                                start_line(code, indentation, "(function ()\n");
                                 block(code, indentation,
                                       [&](indentation_level const in_function)
                                       {
@@ -612,7 +466,7 @@ namespace warpcoil
                                               Si::append(code, ";\n");
                                           }
                                       },
-                                      "();\n");
+                                      ")();\n");
                             },
                             [&](std::unique_ptr<types::vector> const &)
                             {
@@ -633,6 +487,175 @@ namespace warpcoil
                                 start_line(code, indentation, "new Uint8Array(", destination, ").set(new Uint8Array(",
                                            library, ".to_utf8(", value, ")), ", content_offset, ");\n");
                             });
+        }
+
+        template <class CharSink>
+        void generate_request_parsing(CharSink &&code, indentation_level indentation,
+                                      types::interface_definition const &interface,
+                                      Si::memory_range const common_library)
+        {
+            start_line(code, indentation, "var request_id_parser = ", common_library,
+                       ".parse_int_8(0, 0, 0xffffffff, 0xffffffff);\n");
+            start_line(code, indentation, "state = function (input)\n");
+            block(
+                code, indentation,
+                [&](indentation_level const in_state)
+                {
+                    start_line(code, in_state, "var status = request_id_parser(input);\n");
+                    start_line(code, in_state, "if (status === undefined)\n");
+                    block(code, in_state,
+                          [&](indentation_level const in_if)
+                          {
+                              start_line(code, in_if, "return;\n");
+                          },
+                          "\n");
+                    start_line(code, in_state, "var request_id = status;\n");
+                    start_line(code, in_state, "var method_name_parser = ");
+                    generate_parser_creation(code, in_state, types::utf8{types::integer{0, 255}}, common_library);
+                    Si::append(code, ";\n");
+                    start_line(code, in_state, "state = function (input)\n");
+                    block(
+                        code, in_state,
+                        [&](indentation_level const in_if)
+                        {
+                            start_line(code, in_if, "var status = method_name_parser(input);\n");
+                            start_line(code, in_if, "if (status === undefined)\n");
+                            block(code, in_if,
+                                  [&](indentation_level const in_if_2)
+                                  {
+                                      start_line(code, in_if_2, "return;\n");
+                                  },
+                                  "\n");
+                            for (auto const &method : interface.methods)
+                            {
+                                start_line(code, in_if, "if (status === \"", method.first, "\")\n");
+                                block(
+                                    code, in_if,
+                                    [&](indentation_level const in_if_2)
+                                    {
+                                        {
+                                            types::tuple parameters;
+                                            for (types::parameter const &parameter : method.second.parameters)
+                                            {
+                                                parameters.elements.emplace_back(clone(parameter.type_));
+                                            }
+                                            start_line(code, in_if_2, "var parameters = ");
+                                            types::type const parameters_erased = Si::to_unique(std::move(parameters));
+                                            generate_parser_creation(code, in_if_2, parameters_erased, common_library);
+                                            Si::append(code, ";\n");
+                                        }
+                                        start_line(code, in_if_2, "state = function (input)\n");
+                                        block(
+                                            code, in_if_2,
+                                            [&](indentation_level const in_function)
+                                            {
+                                                start_line(code, in_function, "var status = parameters(input);\n");
+                                                start_line(code, in_function,
+                                                           "if (status === undefined) { return undefined; }\n");
+                                                start_line(code, in_function, "state = initial_state;\n");
+                                                start_line(code, in_function, "server_implementation.", method.first,
+                                                           "(");
+                                                auto comma = cpp::make_comma_separator(Si::ref_sink(code));
+                                                for (size_t i = 0; i < method.second.parameters.size(); ++i)
+                                                {
+                                                    comma.add_element();
+                                                    Si::append(code, "status[");
+                                                    Si::append(code, boost::lexical_cast<std::string>(i));
+                                                    Si::append(code, "]");
+                                                }
+                                                comma.add_element();
+                                                Si::append(code, "function (result)\n");
+                                                block(
+                                                    code, in_function,
+                                                    [&](indentation_level const in_callback)
+                                                    {
+                                                        start_line(code, in_callback, "var response_size = 1 + 8 + ");
+                                                        generate_size_of_value(code, in_callback, method.second.result,
+                                                                               Si::make_c_str_range("result"),
+                                                                               common_library);
+                                                        Si::append(code, ";\n");
+                                                        start_line(
+                                                            code, in_callback,
+                                                            "var response_buffer = new ArrayBuffer(response_size);\n");
+                                                        generate_serialization(
+                                                            code, in_callback, types::integer{0, 255},
+                                                            Si::make_c_str_range("1"),
+                                                            Si::make_c_str_range("response_buffer"),
+                                                            Si::make_c_str_range("0"), common_library);
+                                                        generate_serialization(
+                                                            code, in_callback, types::integer{0, 0xffffffffffffffffu},
+                                                            Si::make_c_str_range("request_id"),
+                                                            Si::make_c_str_range("response_buffer"),
+                                                            Si::make_c_str_range("1"), common_library);
+                                                        generate_serialization(code, in_callback, method.second.result,
+                                                                               Si::make_c_str_range("result"),
+                                                                               Si::make_c_str_range("response_buffer"),
+                                                                               Si::make_c_str_range("(1 + 8)"),
+                                                                               common_library);
+                                                        start_line(code, in_callback, "send_bytes(response_buffer);\n");
+                                                    },
+                                                    "");
+                                                Si::append(code, ");\n");
+                                            },
+                                            ";\n");
+                                        start_line(code, in_if_2, "return;\n");
+                                    },
+                                    "\n");
+                            }
+                            start_line(code, in_if, "throw new Error(\"unknown method: \" + status);\n");
+                        },
+                        ";\n");
+                },
+                ";\n");
+        }
+
+        template <class CharSink>
+        void generate_input_receiver(CharSink &&code, indentation_level indentation,
+                                     types::interface_definition const &interface,
+                                     Si::memory_range const common_library)
+        {
+            start_line(code, indentation, "function (pending_requests, server_implementation, send_bytes)\n");
+            block(code, indentation,
+                  [&](indentation_level const in_function)
+                  {
+                      start_line(code, in_function, "var state;\n");
+                      start_line(code, in_function, "var initial_state = function (input)\n");
+                      block(code, in_function,
+                            [&](indentation_level const in_first_state)
+                            {
+                                start_line(code, in_first_state, "if (input === 0)\n");
+                                block(code, in_first_state,
+                                      [&](indentation_level const in_if)
+                                      {
+                                          generate_request_parsing(code, in_if, interface, common_library);
+                                      },
+                                      "\n");
+                                start_line(code, in_first_state, "else if (input === 1)\n");
+                                block(code, in_first_state,
+                                      [&](indentation_level const in_if)
+                                      {
+                                          generate_response_parsing(code, in_if, common_library);
+                                      },
+                                      "\n");
+                                start_line(code, in_first_state, "else\n");
+                                block(code, in_first_state,
+                                      [&](indentation_level const in_else)
+                                      {
+                                          start_line(code, in_else, "throw new Error(\"unknown message type\");\n");
+                                      },
+                                      "\n");
+                            },
+                            ";\n");
+                      start_line(code, in_function, "state = initial_state;\n");
+                      start_line(code, in_function, "return function (input)\n");
+                      block(code, in_function,
+                            [&](indentation_level const in_parse)
+                            {
+                                start_line(code, in_parse, common_library, ".assert(undefined === state(input));\n");
+                            },
+                            ";\n");
+                  },
+                  "");
         }
 
         template <class CharSink>

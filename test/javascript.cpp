@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(javascript_receiver)
             Si::append(code_writer, "var should_get_request = false;\n");
             Si::append(code_writer, "var got_request = false;\n");
             Si::append(code_writer, "var should_send = false;\n");
-            Si::append(code_writer, "var server = { on_event: function (content)\n");
+            Si::append(code_writer, "var server = { on_event: function (content, on_result)\n");
             warpcoil::block(code_writer, warpcoil::indentation_level(),
                             [&](warpcoil::indentation_level const in_function)
                             {
@@ -145,6 +145,7 @@ BOOST_AUTO_TEST_CASE(javascript_receiver)
                                 start_line(code_writer, in_function, "should_get_request = false;\n");
                                 start_line(code_writer, in_function, "library.assert(content == \"XY\");\n");
                                 start_line(code_writer, in_function, "should_send = true;\n");
+                                start_line(code_writer, in_function, "on_result([]);\n");
                             },
                             "\n};\n");
             Si::append(code_writer, "var got_send = false;\n");
@@ -157,6 +158,16 @@ BOOST_AUTO_TEST_CASE(javascript_receiver)
                                 start_line(code_writer, in_function, "got_send = true;\n");
                                 start_line(code_writer, in_function, "should_send = false;\n");
                                 start_line(code_writer, in_function, "library.assert(bytes.length === 9);\n");
+                                start_line(code_writer, in_function, "var view = new Uint8Array(bytes);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(1, view[0]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(1, view[1]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(2, view[2]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(3, view[3]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(4, view[4]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(5, view[5]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(6, view[6]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(7, view[7]);\n");
+                                start_line(code_writer, in_function, "library.assert_eq(8, view[8]);\n");
                             },
                             ";\n");
             Si::append(code_writer, "var receiver = make_receiver(pending_requests, server, send_bytes);\n");
@@ -173,6 +184,7 @@ BOOST_AUTO_TEST_CASE(javascript_receiver)
             Si::append(code_writer, "should_get_request = true;\n");
             Si::append(code_writer, "receiver('Y'.charCodeAt());\n");
             Si::append(code_writer, "library.assert(got_request);\n");
+            Si::append(code_writer, "library.assert(got_send);\n");
         });
 }
 
