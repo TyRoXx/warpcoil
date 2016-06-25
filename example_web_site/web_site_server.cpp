@@ -1,4 +1,5 @@
 #include "web_site_interfaces.hpp"
+#include "web_site_interface.hpp"
 #include <warpcoil/beast.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <silicium/error_or.hpp>
@@ -7,6 +8,7 @@
 #include <beast/websocket/stream.hpp>
 #include <beast/http/read.hpp>
 #include <warpcoil/pop_warnings.hpp>
+#include <warpcoil/javascript.hpp>
 #include <ventura/read_file.hpp>
 
 namespace
@@ -82,12 +84,34 @@ namespace
     void begin_serve(std::shared_ptr<http_client> client, my_service &server_impl,
                      ventura::absolute_path const &document_root);
 
+    void serve_prepared_response(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
+                                 ventura::absolute_path const &document_root, boost::string_ref const content_type)
+    {
+        client->response.version = 11;
+        client->response.headers.insert("Content-Length",
+                                        boost::lexical_cast<std::string>(client->response.body.size()));
+        client->response.headers.insert("Content-Type", content_type);
+        beast::http::async_write(client->socket, client->response, [client, is_keep_alive, &server_impl,
+                                                                    document_root](boost::system::error_code const ec)
+                                 {
+                                     Si::throw_if_error(ec);
+                                     if (is_keep_alive)
+                                     {
+                                         auto http_client_again = std::make_shared<http_client>(
+                                             std::move(client->socket), std::move(client->receive_buffer));
+                                         begin_serve(http_client_again, server_impl, document_root);
+                                     }
+                                     else
+                                     {
+                                         client->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+                                     }
+                                 });
+    }
+
     void serve_static_file(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
                            ventura::absolute_path const &document_root, ventura::absolute_path const &served_document,
                            boost::string_ref const content_type)
     {
-        client->response.version = 11;
-
         Si::visit<void>(ventura::read_file(ventura::safe_c_str(ventura::to_os_string(served_document))),
                         [&](std::vector<char> content)
                         {
@@ -112,25 +136,33 @@ namespace
                             client->response.status = 500;
                             client->response.body = client->response.reason;
                         });
+        serve_prepared_response(client, is_keep_alive, server_impl, document_root, content_type);
+    }
 
-        client->response.headers.insert("Content-Length",
-                                        boost::lexical_cast<std::string>(client->response.body.size()));
-        client->response.headers.insert("Content-Type", content_type);
-        beast::http::async_write(client->socket, client->response, [client, is_keep_alive, &server_impl,
-                                                                    document_root](boost::system::error_code const ec)
-                                 {
-                                     Si::throw_if_error(ec);
-                                     if (is_keep_alive)
-                                     {
-                                         auto http_client_again = std::make_shared<http_client>(
-                                             std::move(client->socket), std::move(client->receive_buffer));
-                                         begin_serve(http_client_again, server_impl, document_root);
-                                     }
-                                     else
-                                     {
-                                         client->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-                                     }
-                                 });
+    void serve_interface_library(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
+                                 ventura::absolute_path const &document_root)
+    {
+        auto code_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(client->response.body));
+        Si::append(code_writer, "\"use strict\";\n");
+
+        Si::append(code_writer, "var library = ");
+        warpcoil::javascript::generate_common_library(code_writer, warpcoil::indentation_level());
+        Si::append(code_writer, ";\n");
+
+        Si::memory_range const library = Si::make_c_str_range("library");
+        Si::append(code_writer, "var make_receiver = ");
+        warpcoil::javascript::generate_input_receiver(code_writer, warpcoil::indentation_level(),
+                                                      warpcoil::types::interface_definition(), library);
+        Si::append(code_writer, ";\n");
+
+        warpcoil::types::interface_definition const service = warpcoil::create_web_site_interface();
+        Si::append(code_writer, "var make_client = ");
+        warpcoil::javascript::generate_client(code_writer, warpcoil::indentation_level(), service, library);
+        Si::append(code_writer, ";\n");
+
+        client->response.reason = "OK";
+        client->response.status = 200;
+        serve_prepared_response(client, is_keep_alive, server_impl, document_root, "text/javascript");
     }
 
     void begin_serve(std::shared_ptr<http_client> client, my_service &server_impl,
@@ -160,6 +192,11 @@ namespace
                         serve_static_file(new_client, beast::http::is_keep_alive(client->request), server_impl,
                                           document_root, document_root / ventura::relative_path("index.js"),
                                           "text/javascript");
+                    }
+                    else if (client->request.url == "/service.js")
+                    {
+                        serve_interface_library(new_client, beast::http::is_keep_alive(client->request), server_impl,
+                                                document_root);
                     }
                     else
                     {
