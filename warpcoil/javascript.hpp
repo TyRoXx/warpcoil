@@ -661,7 +661,8 @@ namespace warpcoil
                                   block(code, in_result,
                                         [&](indentation_level const in_method)
                                         {
-                                            start_line(code, in_method, "var request_size = 1 + 8");
+                                            start_line(code, in_method, "var request_size = 1 + 8 + 1 + ",
+                                                       boost::lexical_cast<std::string>(method.first.size()));
                                             for (types::parameter const &parameter : method.second.parameters)
                                             {
                                                 Si::append(code, " + ");
@@ -683,9 +684,24 @@ namespace warpcoil
                                                                    Si::make_c_str_range("{high: 0, low: request_id}"),
                                                                    Si::make_c_str_range("request_buffer"),
                                                                    Si::make_c_str_range("1"), library);
-                                            if (!method.second.parameters.empty())
+                                            start_line(code, in_method, "var write_pointer = 1 + 8;\n");
                                             {
-                                                start_line(code, in_method, "var write_pointer = 1 + 8;\n");
+                                                std::string method_name_literal = "\"";
+                                                method_name_literal += method.first;
+                                                method_name_literal += "\"";
+                                                types::type const name_type = types::utf8{types::integer{0, 255}};
+                                                generate_serialization(code, in_method, name_type,
+                                                                       Si::make_memory_range(method_name_literal),
+                                                                       Si::make_c_str_range("request_buffer"),
+                                                                       Si::make_c_str_range("write_pointer"), library);
+                                                if (!method.second.parameters.empty())
+                                                {
+                                                    start_line(code, in_method, "write_pointer += ");
+                                                    generate_size_of_value(code, in_method, name_type,
+                                                                           Si::make_memory_range(method_name_literal),
+                                                                           library);
+                                                    Si::append(code, ";\n");
+                                                }
                                             }
                                             for (size_t k = 0; k < method.second.parameters.size(); ++k)
                                             {
