@@ -117,6 +117,7 @@ add_subdirectory("test")
 option(WARPCOIL_BUILD_EXAMPLES "" ON)
 if(WARPCOIL_BUILD_EXAMPLES)
 	add_subdirectory("example")
+	add_subdirectory("example_web_site")
 endif()
 
 if(WARPCOIL_USE_CLANG_FORMAT)
