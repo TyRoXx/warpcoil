@@ -758,7 +758,7 @@ namespace warpcoil
                                     [&](indentation_level const in_for)
                                     {
                                         // TODO: actual UTF-8 encoder
-                                        start_line(code, in_for, "view.setUint8(i, string[i]);\n");
+                                        start_line(code, in_for, "view.setUint8(i, string.charCodeAt(i));\n");
                                     },
                                     "\n");
                               start_line(code, in_function, "return buffer;\n");
@@ -784,6 +784,10 @@ namespace warpcoil
 
                 start_line(code, in_object, "assert: ");
                 Si::append(code, "function (x) { if (!(x)) { throw new Error(\"assertion failed\"); } },\n");
+
+                start_line(code, in_object, "assert_eq: ");
+                Si::append(code, "function (expected, got) { if (expected !== got) { throw new Error(\"Expected \" + "
+                                 "expected + \", got \" + got); } },\n");
 
                 start_line(code, in_object, "require_type: ");
                 Si::append(code, "function (type, value) { assert(typeof(value) === type); }\n");

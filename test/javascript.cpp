@@ -49,6 +49,8 @@ namespace
         server_definition.add_method("send", Si::to_unique(warpcoil::types::tuple{{}}))(
             "content", warpcoil::types::utf8{warpcoil::types::integer{0, 2000}});
         server_definition.add_method("disconnect", Si::to_unique(warpcoil::types::tuple{{}}));
+        server_definition.add_method("hello", warpcoil::types::utf8{warpcoil::types::integer{0, 2000}})(
+            "name", warpcoil::types::utf8{warpcoil::types::integer{0, 1992}});
 
         Si::memory_range const library = Si::make_c_str_range("library");
         Si::append(code_writer, "var make_receiver = ");
@@ -174,26 +176,46 @@ BOOST_AUTO_TEST_CASE(javascript_receiver)
         });
 }
 
-BOOST_AUTO_TEST_CASE(javascript_client)
+BOOST_AUTO_TEST_CASE(javascript_client_empty_response)
 {
     javascript_test(
-        "client", [](Si::Sink<char, Si::success>::interface &code_writer)
+        "client_empty_response", [](Si::Sink<char, Si::success>::interface &code_writer)
         {
             Si::append(code_writer, "var pending_requests = {};\n");
             Si::append(code_writer, "var should_send = false;\n");
             Si::append(code_writer, "var got_send = false;\n");
             Si::append(code_writer, "var send_bytes = function (bytes)\n");
-            warpcoil::block(code_writer, warpcoil::indentation_level(),
-                            [&](warpcoil::indentation_level const in_function)
-                            {
-                                start_line(code_writer, in_function, "library.assert(should_send);\n");
-                                start_line(code_writer, in_function, "library.assert(!got_send);\n");
-                                start_line(code_writer, in_function, "got_send = true;\n");
-                                start_line(code_writer, in_function, "should_send = false;\n");
-                                start_line(code_writer, in_function,
-                                           "library.assert(bytes.length === (1 + 8 + 5 + 5));\n");
-                            },
-                            ";\n");
+            warpcoil::block(
+                code_writer, warpcoil::indentation_level(),
+                [&](warpcoil::indentation_level const in_function)
+                {
+                    start_line(code_writer, in_function, "library.assert(should_send);\n");
+                    start_line(code_writer, in_function, "library.assert(!got_send);\n");
+                    start_line(code_writer, in_function, "got_send = true;\n");
+                    start_line(code_writer, in_function, "should_send = false;\n");
+                    start_line(code_writer, in_function, "library.assert(bytes.length === (1 + 8 + 5 + 5));\n");
+                    start_line(code_writer, in_function, "var view = new Uint8Array(bytes);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[0]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[1]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[2]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[3]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[4]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[5]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[6]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[7]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[8]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(4, view[9]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('s'.charCodeAt(), view[10]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('e'.charCodeAt(), view[11]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('n'.charCodeAt(), view[12]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('d'.charCodeAt(), view[13]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[14]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(3, view[15]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('a'.charCodeAt(), view[16]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('b'.charCodeAt(), view[17]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('c'.charCodeAt(), view[18]);\n");
+                },
+                ";\n");
             Si::append(code_writer, "var client = make_client(pending_requests, send_bytes);\n");
             Si::append(code_writer, "should_send = true;\n");
             Si::append(code_writer, "var should_get_response = false;\n");
@@ -221,6 +243,81 @@ BOOST_AUTO_TEST_CASE(javascript_client)
                             ");\n");
             Si::append(code_writer, "should_get_response = true;\n");
             Si::append(code_writer, "receiver(0);\n");
+            Si::append(code_writer, "library.assert(got_response);\n");
+        });
+}
+
+BOOST_AUTO_TEST_CASE(javascript_client_non_empty_response)
+{
+    javascript_test(
+        "client_non_empty_response", [](Si::Sink<char, Si::success>::interface &code_writer)
+        {
+            Si::append(code_writer, "var pending_requests = {};\n");
+            Si::append(code_writer, "var should_send = false;\n");
+            Si::append(code_writer, "var got_send = false;\n");
+            Si::append(code_writer, "var send_bytes = function (bytes)\n");
+            warpcoil::block(
+                code_writer, warpcoil::indentation_level(),
+                [&](warpcoil::indentation_level const in_function)
+                {
+                    start_line(code_writer, in_function, "library.assert(should_send);\n");
+                    start_line(code_writer, in_function, "library.assert(!got_send);\n");
+                    start_line(code_writer, in_function, "got_send = true;\n");
+                    start_line(code_writer, in_function, "should_send = false;\n");
+                    start_line(code_writer, in_function, "library.assert(bytes.length === (1 + 8 + 6 + 5));\n");
+                    start_line(code_writer, in_function, "var view = new Uint8Array(bytes);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[0]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[1]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[2]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[3]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[4]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[5]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[6]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[7]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[8]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(5, view[9]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('h'.charCodeAt(), view[10]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('e'.charCodeAt(), view[11]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('l'.charCodeAt(), view[12]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('l'.charCodeAt(), view[13]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('o'.charCodeAt(), view[14]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(0, view[15]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq(3, view[16]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('a'.charCodeAt(), view[17]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('b'.charCodeAt(), view[18]);\n");
+                    start_line(code_writer, in_function, "library.assert_eq('c'.charCodeAt(), view[19]);\n");
+                },
+                ";\n");
+            Si::append(code_writer, "var client = make_client(pending_requests, send_bytes);\n");
+            Si::append(code_writer, "should_send = true;\n");
+            Si::append(code_writer, "var should_get_response = false;\n");
+            Si::append(code_writer, "var got_response = false;\n");
+            Si::append(code_writer, "client.hello(\"abc\", function (error, response)\n");
+            warpcoil::block(code_writer, warpcoil::indentation_level(),
+                            [&](warpcoil::indentation_level const in_function)
+                            {
+                                start_line(code_writer, in_function, "library.assert(should_get_response);\n");
+                                start_line(code_writer, in_function, "should_get_response = false;\n");
+                                start_line(code_writer, in_function, "got_response = true;\n");
+                                start_line(code_writer, in_function, "library.assert(error === undefined);\n");
+                                start_line(code_writer, in_function, "library.assert(response === \"Hello, abc!\");\n");
+                            },
+                            ");\n");
+            Si::append(code_writer, "library.assert(got_send);\n");
+            Si::append(code_writer, "var no_server = {};\n");
+            Si::append(code_writer, "var receiver = make_receiver(pending_requests, no_server, send_bytes);\n");
+            Si::append(code_writer, "[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 'H'.charCodeAt(), 'e'.charCodeAt(), "
+                                    "'l'.charCodeAt(), 'l'.charCodeAt(), 'o'.charCodeAt(), ','.charCodeAt(), ' "
+                                    "'.charCodeAt(), 'a'.charCodeAt(), 'b'.charCodeAt() , "
+                                    "'c'.charCodeAt()].forEach(function (byte)\n");
+            warpcoil::block(code_writer, warpcoil::indentation_level(),
+                            [&](warpcoil::indentation_level const in_function)
+                            {
+                                start_line(code_writer, in_function, "receiver(byte);\n");
+                            },
+                            ");\n");
+            Si::append(code_writer, "should_get_response = true;\n");
+            Si::append(code_writer, "receiver('!'.charCodeAt());\n");
             Si::append(code_writer, "library.assert(got_response);\n");
         });
 }
