@@ -176,26 +176,51 @@ BOOST_AUTO_TEST_CASE(javascript_receiver)
 
 BOOST_AUTO_TEST_CASE(javascript_client)
 {
-    javascript_test("client", [](Si::Sink<char, Si::success>::interface &code_writer)
-                    {
-                        Si::append(code_writer, "var pending_requests = {};\n");
-                        Si::append(code_writer, "var should_send = false;\n");
-                        Si::append(code_writer, "var got_send = false;\n");
-                        Si::append(code_writer, "var send_bytes = function (bytes)\n");
-                        warpcoil::block(code_writer, warpcoil::indentation_level(),
-                                        [&](warpcoil::indentation_level const in_function)
-                                        {
-                                            start_line(code_writer, in_function, "library.assert(should_send);\n");
-                                            start_line(code_writer, in_function, "library.assert(!got_send);\n");
-                                            start_line(code_writer, in_function, "got_send = true;\n");
-                                            start_line(code_writer, in_function, "should_send = false;\n");
-                                            start_line(code_writer, in_function,
-                                                       "library.assert(bytes.length === (1 + 8 + 5 + 5));\n");
-                                        },
-                                        ";\n");
-                        Si::append(code_writer, "var client = make_client(pending_requests, send_bytes);\n");
-                        Si::append(code_writer, "should_send = true;\n");
-                        Si::append(code_writer, "client.send(\"abc\", function (error) {});\n");
-                        Si::append(code_writer, "library.assert(got_send);\n");
-                    });
+    javascript_test(
+        "client", [](Si::Sink<char, Si::success>::interface &code_writer)
+        {
+            Si::append(code_writer, "var pending_requests = {};\n");
+            Si::append(code_writer, "var should_send = false;\n");
+            Si::append(code_writer, "var got_send = false;\n");
+            Si::append(code_writer, "var send_bytes = function (bytes)\n");
+            warpcoil::block(code_writer, warpcoil::indentation_level(),
+                            [&](warpcoil::indentation_level const in_function)
+                            {
+                                start_line(code_writer, in_function, "library.assert(should_send);\n");
+                                start_line(code_writer, in_function, "library.assert(!got_send);\n");
+                                start_line(code_writer, in_function, "got_send = true;\n");
+                                start_line(code_writer, in_function, "should_send = false;\n");
+                                start_line(code_writer, in_function,
+                                           "library.assert(bytes.length === (1 + 8 + 5 + 5));\n");
+                            },
+                            ";\n");
+            Si::append(code_writer, "var client = make_client(pending_requests, send_bytes);\n");
+            Si::append(code_writer, "should_send = true;\n");
+            Si::append(code_writer, "var should_get_response = false;\n");
+            Si::append(code_writer, "var got_response = false;\n");
+            Si::append(code_writer, "client.send(\"abc\", function (error, response)\n");
+            warpcoil::block(code_writer, warpcoil::indentation_level(),
+                            [&](warpcoil::indentation_level const in_function)
+                            {
+                                start_line(code_writer, in_function, "library.assert(should_get_response);\n");
+                                start_line(code_writer, in_function, "should_get_response = false;\n");
+                                start_line(code_writer, in_function, "got_response = true;\n");
+                                start_line(code_writer, in_function, "library.assert(error === undefined);\n");
+                                start_line(code_writer, in_function, "library.assert(response.length === 0);\n");
+                            },
+                            ");\n");
+            Si::append(code_writer, "library.assert(got_send);\n");
+            Si::append(code_writer, "var no_server = {};\n");
+            Si::append(code_writer, "var receiver = make_receiver(pending_requests, no_server, send_bytes);\n");
+            Si::append(code_writer, "[1, 0, 0, 0, 0, 0, 0, 0].forEach(function (byte)\n");
+            warpcoil::block(code_writer, warpcoil::indentation_level(),
+                            [&](warpcoil::indentation_level const in_function)
+                            {
+                                start_line(code_writer, in_function, "receiver(byte);\n");
+                            },
+                            ");\n");
+            Si::append(code_writer, "should_get_response = true;\n");
+            Si::append(code_writer, "receiver(0);\n");
+            Si::append(code_writer, "library.assert(got_response);\n");
+        });
 }

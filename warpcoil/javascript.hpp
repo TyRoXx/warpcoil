@@ -131,40 +131,41 @@ namespace warpcoil
                       block(code, in_state,
                             [&](indentation_level const in_if)
                             {
-                                start_line(code, in_if, "return undefined;\n");
+                                start_line(code, in_if, "return;\n");
                             },
                             "\n");
-                      start_line(code, in_state, "var pending_request = pendings_requests[status];\n");
+                      start_line(code, in_state, "var key = JSON.stringify(status);\n");
+                      start_line(code, in_state, "var pending_request = pending_requests[key];\n");
                       start_line(code, in_state, "if (pending_request === undefined)\n");
                       block(code, in_state,
                             [&](indentation_level const in_if)
                             {
-                                start_line(code, in_if, "return undefined;\n");
+                                start_line(code, in_if, "throw new Error(\"Unexpected response: \" + key);\n");
                             },
                             "\n");
-                      start_line(code, in_state, "delete pendings_requests[status];\n");
+                      start_line(code, in_state, "delete pending_requests[key];\n");
+                      start_line(code, in_state, "var argument_parser = pending_request.argument_parser;\n");
+                      // empty tuple requires no parser, so the field is undefined
+                      start_line(code, in_state, "if (argument_parser === undefined)\n");
+                      block(code, in_state,
+                            [&](indentation_level const in_if)
+                            {
+                                start_line(code, in_if, "state = initial_state;\n");
+                                start_line(code, in_if, "pending_request.on_result(undefined, []);\n");
+                                start_line(code, in_if, "return;\n");
+                            },
+                            "\n");
                       start_line(code, in_state, "state = function (input)\n");
                       block(code, in_state,
                             [&](indentation_level const in_state)
                             {
-                                start_line(code, in_state, "var argument_parser = pending_request.argument_parser;\n");
-                                // empty tuple requires no parser, so the field is undefined
-                                start_line(code, in_state, "if (argument_parser === undefined)\n");
-                                block(code, in_state,
-                                      [&](indentation_level const in_if)
-                                      {
-                                          start_line(code, in_if, "state = initial_state;\n");
-                                          start_line(code, in_if, "pending_request.on_result([]);\n");
-                                          start_line(code, in_if, "return;\n");
-                                      },
-                                      "\n");
                                 start_line(code, in_state, "var parsed = argument_parser(input);\n");
                                 start_line(code, in_state, "if (parsed !== undefined)\n");
                                 block(code, in_state,
                                       [&](indentation_level const in_if)
                                       {
                                           start_line(code, in_if, "state = initial_state;\n");
-                                          start_line(code, in_if, "pending_request.on_result(parsed);\n");
+                                          start_line(code, in_if, "pending_request.on_result(undefined, parsed);\n");
                                           start_line(code, in_if, "return;\n");
                                       },
                                       "\n");
@@ -676,12 +677,13 @@ namespace warpcoil
                                                                    Si::make_c_str_range("0"),
                                                                    Si::make_c_str_range("request_buffer"),
                                                                    Si::make_c_str_range("0"), library);
-                                            start_line(code, in_method, "var request_id = next_request_id;\n");
+                                            start_line(code, in_method,
+                                                       "var request_id = {high: 0, low: next_request_id};\n");
                                             // TODO: support more than 32 bit request IDs
                                             start_line(code, in_method, "++next_request_id;\n");
                                             generate_serialization(code, in_method,
                                                                    types::integer{0, 0xffffffffffffffffu},
-                                                                   Si::make_c_str_range("{high: 0, low: request_id}"),
+                                                                   Si::make_c_str_range("request_id"),
                                                                    Si::make_c_str_range("request_buffer"),
                                                                    Si::make_c_str_range("1"), library);
                                             start_line(code, in_method, "var write_pointer = 1 + 8;\n");
@@ -720,8 +722,8 @@ namespace warpcoil
                                                 }
                                             }
                                             start_line(code, in_method, "send_bytes(request_buffer);\n");
-                                            start_line(code, in_method,
-                                                       "pending_requests[request_id] = {argument_parser: ");
+                                            start_line(code, in_method, "var key = JSON.stringify(request_id);\n");
+                                            start_line(code, in_method, "pending_requests[key] = {argument_parser: ");
                                             generate_parser_creation(code, in_method, method.second.result, library);
                                             Si::append(code, ", on_result: on_result};\n");
                                         },
