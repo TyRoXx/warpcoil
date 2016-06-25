@@ -95,8 +95,6 @@ namespace warpcoil
 
         inline type clone(type const &original)
         {
-            // integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<subset>,
-            // std::unique_ptr<vector>, utf8
             return Si::visit<type>(original,
                                    [](integer value)
                                    {
