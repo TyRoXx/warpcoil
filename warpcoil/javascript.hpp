@@ -330,13 +330,15 @@ namespace warpcoil
                                                   start_line(code, in_else,
                                                              "new Uint8Array(content)[received_content] = input;\n");
                                                   start_line(code, in_else, "++received_content;\n");
-                                                  start_line(code, in_else,
-                                                             "if (received_content !== content.length) { return; }\n");
+                                                  start_line(
+                                                      code, in_else,
+                                                      "if (received_content !== content.byteLength) { return; }\n");
                                                   start_line(code, in_else, "var result = \"\";\n");
                                                   // TODO: parse UTF-8
-                                                  start_line(code, in_else, "for (var i = 0; i < content.length; ++i) "
-                                                                            "{ result += String.fromCharCode(new "
-                                                                            "Uint8Array(content)[i]); }\n");
+                                                  start_line(code, in_else,
+                                                             "for (var i = 0; i < content.byteLength; ++i) "
+                                                             "{ result += String.fromCharCode(new "
+                                                             "Uint8Array(content)[i]); }\n");
                                                   start_line(code, in_else, "return result;\n");
                                               },
                                               "\n");
@@ -395,7 +397,7 @@ namespace warpcoil
                     Si::append(code, library);
                     Si::append(code, ".to_utf8(");
                     Si::append(code, value);
-                    Si::append(code, ").length)");
+                    Si::append(code, ").byteLength)");
                 });
         }
 
