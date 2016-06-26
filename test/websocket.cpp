@@ -32,8 +32,8 @@ BOOST_AUTO_TEST_CASE(websocket)
             websocket_connected.enable();
             Si::throw_if_error(ec);
             typedef beast::websocket::stream<ip::tcp::socket &> websocket;
-            auto session =
-                std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(websocket(accepted_socket));
+            auto session = std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(
+                websocket(accepted_socket), beast::streambuf());
             session->next_layer().async_accept(
                 [session, &server_impl, &websocket_accepted, &served, &received_response](boost::system::error_code ec)
                 {
@@ -62,8 +62,8 @@ BOOST_AUTO_TEST_CASE(websocket)
             websocket_accepted.enable();
             Si::throw_if_error(ec);
             typedef beast::websocket::stream<ip::tcp::socket &> websocket;
-            auto session =
-                std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(websocket(connecting_socket));
+            auto session = std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(
+                websocket(connecting_socket), beast::streambuf());
             session->next_layer().async_handshake(
                 "localhost", "/",
                 [session, &websocket_connected, &received_response, &served](boost::system::error_code ec)

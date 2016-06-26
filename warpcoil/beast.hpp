@@ -49,12 +49,6 @@ namespace warpcoil
         template <class WebsocketStream>
         struct async_stream_adaptor
         {
-            explicit async_stream_adaptor(WebsocketStream websocket)
-                : m_websocket(std::forward<WebsocketStream>(websocket))
-            {
-                m_websocket.set_option(::beast::websocket::message_type{::beast::websocket::opcode::binary});
-            }
-
             explicit async_stream_adaptor(WebsocketStream websocket, ::beast::streambuf receive_buffer)
                 : m_websocket(std::forward<WebsocketStream>(websocket))
                 , m_receive_buffer(std::move(receive_buffer))

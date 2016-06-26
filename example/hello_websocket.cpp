@@ -33,8 +33,8 @@ int main()
         {
             Si::throw_if_error(ec);
             typedef beast::websocket::stream<ip::tcp::socket &> websocket;
-            auto session =
-                std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(websocket(accepted_socket));
+            auto session = std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(
+                websocket(accepted_socket), beast::streambuf());
             session->next_layer().async_accept(
                 [session, &server_impl](boost::system::error_code ec)
                 {
@@ -59,8 +59,8 @@ int main()
         {
             Si::throw_if_error(ec);
             typedef beast::websocket::stream<ip::tcp::socket &> websocket;
-            auto session =
-                std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(websocket(connecting_socket));
+            auto session = std::make_shared<warpcoil::beast::async_stream_adaptor<websocket>>(
+                websocket(connecting_socket), beast::streambuf());
             session->next_layer().async_handshake(
                 "localhost", "/", [session](boost::system::error_code ec)
                 {

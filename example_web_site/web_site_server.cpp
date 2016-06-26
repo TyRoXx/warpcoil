@@ -38,7 +38,7 @@ namespace
             : socket(std::move(socket))
             , receive_buffer(std::move(receive_buffer))
             , websocket(this->socket)
-            , adaptor(this->websocket)
+            , adaptor(this->websocket, beast::streambuf())
             , splitter(this->adaptor)
             , writer(this->adaptor)
             , server_adaptor(server_impl, this->splitter, this->writer)
