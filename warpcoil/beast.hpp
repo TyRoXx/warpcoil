@@ -2,6 +2,7 @@
 
 #include <warpcoil/beast_push_warnings.hpp>
 #include <beast/websocket/rfc6455.hpp>
+#include <beast/websocket/option.hpp>
 #include <beast/core/streambuf.hpp>
 #include <beast/core/async_completion.hpp>
 #include <warpcoil/pop_warnings.hpp>
