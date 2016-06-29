@@ -33,9 +33,9 @@ var submit = function () {
     if (client === undefined) {
         return;
     }
-    client.hello(document.getElementById("input").value, function (error, response) {
+    client.publish(document.getElementById("input").value, function (error) {
         var log = document.getElementById("log");
-        log.value += (response + "\n");
+        log.value += "Sent message\n";
         log.scrollTop = log.scrollHeight;
     });
 };

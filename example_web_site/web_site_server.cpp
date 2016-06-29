@@ -15,9 +15,10 @@ namespace
 {
     struct my_service : async_web_site_service
     {
-        void hello(std::string argument, std::function<void(boost::system::error_code, std::string)> on_result) override
+        void publish(std::string message,
+                     std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
         {
-            on_result({}, "Hello, " + argument + "!");
+            on_result({}, std::make_tuple());
         }
     };
 
@@ -155,7 +156,7 @@ namespace
                                                       warpcoil::types::interface_definition(), library);
         Si::append(code_writer, ";\n");
 
-        warpcoil::types::interface_definition const service = warpcoil::create_web_site_interface();
+        warpcoil::types::interface_definition const service = warpcoil::create_service_interface();
         Si::append(code_writer, "var make_client = ");
         warpcoil::javascript::generate_client(code_writer, warpcoil::indentation_level(), service, library);
         Si::append(code_writer, ";\n");
