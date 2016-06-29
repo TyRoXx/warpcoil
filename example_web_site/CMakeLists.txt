@@ -15,7 +15,7 @@ else()
         DEPENDS web_site_interfaces_generate)
 endif()
 
-set(demoSources "web_site_server.cpp")
+set(demoSources "web_site_server.cpp" "web_site_interface.hpp")
 if(EXISTS ${generatedHeader})
     set(demoSources ${demoSources} ${generatedHeader})
 endif()
