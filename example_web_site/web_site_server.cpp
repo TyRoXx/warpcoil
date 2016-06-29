@@ -139,7 +139,6 @@ namespace
                             client->response.body.assign(content.begin(), content.end());
                             client->response.reason = "OK";
                             client->response.status = 200;
-
                         },
                         [&](boost::system::error_code const ec)
                         {
