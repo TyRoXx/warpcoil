@@ -3,6 +3,7 @@
 #include <warpcoil/cpp/parse_result.hpp>
 #include <silicium/detail/integer_sequence.hpp>
 #include <boost/mpl/at.hpp>
+#include <silicium/optional.hpp>
 
 namespace warpcoil
 {
@@ -18,7 +19,8 @@ namespace warpcoil
                 switch (Si::apply_visitor(visitor{this, input}, current_element))
                 {
                 case internal_parse_result::complete:
-                    return std::move(result);
+                    // TODO: input_consumption
+                    return parse_complete<result_type>{std::move(result), input_consumption::consumed};
 
                 case internal_parse_result::incomplete:
                     return need_more_input();
@@ -46,9 +48,10 @@ namespace warpcoil
                 {
                     parse_result<typename Parser::result_type> element = parser.parse_byte(input);
                     return Si::visit<internal_parse_result>(element,
-                                                            [&](typename Parser::result_type &message)
+                                                            [&](parse_complete<typename Parser::result_type> &message)
                                                             {
-                                                                std::get<I>(parent.result) = std::move(message);
+                                                                // TODO: handle message.input
+                                                                std::get<I>(parent.result) = std::move(message.result);
                                                                 return parent.go_to_next_state(
                                                                     std::integral_constant<std::size_t, I>());
                                                             },
@@ -111,8 +114,13 @@ namespace warpcoil
 
             parse_result<result_type> parse_byte(std::uint8_t const)
             {
-                SILICIUM_UNREACHABLE();
+                return parse_complete<result_type>{result_type{}, input_consumption::does_not_consume};
             }
         };
+
+        inline Si::optional<std::tuple<>> check_for_immediate_completion(tuple_parser<> const &)
+        {
+            return std::tuple<>();
+        }
     }
 }

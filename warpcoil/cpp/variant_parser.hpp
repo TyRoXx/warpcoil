@@ -47,15 +47,15 @@ namespace warpcoil
                 {
                     return Si::visit<parse_result<parent_result_type>>(
                         state.parser.parse_byte(input),
-                        [this](index_type const index) -> parse_result<parent_result_type>
+                        [this](parse_complete<index_type> const index) -> parse_result<parent_result_type>
                         {
                             static std::array<void (*)(variant_parser &), sizeof...(ElementParsers)> const transitions =
                                 {{&switch_to_state<ElementParsers>...}};
-                            if (index >= transitions.size())
+                            if (index.result >= transitions.size())
                             {
                                 return invalid_input();
                             }
-                            transitions[index](this->parent);
+                            transitions[index.result](this->parent);
                             return need_more_input();
                         },
                         [](need_more_input error)
@@ -73,9 +73,9 @@ namespace warpcoil
                 {
                     return Si::visit<parse_result<parent_result_type>>(
                         state.parse_byte(input),
-                        [](typename Parser::result_type parsed) -> parent_result_type
+                        [](parse_complete<typename Parser::result_type> parsed) -> parse_result<parent_result_type>
                         {
-                            return parsed;
+                            return parse_complete<parent_result_type>{std::move(parsed.result), parsed.input};
                         },
                         [](need_more_input input)
                         {

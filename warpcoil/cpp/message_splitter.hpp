@@ -55,7 +55,7 @@ namespace warpcoil
                 {
                     return;
                 }
-                Si::exchange(begin_parse_message, nullptr)();
+                begin_parse_message();
             }
 
             template <class RequestHandler>
@@ -80,7 +80,7 @@ namespace warpcoil
                 {
                     return;
                 }
-                Si::exchange(begin_parse_message, nullptr)();
+                begin_parse_message();
             }
 
             buffered_read_stream<AsyncReadStream> &lock_input()
@@ -101,7 +101,7 @@ namespace warpcoil
                     return;
                 }
                 assert(begin_parse_message);
-                Si::exchange(begin_parse_message, nullptr)();
+                begin_parse_message();
             }
 
         private:
@@ -202,7 +202,7 @@ namespace warpcoil
                     if (continue_ && pipeline.waiting_for_response && !pipeline.parsing_header)
                     {
                         assert(pipeline.begin_parse_message);
-                        Si::exchange(pipeline.begin_parse_message, nullptr)();
+                        pipeline.begin_parse_message();
                     }
                 }
 
@@ -246,7 +246,7 @@ namespace warpcoil
                     if (continue_ && pipeline.waiting_for_request && !pipeline.parsing_header)
                     {
                         assert(pipeline.begin_parse_message);
-                        Si::exchange(pipeline.begin_parse_message, nullptr)();
+                        pipeline.begin_parse_message();
                     }
                 }
 
@@ -285,6 +285,10 @@ namespace warpcoil
                     {
                         return;
                     }
+
+                    auto const begin_parse_message_keepalive = std::move(begin_parse_message);
+                    begin_parse_message = nullptr;
+
                     parsing_header = true;
                     begin_parse_value(buffer.input, buffer.buffer, integer_parser<message_type_int>(),
                                       parse_message_type_operation<DummyHandler>(*this, handler));

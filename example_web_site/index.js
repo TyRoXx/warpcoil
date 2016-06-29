@@ -17,8 +17,15 @@ socket.onopen = function (event) {
     var send_bytes = function (bytes) {
         socket.send(bytes);
     };
-    var no_server_at_the_moment = {};
-    var receiver = make_receiver(pending_requests, no_server_at_the_moment, send_bytes);
+    var server = {
+        display : function (message, on_result) {
+            var log = document.getElementById("log");
+            log.value += (message + "\n");
+            log.scrollTop = log.scrollHeight;
+            on_result([]);
+        }
+    };
+    var receiver = make_receiver(pending_requests, server, send_bytes);
     client = make_client(pending_requests, send_bytes);
     socket.onmessage = function (event) {
         var view = new Uint8Array(event.data);
@@ -34,8 +41,8 @@ var submit = function () {
         return;
     }
     client.publish(document.getElementById("input").value, function (error) {
-        var log = document.getElementById("log");
-        log.value += "Sent message\n";
-        log.scrollTop = log.scrollHeight;
+        if (error) {
+            alert(error.message);
+        }
     });
 };

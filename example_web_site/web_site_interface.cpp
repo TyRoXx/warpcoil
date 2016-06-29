@@ -13,8 +13,10 @@ int main(int argc, char **argv)
     Si::append(code_writer, cpp::headers);
     {
         indentation_level const top_level;
-        cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("web_site_service"),
-                                             warpcoil::create_service_interface());
+        cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("publisher"),
+                                             warpcoil::create_publisher_interface());
+        cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("viewer"),
+                                             warpcoil::create_viewer_interface());
     }
     return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc), std::cerr,
                                                 Si::make_contiguous_range(code));

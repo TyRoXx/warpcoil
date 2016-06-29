@@ -26,6 +26,21 @@ namespace warpcoil
             void start() &&
             {
                 using boost::asio::asio_handler_invoke;
+                using warpcoil::cpp::check_for_immediate_completion;
+                if (Si::optional<typename Parser::result_type> completed = check_for_immediate_completion(m_parser))
+                {
+                    if (IsSurelyCalledInHandlerContext)
+                    {
+                        m_on_result(boost::system::error_code(), std::move(*completed));
+                    }
+                    else
+                    {
+                        asio_handler_invoke(
+                            std::bind(std::ref(m_on_result), boost::system::error_code(), std::move(*completed)),
+                            &m_on_result);
+                    }
+                    return;
+                }
                 std::size_t consumed = 0;
                 for (auto const &buffer_piece : m_receive_buffer.data())
                 {
@@ -35,18 +50,27 @@ namespace warpcoil
                         parse_result<typename Parser::result_type> response = m_parser.parse_byte(data[i]);
                         if (Si::visit<bool>(
                                 response,
-                                [&](typename Parser::result_type &message)
+                                [&](parse_complete<typename Parser::result_type> &message)
                                 {
-                                    ++consumed;
+                                    switch (message.input)
+                                    {
+                                    case input_consumption::consumed:
+                                        ++consumed;
+                                        break;
+
+                                    case input_consumption::does_not_consume:
+                                        break;
+                                    }
                                     m_receive_buffer.consume(consumed);
                                     if (IsSurelyCalledInHandlerContext)
                                     {
-                                        m_on_result(boost::system::error_code(), std::move(message));
+                                        m_on_result(boost::system::error_code(), std::move(message.result));
                                     }
                                     else
                                     {
                                         asio_handler_invoke(std::bind(std::ref(m_on_result),
-                                                                      boost::system::error_code(), std::move(message)),
+                                                                      boost::system::error_code(),
+                                                                      std::move(message.result)),
                                                             &m_on_result);
                                     }
                                     return true;

@@ -20,14 +20,15 @@ namespace warpcoil
                         parse_result<typename Length::result_type> length = parser.parse_byte(input);
                         return Si::visit<parse_result<result_type>>(
                             length,
-                            [this](typename Length::result_type const length) -> parse_result<result_type>
+                            [this](
+                                parse_complete<typename Length::result_type> const length) -> parse_result<result_type>
                             {
-                                if (length == 0)
+                                if (length.result == 0)
                                 {
-                                    return std::move(result);
+                                    return parse_complete<result_type>{std::move(result), length.input};
                                 }
-                                result.reserve(length);
-                                assert(result.capacity() == length);
+                                result.reserve(length.result);
+                                assert(result.capacity() == length.result);
                                 step = parsing_element{{}};
                                 return need_more_input();
                             },
@@ -45,12 +46,13 @@ namespace warpcoil
                         parse_result<typename Element::result_type> element = parsing.parser.parse_byte(input);
                         return Si::visit<parse_result<result_type>>(
                             element,
-                            [this, &parsing](typename Element::result_type element) -> parse_result<result_type>
+                            [this, &parsing](
+                                parse_complete<typename Element::result_type> element) -> parse_result<result_type>
                             {
-                                result.emplace_back(std::move(element));
+                                result.emplace_back(std::move(element.result));
                                 if (result.size() == result.capacity())
                                 {
-                                    return std::move(result);
+                                    return parse_complete<result_type>{std::move(result), element.input};
                                 }
                                 step = parsing_element{{}};
                                 return need_more_input();

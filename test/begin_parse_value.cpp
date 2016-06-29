@@ -24,6 +24,23 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_exact)
     BOOST_CHECK_EQUAL(0u, buffer.size());
 }
 
+BOOST_AUTO_TEST_CASE(begin_parse_value_empty_tuple)
+{
+    warpcoil::async_read_stream stream;
+    beast::streambuf buffer;
+    warpcoil::checkpoint parse_completed;
+    parse_completed.enable();
+    warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::tuple_parser<>(),
+                                     [&parse_completed](boost::system::error_code const ec, std::tuple<> const)
+                                     {
+                                         parse_completed.enter();
+                                         BOOST_REQUIRE(!ec);
+                                     });
+    parse_completed.require_crossed();
+    BOOST_REQUIRE(!stream.respond);
+    BOOST_CHECK_EQUAL(0u, buffer.size());
+}
+
 BOOST_AUTO_TEST_CASE(begin_parse_value_excess)
 {
     warpcoil::async_read_stream stream;

@@ -19,7 +19,7 @@ namespace warpcoil
                 ++bytes_received;
                 if (bytes_received == sizeof(result_type))
                 {
-                    return result;
+                    return parse_complete<result_type>{result, input_consumption::consumed};
                 }
                 return need_more_input();
             }

@@ -10,19 +10,12 @@
 #include <warpcoil/pop_warnings.hpp>
 #include <warpcoil/javascript.hpp>
 #include <ventura/read_file.hpp>
+#include <boost/intrusive/list.hpp>
 
 namespace
 {
-    struct my_service : async_web_site_service
-    {
-        void publish(std::string message,
-                     std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
-        {
-            on_result({}, std::make_tuple());
-        }
-    };
-
     struct websocket_client
+        : boost::intrusive::list_base_hook<boost::intrusive::link_mode<boost::intrusive::auto_unlink>>
     {
         typedef beast::websocket::stream<boost::asio::ip::tcp::socket &> websocket_type;
         typedef warpcoil::beast::async_stream_adaptor<websocket_type &> adaptor_type;
@@ -33,9 +26,11 @@ namespace
         adaptor_type adaptor;
         warpcoil::cpp::message_splitter<adaptor_type> splitter;
         warpcoil::cpp::buffered_writer<adaptor_type> writer;
-        async_web_site_service_server<my_service, adaptor_type, adaptor_type> server_adaptor;
+        async_publisher_server<async_publisher, adaptor_type, adaptor_type> server_adaptor;
+        async_viewer_client<adaptor_type, adaptor_type> viewer_client;
 
-        websocket_client(boost::asio::ip::tcp::socket socket, beast::streambuf receive_buffer, my_service &server_impl)
+        websocket_client(boost::asio::ip::tcp::socket socket, beast::streambuf receive_buffer,
+                         async_publisher &server_impl)
             : socket(std::move(socket))
             , receive_buffer(std::move(receive_buffer))
             , websocket(this->socket)
@@ -43,6 +38,7 @@ namespace
             , splitter(this->adaptor)
             , writer(this->adaptor)
             , server_adaptor(server_impl, this->splitter, this->writer)
+            , viewer_client(writer, splitter)
         {
         }
     };
@@ -55,6 +51,28 @@ namespace
                                                      begin_serve(client);
                                                  });
     }
+
+    struct web_site_publisher : async_publisher
+    {
+        typedef boost::intrusive::list<websocket_client, boost::intrusive::constant_time_size<false>>
+            websocket_client_list;
+
+        websocket_client_list all_clients;
+
+        void publish(std::string message,
+                     std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
+        {
+            for (websocket_client &client : all_clients)
+            {
+                client.viewer_client.display(message, [](boost::system::error_code const ec, std::tuple<>)
+                                             {
+                                                 Si::throw_if_error(ec);
+                                             });
+            }
+            // does not make sense to wait for responses from the clients here
+            on_result({}, std::make_tuple());
+        }
+    };
 
     struct file_client
     {
@@ -82,11 +100,12 @@ namespace
         }
     };
 
-    void begin_serve(std::shared_ptr<http_client> client, my_service &server_impl,
+    void begin_serve(std::shared_ptr<http_client> client, web_site_publisher &server_impl,
                      ventura::absolute_path const &document_root);
 
-    void serve_prepared_response(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
-                                 ventura::absolute_path const &document_root, boost::string_ref const content_type)
+    void serve_prepared_response(std::shared_ptr<file_client> client, bool const is_keep_alive,
+                                 web_site_publisher &server_impl, ventura::absolute_path const &document_root,
+                                 boost::string_ref const content_type)
     {
         client->response.version = 11;
         client->response.headers.insert("Content-Length",
@@ -109,9 +128,9 @@ namespace
                                  });
     }
 
-    void serve_static_file(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
-                           ventura::absolute_path const &document_root, ventura::absolute_path const &served_document,
-                           boost::string_ref const content_type)
+    void serve_static_file(std::shared_ptr<file_client> client, bool const is_keep_alive,
+                           web_site_publisher &server_impl, ventura::absolute_path const &document_root,
+                           ventura::absolute_path const &served_document, boost::string_ref const content_type)
     {
         Si::visit<void>(ventura::read_file(ventura::safe_c_str(ventura::to_os_string(served_document))),
                         [&](std::vector<char> content)
@@ -140,8 +159,8 @@ namespace
         serve_prepared_response(client, is_keep_alive, server_impl, document_root, content_type);
     }
 
-    void serve_interface_library(std::shared_ptr<file_client> client, bool const is_keep_alive, my_service &server_impl,
-                                 ventura::absolute_path const &document_root)
+    void serve_interface_library(std::shared_ptr<file_client> client, bool const is_keep_alive,
+                                 web_site_publisher &server_impl, ventura::absolute_path const &document_root)
     {
         auto code_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(client->response.body));
         Si::append(code_writer, "\"use strict\";\n");
@@ -153,10 +172,10 @@ namespace
         Si::memory_range const library = Si::make_c_str_range("library");
         Si::append(code_writer, "var make_receiver = ");
         warpcoil::javascript::generate_input_receiver(code_writer, warpcoil::indentation_level(),
-                                                      warpcoil::types::interface_definition(), library);
+                                                      warpcoil::create_viewer_interface(), library);
         Si::append(code_writer, ";\n");
 
-        warpcoil::types::interface_definition const service = warpcoil::create_service_interface();
+        warpcoil::types::interface_definition const service = warpcoil::create_publisher_interface();
         Si::append(code_writer, "var make_client = ");
         warpcoil::javascript::generate_client(code_writer, warpcoil::indentation_level(), service, library);
         Si::append(code_writer, ";\n");
@@ -166,7 +185,7 @@ namespace
         serve_prepared_response(client, is_keep_alive, server_impl, document_root, "text/javascript");
     }
 
-    void begin_serve(std::shared_ptr<http_client> client, my_service &server_impl,
+    void begin_serve(std::shared_ptr<http_client> client, web_site_publisher &server_impl,
                      ventura::absolute_path const &document_root)
     {
         beast::http::async_read(
@@ -178,9 +197,11 @@ namespace
                 {
                     auto new_client = std::make_shared<websocket_client>(
                         std::move(client->socket), std::move(client->receive_buffer), server_impl);
-                    new_client->websocket.async_accept(client->request, [new_client](boost::system::error_code const ec)
+                    new_client->websocket.async_accept(client->request,
+                                                       [new_client, &server_impl](boost::system::error_code const ec)
                                                        {
                                                            Si::throw_if_error(ec);
+                                                           server_impl.all_clients.push_back(*new_client);
                                                            begin_serve(new_client);
                                                        });
                 }
@@ -209,7 +230,7 @@ namespace
             });
     }
 
-    void begin_accept(boost::asio::ip::tcp::acceptor &acceptor, my_service &server_impl,
+    void begin_accept(boost::asio::ip::tcp::acceptor &acceptor, web_site_publisher &server_impl,
                       ventura::absolute_path const &document_root)
     {
         auto client =
@@ -227,9 +248,9 @@ namespace
 int main()
 {
     using namespace boost::asio;
-    io_service io;
 
-    my_service server_impl;
+    web_site_publisher server_impl;
+    io_service io;
 
     boost::uint16_t const port = 8080;
 
