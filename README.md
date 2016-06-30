@@ -11,7 +11,7 @@
 * UTF-8 everywhere
 
 ## non-goals
-* "human-readability"
+* "human-readability" of the transport stream
 * support for inheritance or similar nonsense
 * support for ancient compilers, standards or Boost versions
 * reinventing Boost.Asio, TLS, authentication or Websockets
