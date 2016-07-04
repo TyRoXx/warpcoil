@@ -13,26 +13,38 @@ namespace warpcoil
         {
         }
 
-        ~checkpoint()
+        ~checkpoint() BOOST_NOEXCEPT_IF(false)
         {
-            BOOST_CHECK_EQUAL(state::crossed, m_state);
+            if (state::crossed != m_state)
+            {
+                boost::throw_exception(std::logic_error("Unexpected state"));
+            }
         }
 
         void enable()
         {
-            BOOST_REQUIRE_EQUAL(state::created, m_state);
+            if (state::created != m_state)
+            {
+                boost::throw_exception(std::logic_error("Unexpected state"));
+            }
             m_state = state::enabled;
         }
 
         void enter()
         {
-            BOOST_REQUIRE_EQUAL(state::enabled, m_state);
+            if (state::enabled != m_state)
+            {
+                boost::throw_exception(std::logic_error("Unexpected state"));
+            }
             m_state = state::crossed;
         }
 
         void require_crossed()
         {
-            BOOST_REQUIRE_EQUAL(state::crossed, m_state);
+            if (state::crossed != m_state)
+            {
+                boost::throw_exception(std::logic_error("Unexpected state"));
+            }
         }
 
     private:

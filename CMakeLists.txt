@@ -113,6 +113,7 @@ endif()
 
 add_subdirectory("test_interfaces")
 add_subdirectory("test")
+add_subdirectory("benchmarks")
 
 option(WARPCOIL_BUILD_EXAMPLES "" ON)
 if(WARPCOIL_BUILD_EXAMPLES)
