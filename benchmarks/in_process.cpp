@@ -130,7 +130,8 @@ namespace
         }
     };
 
-    void RequestAndResponseOverInProcessPipe(benchmark::State &state)
+    template <class LoopBody>
+    void BenchmarkWithInProcessPipe(benchmark::State &state, LoopBody const &body)
     {
         boost::asio::io_service io;
         byte_counter<in_process_pipe> client_to_server(io);
@@ -149,26 +150,7 @@ namespace
 
         while (state.KeepRunning())
         {
-            warpcoil::checkpoint client_side;
-            client.evaluate(std::make_tuple(34, 45), [&client_side](boost::system::error_code ec, std::uint64_t result)
-                            {
-                                client_side.enter();
-                                Si::throw_if_error(ec);
-                                if (result != (34u * 45u))
-                                {
-                                    boost::throw_exception(std::logic_error("wrong result"));
-                                }
-                            });
-            warpcoil::checkpoint server_side;
-            server.serve_one_request([&server_side](boost::system::error_code ec)
-                                     {
-                                         server_side.enter();
-                                         Si::throw_if_error(ec);
-                                     });
-            server_side.enable();
-            client_side.enable();
-            io.reset();
-            io.run();
+            body(io, client, server);
         }
 
         std::uint64_t const total_transferred = client_to_server.read + client_to_server.written;
@@ -178,5 +160,34 @@ namespace
         }
         state.SetBytesProcessed(static_cast<size_t>(total_transferred));
     }
-    BENCHMARK(RequestAndResponseOverInProcessPipe);
+
+    void TinyRequestAndResponseOverInProcessPipe(benchmark::State &state)
+    {
+        BenchmarkWithInProcessPipe(state, [](boost::asio::io_service &io, auto &client, auto &server)
+                                   {
+                                       warpcoil::checkpoint client_side;
+                                       client.evaluate(
+                                           std::make_tuple(34, 45),
+                                           [&client_side](boost::system::error_code ec, std::uint64_t result)
+                                           {
+                                               client_side.enter();
+                                               Si::throw_if_error(ec);
+                                               if (result != (34u * 45u))
+                                               {
+                                                   boost::throw_exception(std::logic_error("wrong result"));
+                                               }
+                                           });
+                                       warpcoil::checkpoint server_side;
+                                       server.serve_one_request([&server_side](boost::system::error_code ec)
+                                                                {
+                                                                    server_side.enter();
+                                                                    Si::throw_if_error(ec);
+                                                                });
+                                       server_side.enable();
+                                       client_side.enable();
+                                       io.reset();
+                                       io.run();
+                                   });
+    }
+    BENCHMARK(TinyRequestAndResponseOverInProcessPipe);
 }
