@@ -1,5 +1,5 @@
 #include <benchmark/benchmark.h>
-#include "generated.hpp"
+#include "benchmark_interfaces.hpp"
 #include <silicium/error_or.hpp>
 #include <test/checkpoint.hpp>
 #include <boost/asio/io_service.hpp>
@@ -121,7 +121,7 @@ namespace
         }
     };
 
-    struct my_hello_service : async_binary_integer_function
+    struct my_hello_service : async_benchmark_service
     {
         void evaluate(std::tuple<std::uint64_t, std::uint64_t> argument,
                       std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
@@ -139,14 +139,13 @@ namespace
         my_hello_service server_impl;
         warpcoil::cpp::message_splitter<decltype(client_to_server)> server_splitter(client_to_server);
         warpcoil::cpp::buffered_writer<decltype(server_to_client)> server_writer(server_to_client);
-        async_binary_integer_function_server<decltype(server_impl), decltype(client_to_server),
-                                             decltype(server_to_client)> server(server_impl, server_splitter,
-                                                                                server_writer);
+        async_benchmark_service_server<decltype(server_impl), decltype(client_to_server), decltype(server_to_client)>
+            server(server_impl, server_splitter, server_writer);
 
         warpcoil::cpp::message_splitter<decltype(server_to_client)> client_splitter(server_to_client);
         warpcoil::cpp::buffered_writer<decltype(client_to_server)> client_writer(client_to_server);
-        async_binary_integer_function_client<decltype(server_to_client), decltype(client_to_server)> client(
-            client_writer, client_splitter);
+        async_benchmark_service_client<decltype(server_to_client), decltype(client_to_server)> client(client_writer,
+                                                                                                      client_splitter);
 
         while (state.KeepRunning())
         {
