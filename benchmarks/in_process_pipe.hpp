@@ -1,7 +1,10 @@
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/empty.hpp>
 #include <silicium/exchange.hpp>
+#include <warpcoil/cpp/wrap_handler.hpp>
 
 namespace warpcoil
 {
