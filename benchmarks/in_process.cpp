@@ -130,27 +130,20 @@ namespace
         }
     };
 
-    template <class LoopBody>
-    void BenchmarkWithInProcessPipe(benchmark::State &state, LoopBody const &body)
+    template <class ClientServerProvider, class LoopBody>
+    void BenchmarkWithInProcessPipe(benchmark::State &state, ClientServerProvider const &provider, LoopBody const &body)
     {
         boost::asio::io_service io;
         byte_counter<in_process_pipe> client_to_server(io);
         byte_counter<in_process_pipe> server_to_client(io);
-        my_hello_service server_impl;
-        warpcoil::cpp::message_splitter<decltype(client_to_server)> server_splitter(client_to_server);
-        warpcoil::cpp::buffered_writer<decltype(server_to_client)> server_writer(server_to_client);
-        async_benchmark_service_server<decltype(server_impl), decltype(client_to_server), decltype(server_to_client)>
-            server(server_impl, server_splitter, server_writer);
 
-        warpcoil::cpp::message_splitter<decltype(server_to_client)> client_splitter(server_to_client);
-        warpcoil::cpp::buffered_writer<decltype(client_to_server)> client_writer(client_to_server);
-        async_benchmark_service_client<decltype(server_to_client), decltype(client_to_server)> client(client_writer,
-                                                                                                      client_splitter);
-
-        while (state.KeepRunning())
-        {
-            body(io, client, server);
-        }
+        provider(client_to_server, server_to_client, [&io, &state, &body](auto &client, auto &server)
+                 {
+                     while (state.KeepRunning())
+                     {
+                         body(io, client, server);
+                     }
+                 });
 
         std::uint64_t const total_transferred = client_to_server.read + client_to_server.written;
         if (total_transferred > (std::numeric_limits<std::size_t>::max)())
@@ -162,31 +155,49 @@ namespace
 
     void TinyRequestAndResponseOverInProcessPipe(benchmark::State &state)
     {
-        BenchmarkWithInProcessPipe(state, [](boost::asio::io_service &io, auto &client, auto &server)
-                                   {
-                                       warpcoil::checkpoint client_side;
-                                       client.evaluate(
-                                           std::make_tuple(34, 45),
-                                           [&client_side](boost::system::error_code ec, std::uint64_t result)
-                                           {
-                                               client_side.enter();
-                                               Si::throw_if_error(ec);
-                                               if (result != (34u * 45u))
-                                               {
-                                                   boost::throw_exception(std::logic_error("wrong result"));
-                                               }
-                                           });
-                                       warpcoil::checkpoint server_side;
-                                       server.serve_one_request([&server_side](boost::system::error_code ec)
-                                                                {
-                                                                    server_side.enter();
-                                                                    Si::throw_if_error(ec);
-                                                                });
-                                       server_side.enable();
-                                       client_side.enable();
-                                       io.reset();
-                                       io.run();
-                                   });
+        BenchmarkWithInProcessPipe(
+            state,
+            [](byte_counter<in_process_pipe> &client_to_server, byte_counter<in_process_pipe> &server_to_client,
+               auto &&user)
+            {
+                my_hello_service server_impl;
+                warpcoil::cpp::message_splitter<decltype(client_to_server)> server_splitter(client_to_server);
+                warpcoil::cpp::buffered_writer<decltype(server_to_client)> server_writer(server_to_client);
+                async_benchmark_service_server<decltype(server_impl), decltype(client_to_server),
+                                               decltype(server_to_client)> server(server_impl, server_splitter,
+                                                                                  server_writer);
+
+                warpcoil::cpp::message_splitter<decltype(server_to_client)> client_splitter(server_to_client);
+                warpcoil::cpp::buffered_writer<decltype(client_to_server)> client_writer(client_to_server);
+                async_benchmark_service_client<decltype(server_to_client), decltype(client_to_server)> client(
+                    client_writer, client_splitter);
+
+                user(client, server);
+            },
+            [](boost::asio::io_service &io, auto &client, auto &server)
+            {
+                warpcoil::checkpoint client_side;
+                client.evaluate(std::make_tuple(34, 45),
+                                [&client_side](boost::system::error_code ec, std::uint64_t result)
+                                {
+                                    client_side.enter();
+                                    Si::throw_if_error(ec);
+                                    if (result != (34u * 45u))
+                                    {
+                                        boost::throw_exception(std::logic_error("wrong result"));
+                                    }
+                                });
+                warpcoil::checkpoint server_side;
+                server.serve_one_request([&server_side](boost::system::error_code ec)
+                                         {
+                                             server_side.enter();
+                                             Si::throw_if_error(ec);
+                                         });
+                server_side.enable();
+                client_side.enable();
+                io.reset();
+                io.run();
+            });
     }
     BENCHMARK(TinyRequestAndResponseOverInProcessPipe);
 }
