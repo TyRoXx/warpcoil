@@ -145,5 +145,5 @@ namespace
                 io.run();
             });
     }
-    BENCHMARK(MediumRequestAndResponseOverInProcessPipe)->Range(1, 1 << 21);
+    BENCHMARK(MediumRequestAndResponseOverInProcessPipe)->Range(1, 1 << 20);
 }
