@@ -1,4 +1,4 @@
-add_executable(benchmark_interfaces_generate "benchmark_interface.cpp")
+add_executable(benchmark_interfaces_generate benchmark_interface.hpp benchmark_interface.cpp)
 target_link_libraries(benchmark_interfaces_generate ${CONAN_LIBS} ${CMAKE_THREAD_LIBS_INIT} ${WARPCOIL_LIBRT})
 
 set(generatedHeader ${CMAKE_BINARY_DIR}/benchmark_interfaces.hpp)
@@ -13,7 +13,7 @@ else()
 endif()
 
 file(GLOB sources main.cpp in_process.cpp local_socket.cpp)
-file(GLOB_RECURSE headers "../warpcoil/*.hpp")
+file(GLOB_RECURSE headers "../warpcoil/*.hpp" "*.hpp")
 set(allSources ${sources} ${headers})
 set(formatted ${formatted} ${allSources} PARENT_SCOPE)
 set(generatedHeader ${CMAKE_BINARY_DIR}/generated.hpp)

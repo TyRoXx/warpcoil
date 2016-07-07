@@ -7,7 +7,7 @@
 
 namespace
 {
-    struct my_hello_service : async_benchmark_service
+    struct my_hello_service : async_benchmark_service_a
     {
         void evaluate(std::tuple<std::uint64_t, std::uint64_t> argument,
                       std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
@@ -27,7 +27,7 @@ namespace
         my_hello_service server_impl;
         warpcoil::cpp::message_splitter<ip::tcp::socket> server_splitter(accepted_socket);
         warpcoil::cpp::buffered_writer<ip::tcp::socket> server_writer(accepted_socket);
-        async_benchmark_service_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket> server(
+        async_benchmark_service_a_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket> server(
             server_impl, server_splitter, server_writer);
         acceptor.async_accept(accepted_socket, [](boost::system::error_code ec)
                               {
@@ -37,7 +37,7 @@ namespace
         ip::tcp::socket client_socket(io);
         warpcoil::cpp::message_splitter<decltype(client_socket)> client_splitter(client_socket);
         warpcoil::cpp::buffered_writer<ip::tcp::socket> client_writer(client_socket);
-        async_benchmark_service_client<ip::tcp::socket, ip::tcp::socket> client(client_writer, client_splitter);
+        async_benchmark_service_a_client<ip::tcp::socket, ip::tcp::socket> client(client_writer, client_splitter);
         client_socket.async_connect(ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
                                     [](boost::system::error_code ec)
                                     {
