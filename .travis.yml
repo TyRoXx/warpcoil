@@ -39,6 +39,7 @@ script:
  - cmake --build . -- -j2 || exit 1
  - pushd bin
  - valgrind --leak-check=full --error-exitcode=1 ./tests || exit 1
+ - valgrind --leak-check=full --error-exitcode=1 ./benchmarks || exit 1
  - if [$(./hello_tcp_callback) !== "Hello, Alice!\n" ]; then
      exit 1;
    fi
