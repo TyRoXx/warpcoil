@@ -80,6 +80,7 @@ else()
     message(FATAL_ERROR "currently you have to install the dependencies with conan")
 endif()
 
+set(CONAN_SYSTEM_INCLUDES ON)
 conan_basic_setup()
 
 if(WIN32)

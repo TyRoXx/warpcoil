@@ -12,10 +12,10 @@ namespace warpcoil
         return definition;
     }
 
-	inline types::interface_definition create_benchmark_interface_b()
-	{
-		types::interface_definition definition;
-		definition.add_method("evaluate", types::integer())("argument", types::utf8{ types::integer{ 0, 0xffffffff } });
-		return definition;
-	}
+    inline types::interface_definition create_benchmark_interface_b()
+    {
+        types::interface_definition definition;
+        definition.add_method("evaluate", types::integer())("argument", types::utf8{types::integer{0, 0xffffffff}});
+        return definition;
+    }
 }
