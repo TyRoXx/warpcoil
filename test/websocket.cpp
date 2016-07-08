@@ -9,6 +9,22 @@
 #include <warpcoil/pop_warnings.hpp>
 #include "checkpoint.hpp"
 
+BOOST_AUTO_TEST_CASE(websocket_error)
+{
+    // make sure that these strings are stable
+    {
+        boost::system::error_code const ec =
+            warpcoil::beast::make_error_code(warpcoil::beast::websocket_error::unexpected_opcode);
+        BOOST_CHECK_EQUAL("websocket_error", std::string(ec.category().name()));
+        BOOST_CHECK_EQUAL("unexpected_opcode", ec.message());
+    }
+    {
+        boost::system::error_code const ec = warpcoil::beast::make_error_code(warpcoil::beast::websocket_error::close);
+        BOOST_CHECK_EQUAL("websocket_error", std::string(ec.category().name()));
+        BOOST_CHECK_EQUAL("close", ec.message());
+    }
+}
+
 BOOST_AUTO_TEST_CASE(websocket)
 {
     using namespace boost::asio;
