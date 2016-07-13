@@ -30,7 +30,17 @@ namespace
                         ;
                     if (run.bytes_per_second >= required_bytes)
                     {
-                        ok = true;
+                        if (run.bytes_per_second < (required_bytes * 1.25))
+                        {
+                            ok = true;
+                        }
+                        else
+                        {
+                            std::cerr << run.benchmark_name
+                                      << " is much faster than required which is suspicious: " << run.bytes_per_second
+                                      << " bytes/s (" << required_bytes << " required)\n";
+                            ok = false;
+                        }
                     }
                     else
                     {
