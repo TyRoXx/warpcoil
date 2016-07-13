@@ -30,7 +30,7 @@ namespace
                         ;
                     if (run.bytes_per_second >= required_bytes)
                     {
-                        if (run.bytes_per_second < (required_bytes * 1.25))
+                        if (run.bytes_per_second < (required_bytes * 1.3))
                         {
                             ok = true;
                         }
