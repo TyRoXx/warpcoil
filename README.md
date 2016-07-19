@@ -40,7 +40,8 @@ You can disable formatting with the CMake option `WARPCOIL_USE_CLANG_FORMAT`.
 | UTF-8 | length (integer) | actual length followed by the usual UTF-8 code units | length is the number of code units. Has to be valid and complete UTF-8 |
 | tuple | element types | elements in order | |
 | variant | element types | actual element index encoded as an integer followed by the actual element | |
-| vector | length (integer) | length followed by the elements in order | |
+| vector | length (integer), element type | length followed by the elements in order | |
+| structure | vector(integer(0, 2^64-1), tuple(UTF-8(integer(1, 255)), type)) | values of the fields in order (no names or indices etc) | The structure is a map from names to types. The order of the fields is significant. Its wire representation does not contain any meta-information about the structure, only the values of the fields in declared order. |
 
 ## client to server
 | part of the message | type |
