@@ -3,6 +3,7 @@
 #include <ventura/run_process.hpp>
 #include <warpcoil/cpp/generate/asynchronous.hpp>
 #include <warpcoil/update_generated_file.hpp>
+#include <warpcoil/make_vector.hpp>
 
 int main(int argc, char **argv)
 {

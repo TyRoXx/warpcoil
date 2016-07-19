@@ -1,7 +1,7 @@
 #pragma once
 
 #include <warpcoil/block.hpp>
-#include <warpcoil/warpcoil.hpp>
+#include <warpcoil/types.hpp>
 #include <boost/lexical_cast.hpp>
 #include "cpp/generate/basics.hpp"
 

@@ -4,7 +4,7 @@
 #include <silicium/sink/append.hpp>
 #include <silicium/sink/ptr_sink.hpp>
 #include <silicium/sink/iterator_sink.hpp>
-#include <warpcoil/warpcoil.hpp>
+#include <warpcoil/types.hpp>
 
 namespace warpcoil
 {

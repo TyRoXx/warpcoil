@@ -1,4 +1,4 @@
-#include <warpcoil/warpcoil.hpp>
+#include <warpcoil/types.hpp>
 
 namespace warpcoil
 {
