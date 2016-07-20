@@ -25,7 +25,7 @@ namespace
 #ifdef NDEBUG
                         1200000
 #else
-                        28000
+                        26000
 #endif
                         ;
                     if (run.bytes_per_second >= required_bytes)
