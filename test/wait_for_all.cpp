@@ -103,7 +103,7 @@ namespace warpcoil
                 auto &&callback) mutable
             {
                 apply_from_tuple(
-                    [&](auto &&... arguments)
+                    [&callback, &callee, method_ptr](auto &&... arguments)
                     {
                         (callee.*method_ptr)(std::forward<decltype(arguments)>(arguments)...,
                                              std::forward<decltype(callback)>(callback));
