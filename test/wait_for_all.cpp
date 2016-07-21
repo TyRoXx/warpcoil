@@ -21,28 +21,32 @@ namespace warpcoil
             }
         };
 
+        template <std::size_t Index, std::size_t MethodCount, class Method, class State>
+        void start_method(Method &&method, std::shared_ptr<State> const &state)
+        {
+            method.start([state](boost::system::error_code ec, typename std::decay<Method>::type::result element)
+                         {
+                             if (!ec)
+                             {
+                                 std::get<Index>(state->total_result) = std::move(element);
+                                 ++state->completed;
+                                 if (state->completed == MethodCount)
+                                 {
+                                     state->handler(ec, std::move(state->total_result));
+                                 }
+                             }
+                             else if (!Si::exchange(state->errored, true))
+                             {
+                                 state->handler(ec, {});
+                             }
+                         });
+        }
+
         template <class State, class... Methods, std::size_t... Indices>
         void start_methods(std::shared_ptr<State> state, std::integer_sequence<std::size_t, Indices...>,
                            Methods &&... methods)
         {
-            Si::unit dummy[] = {
-                (methods.start([state](boost::system::error_code ec, typename std::decay<Methods>::type::result element)
-                               {
-                                   if (!ec)
-                                   {
-                                       std::get<Indices>(state->total_result) = std::move(element);
-                                       ++state->completed;
-                                       if (state->completed == sizeof...(Methods))
-                                       {
-                                           state->handler(ec, std::move(state->total_result));
-                                       }
-                                   }
-                                   else if (!Si::exchange(state->errored, true))
-                                   {
-                                       state->handler(ec, {});
-                                   }
-                               }),
-                 Si::unit())...};
+            Si::unit dummy[] = {(start_method<Indices, sizeof...(Methods)>(methods, state), Si::unit())...};
             Si::ignore_unused_variable_warning(dummy);
         }
 
@@ -138,7 +142,7 @@ BOOST_AUTO_TEST_CASE(wait_for_all_2)
             got_result.enter();
             BOOST_CHECK(!ec);
             BOOST_CHECK_EQUAL("Hello123", std::get<0>(result));
-            BOOST_CHECK_EQUAL(123, std::get<1>(result));
+            BOOST_CHECK_EQUAL(123u, std::get<1>(result));
         },
         warpcoil::method(server, &warpcoil::impl_test_interface::utf8, "Hello"),
         warpcoil::method(server, &warpcoil::impl_test_interface::atypical_int, 123));
