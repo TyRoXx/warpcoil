@@ -1,6 +1,7 @@
 #include "generated.hpp"
 #include "impl_test_interface.hpp"
 #include "checkpoint.hpp"
+#include <boost/mpl/back.hpp>
 
 namespace warpcoil
 {
@@ -109,7 +110,7 @@ namespace warpcoil
                     },
                     std::move(arguments));
             };
-            using std_function_callback = typename boost::mpl::vector<Parameters...>::back;
+            using std_function_callback = typename boost::mpl::back<boost::mpl::vector<Parameters...>>::type;
             using result = typename result_of_callback<std_function_callback>::type;
             return method_holder<result, decltype(start)>{std::move(start)};
         }
@@ -145,5 +146,5 @@ BOOST_AUTO_TEST_CASE(wait_for_all_2)
             BOOST_CHECK_EQUAL(123u, std::get<1>(result));
         },
         warpcoil::method(server, &warpcoil::impl_test_interface::utf8, "Hello"),
-        warpcoil::method(server, &warpcoil::impl_test_interface::atypical_int, 123));
+        warpcoil::method(server, &warpcoil::impl_test_interface::atypical_int, static_cast<boost::uint16_t>(123)));
 }
