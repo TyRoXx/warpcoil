@@ -72,6 +72,17 @@ int main(int argc, char **argv)
         cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("test_interface"),
                                              definition);
     }
+    {
+        types::interface_definition definition;
+        types::tuple parameters;
+        parameters.elements.emplace_back(types::integer());
+        parameters.elements.emplace_back(types::integer());
+        definition.add_method("make_directory", Si::to_unique(types::tuple()))("path",
+                                                                               types::utf8{types::integer{0, 0xffff}});
+        definition.add_method("remove", Si::to_unique(types::tuple()))("path", types::utf8{types::integer{0, 0xffff}});
+        indentation_level const top_level;
+        cpp::generate_serializable_interface(code_writer, top_level, Si::make_c_str_range("directory"), definition);
+    }
     return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc), std::cerr,
                                                 Si::make_contiguous_range(code));
 }
