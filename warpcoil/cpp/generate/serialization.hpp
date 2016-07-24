@@ -119,6 +119,17 @@ namespace warpcoil
                     Si::append(code, ".data() + ");
                     Si::append(code, value);
                     Si::append(code, ".size())));\n");
+                },
+                [&](std::unique_ptr<types::structure> const &root)
+                {
+                    for (types::structure::element const &e : root->elements)
+                    {
+                        std::string element_name(value.begin(), value.end());
+                        element_name += ".";
+                        element_name += e.name;
+                        generate_value_serialization(code, indentation, sink, Si::make_contiguous_range(element_name),
+                                                     e.what, return_invalid_input_error);
+                    }
                 });
         }
     }

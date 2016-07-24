@@ -346,6 +346,10 @@ namespace warpcoil
                                     ";\n");
                           },
                           "()");
+                },
+                [&](std::unique_ptr<types::structure> const &)
+                {
+                    throw std::logic_error("todo");
                 });
         }
 
@@ -398,6 +402,21 @@ namespace warpcoil
                     Si::append(code, ".to_utf8(");
                     Si::append(code, value);
                     Si::append(code, ").byteLength)");
+                },
+                [&](std::unique_ptr<types::structure> const &root)
+                {
+                    Si::append(code, "(0");
+                    for (types::structure::element const &e : root->elements)
+                    {
+                        Si::append(code, " + ");
+                        std::string element_value;
+                        element_value.append(value.begin(), value.size());
+                        element_value += ".";
+                        element_value += e.name;
+                        generate_size_of_value(code, indentation, e.what, Si::make_memory_range(element_value),
+                                               library);
+                    }
+                    Si::append(code, ")");
                 });
         }
 
@@ -488,6 +507,34 @@ namespace warpcoil
                                 content_offset.append(")");
                                 start_line(code, indentation, "new Uint8Array(", destination, ").set(new Uint8Array(",
                                            library, ".to_utf8(", value, ")), ", content_offset, ");\n");
+                            },
+                            [&](std::unique_ptr<types::structure> const &root)
+                            {
+                                if (root->elements.empty())
+                                {
+                                    return;
+                                }
+                                start_line(code, indentation, "(function ()\n");
+                                block(code, indentation,
+                                      [&](indentation_level const in_function)
+                                      {
+                                          start_line(code, in_function, "var offset = ", offset, ";\n");
+                                          for (types::structure::element const &e : root->elements)
+                                          {
+                                              std::string element_value;
+                                              element_value.append(value.begin(), value.size());
+                                              element_value += ".";
+                                              element_value += e.name;
+                                              generate_serialization(code, indentation, e.what,
+                                                                     Si::make_memory_range(element_value), destination,
+                                                                     Si::make_c_str_range("offset"), library);
+                                              start_line(code, in_function, "offset += ");
+                                              generate_size_of_value(code, in_function, e.what,
+                                                                     Si::make_memory_range(element_value), library);
+                                              Si::append(code, ";\n");
+                                          }
+                                      },
+                                      ")();\n");
                             });
         }
 

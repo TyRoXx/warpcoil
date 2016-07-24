@@ -111,6 +111,10 @@ namespace warpcoil
                 {
                     Si::append(code, "std::string");
                     return type_emptiness::non_empty;
+                },
+                [](std::unique_ptr<types::structure> const &) -> type_emptiness
+                {
+                    throw std::logic_error("not implemented");
                 });
         }
 

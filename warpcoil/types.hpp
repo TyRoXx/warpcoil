@@ -36,9 +36,10 @@ namespace warpcoil
         struct variant;
         struct tuple;
         struct vector;
+        struct structure;
 
-        typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<vector>, utf8>
-            type;
+        typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<vector>, utf8,
+                            std::unique_ptr<structure>> type;
 
         BOOST_STATIC_ASSERT((std::is_nothrow_move_constructible<type>::value));
         BOOST_STATIC_ASSERT((std::is_nothrow_move_assignable<type>::value));
@@ -86,6 +87,27 @@ namespace warpcoil
             }
         };
 
+        struct structure
+        {
+            struct element
+            {
+                type what;
+                identifier name;
+            };
+
+            std::vector<element> elements;
+
+            structure clone() const
+            {
+                structure result;
+                for (element const &e : elements)
+                {
+                    result.elements.emplace_back(element{types::clone(e.what), e.name});
+                }
+                return result;
+            }
+        };
+
         struct parameter
         {
             std::string name;
@@ -114,6 +136,10 @@ namespace warpcoil
                                    [](utf8 const &value)
                                    {
                                        return value;
+                                   },
+                                   [](std::unique_ptr<structure> const &value)
+                                   {
+                                       return Si::to_unique(value->clone());
                                    });
         }
 
