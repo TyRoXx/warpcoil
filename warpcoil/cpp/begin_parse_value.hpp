@@ -26,8 +26,7 @@ namespace warpcoil
             void start() &&
             {
                 using boost::asio::asio_handler_invoke;
-                using warpcoil::cpp::check_for_immediate_completion;
-                if (Si::optional<typename Parser::result_type> completed = check_for_immediate_completion(m_parser))
+                if (Si::optional<typename Parser::result_type> completed = m_parser.check_for_immediate_completion())
                 {
                     if (IsSurelyCalledInHandlerContext)
                     {

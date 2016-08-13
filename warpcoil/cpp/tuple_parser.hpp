@@ -18,9 +18,11 @@ namespace warpcoil
             {
                 switch (Si::apply_visitor(visitor{this, input}, current_element))
                 {
-                case internal_parse_result::complete:
-                    // TODO: input_consumption
+                case internal_parse_result::complete_and_consumed:
                     return parse_complete<result_type>{std::move(result), input_consumption::consumed};
+
+                case internal_parse_result::complete_and_not_consumed:
+                    return parse_complete<result_type>{std::move(result), input_consumption::does_not_consume};
 
                 case internal_parse_result::incomplete:
                     return need_more_input();
@@ -31,10 +33,21 @@ namespace warpcoil
                 SILICIUM_UNREACHABLE();
             }
 
+            Si::optional<result_type> check_for_immediate_completion() const
+            {
+                std::size_t arity = sizeof...(T);
+                if ((arity == 1) && Si::apply_visitor(immediate_completion_visitor(), this->current_element))
+                {
+                    return std::move(result);
+                }
+                return Si::none;
+            }
+
         private:
             enum class internal_parse_result
             {
-                complete,
+                complete_and_consumed,
+                complete_and_not_consumed,
                 incomplete,
                 invalid
             };
@@ -47,22 +60,26 @@ namespace warpcoil
                 internal_parse_result operator()(tuple_parser &parent, std::uint8_t const input)
                 {
                     parse_result<typename Parser::result_type> element = parser.parse_byte(input);
-                    return Si::visit<internal_parse_result>(element,
-                                                            [&](parse_complete<typename Parser::result_type> &message)
-                                                            {
-                                                                // TODO: handle message.input
-                                                                std::get<I>(parent.result) = std::move(message.result);
-                                                                return parent.go_to_next_state(
-                                                                    std::integral_constant<std::size_t, I>());
-                                                            },
-                                                            [](need_more_input)
-                                                            {
-                                                                return internal_parse_result::incomplete;
-                                                            },
-                                                            [](invalid_input)
-                                                            {
-                                                                return internal_parse_result::invalid;
-                                                            });
+                    return Si::visit<internal_parse_result>(
+                        element,
+                        [&](parse_complete<typename Parser::result_type> &message)
+                        {
+                            std::get<I>(parent.result) = std::move(message.result);
+                            return parent.go_to_next_state(std::integral_constant<std::size_t, I>(), message.input);
+                        },
+                        [](need_more_input)
+                        {
+                            return internal_parse_result::incomplete;
+                        },
+                        [](invalid_input)
+                        {
+                            return internal_parse_result::invalid;
+                        });
+                }
+
+                bool check_for_immediate_completion() const
+                {
+                    return !!parser.check_for_immediate_completion();
                 }
             };
 
@@ -80,17 +97,36 @@ namespace warpcoil
                 }
             };
 
+            struct immediate_completion_visitor : boost::static_visitor<bool>
+            {
+                template <class Indexed>
+                bool operator()(Indexed &state) const
+                {
+                    return state.check_for_immediate_completion();
+                }
+            };
+
             template <std::size_t CurrentElement>
-            internal_parse_result go_to_next_state(std::integral_constant<std::size_t, CurrentElement>)
+            internal_parse_result go_to_next_state(std::integral_constant<std::size_t, CurrentElement>,
+                                                   input_consumption const)
             {
                 current_element = typename boost::mpl::at<typename decltype(current_element)::element_types,
                                                           boost::mpl::int_<CurrentElement + 1>>::type();
                 return internal_parse_result::incomplete;
             }
 
-            internal_parse_result go_to_next_state(std::integral_constant<std::size_t, sizeof...(T)-1>)
+            internal_parse_result go_to_next_state(std::integral_constant<std::size_t, sizeof...(T)-1>,
+                                                   input_consumption const consumption)
             {
-                return internal_parse_result::complete;
+                switch (consumption)
+                {
+                case input_consumption::consumed:
+                    return internal_parse_result::complete_and_consumed;
+
+                case input_consumption::does_not_consume:
+                    return internal_parse_result::complete_and_not_consumed;
+                }
+                SILICIUM_UNREACHABLE();
             }
 
             template <class Integers>
@@ -116,11 +152,11 @@ namespace warpcoil
             {
                 return parse_complete<result_type>{result_type{}, input_consumption::does_not_consume};
             }
-        };
 
-        inline Si::optional<std::tuple<>> check_for_immediate_completion(tuple_parser<> const &)
-        {
-            return std::tuple<>();
-        }
+            Si::optional<result_type> check_for_immediate_completion() const
+            {
+                return std::tuple<>();
+            }
+        };
     }
 }

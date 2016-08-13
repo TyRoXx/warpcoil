@@ -60,6 +60,11 @@ namespace warpcoil
                     });
             }
 
+            Si::optional<result_type> check_for_immediate_completion() const
+            {
+                return Si::none;
+            }
+
         private:
             struct parsing_element
             {

@@ -61,7 +61,7 @@ namespace warpcoil
             on_result({}, argument);
         }
 
-        virtual void variant(
+        void variant(
             Si::variant<std::uint32_t, std::string> argument,
             std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result) override
         {
@@ -75,6 +75,13 @@ namespace warpcoil
                                                                              {
                                                                                  return value + 'd';
                                                                              }));
+        }
+
+        void structure(structure_to_do argument,
+                       std::function<void(boost::system::error_code, structure_to_do_member)> on_result) override
+        {
+            Si::ignore_unused_variable_warning(argument);
+            on_result({}, structure_to_do_member());
         }
     };
 }

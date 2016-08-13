@@ -9,14 +9,15 @@ namespace warpcoil
 {
     namespace cpp
     {
-        template <class CharSink>
-        void generate_serializable_interface(CharSink &&code, indentation_level indentation, Si::memory_range name,
+        template <class CharSink1, class CharSink2>
+        void generate_serializable_interface(CharSink1 &&code, shared_code_generator<CharSink2> &shared,
+                                             indentation_level indentation, Si::memory_range name,
                                              types::interface_definition const &definition)
         {
-            generate_interface(code, indentation, name, definition);
-            generate_type_eraser(code, indentation, name, definition);
-            generate_serialization_client(code, indentation, name, definition);
-            generate_serialization_server(code, indentation, name, definition);
+            generate_interface(code, shared, indentation, name, definition);
+            generate_type_eraser(code, shared, indentation, name, definition);
+            generate_serialization_client(code, shared, indentation, name, definition);
+            generate_serialization_server(code, shared, indentation, name, definition);
         }
 
         static char const headers[] = "#pragma once\n"
@@ -25,6 +26,7 @@ namespace warpcoil
                                       "#include <warpcoil/cpp/wrap_handler.hpp>\n"
                                       "#include <warpcoil/cpp/utf8_parser.hpp>\n"
                                       "#include <warpcoil/cpp/integer_parser.hpp>\n"
+                                      "#include <warpcoil/cpp/structure_parser.hpp>\n"
                                       "#include <warpcoil/cpp/vector_parser.hpp>\n"
                                       "#include <warpcoil/cpp/tuple_parser.hpp>\n"
                                       "#include <warpcoil/cpp/variant_parser.hpp>\n"

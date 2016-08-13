@@ -145,6 +145,31 @@ BOOST_AUTO_TEST_CASE(async_server_tuple)
     BOOST_CHECK(expected == result);
 }
 
+BOOST_AUTO_TEST_CASE(async_server_tuple_empty)
+{
+    std::tuple<> result = test_simple_request_response<std::tuple<>>(
+        [](async_test_interface &client, std::function<void(boost::system::error_code, std::tuple<>)> on_result)
+        {
+            client.no_result_no_parameter({}, on_result);
+        },
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 'n', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', '_', 'n', 'o', '_', 'p', 'a', 'r',
+         'a', 'm', 'e', 't', 'e', 'r'},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0});
+    std::tuple<> const expected;
+    BOOST_CHECK(expected == result);
+}
+
+BOOST_AUTO_TEST_CASE(async_server_structure)
+{
+    structure_to_do_member result = test_simple_request_response<structure_to_do_member>(
+        [](async_test_interface &client,
+           std::function<void(boost::system::error_code, structure_to_do_member)> on_result)
+        {
+            client.structure(structure_to_do(), on_result);
+        },
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 's', 't', 'r', 'u', 'c', 't', 'u', 'r', 'e'}, {1, 0, 0, 0, 0, 0, 0, 0, 0});
+}
+
 BOOST_AUTO_TEST_CASE(async_server_multiple_parameters)
 {
     std::uint8_t const result = test_simple_request_response<std::uint8_t>(

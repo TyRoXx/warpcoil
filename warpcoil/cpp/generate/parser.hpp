@@ -83,9 +83,12 @@ namespace warpcoil
                                        generate_parser_type(code, text.code_units);
                                        Si::append(code, ">");
                                    },
-                                   [](std::unique_ptr<types::structure> const &)
+                                   [&](std::unique_ptr<types::structure> const &root)
                                    {
-                                       throw std::logic_error("not implemented");
+                                       assert(root);
+                                       Si::append(code, "warpcoil::cpp::structure_parser<");
+                                       generate_name_for_structure(code, *root);
+                                       Si::append(code, ">");
                                    });
         }
     }

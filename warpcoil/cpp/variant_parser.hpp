@@ -16,6 +16,11 @@ namespace warpcoil
                 return Si::apply_visitor(element_parser_visitor(*this, input), m_state);
             }
 
+            Si::optional<result_type> check_for_immediate_completion() const
+            {
+                return Si::none;
+            }
+
         private:
             typedef std::uint8_t index_type;
 

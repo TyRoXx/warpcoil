@@ -24,6 +24,11 @@ namespace warpcoil
                 return need_more_input();
             }
 
+            Si::optional<result_type> check_for_immediate_completion() const
+            {
+                return Si::none;
+            }
+
         private:
             result_type result = 0;
             std::size_t bytes_received = 0;

@@ -50,11 +50,5 @@ namespace warpcoil
 
         template <class T>
         using parse_result = Si::variant<parse_complete<T>, need_more_input, invalid_input>;
-
-        template <class Parser>
-        Si::optional<typename Parser::result_type> check_for_immediate_completion(Parser const &)
-        {
-            return Si::none;
-        }
     }
 }

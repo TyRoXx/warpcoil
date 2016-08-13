@@ -347,9 +347,75 @@ namespace warpcoil
                           },
                           "()");
                 },
-                [&](std::unique_ptr<types::structure> const &)
+                [&](std::unique_ptr<types::structure> const &root)
                 {
-                    throw std::logic_error("todo");
+                    if (root->elements.empty())
+                    {
+                        Si::append(code, "undefined");
+                    }
+                    else
+                    {
+                        Si::append(code, "function ()\n");
+                        block(code, indentation,
+                              [&](indentation_level const in_function)
+                              {
+                                  start_line(code, in_function, "var result = {};\n");
+                                  start_line(code, in_function, "var members_parsed = 0;\n");
+                                  start_line(code, in_function, "var current_parser = ");
+                                  generate_parser_creation(code, in_function, root->elements[0].what, library);
+                                  Si::append(code, ";\n");
+                                  start_line(code, in_function, "return function (input)\n");
+                                  block(code, in_function,
+                                        [&](indentation_level const in_function_2)
+                                        {
+                                            start_line(code, in_function_2, "switch (members_parsed)\n");
+                                            block(code, in_function_2,
+                                                  [&](indentation_level const in_switch)
+                                                  {
+                                                      for (size_t i = 0; i < root->elements.size(); ++i)
+                                                      {
+                                                          start_line(code, in_switch, "case ",
+                                                                     boost::lexical_cast<std::string>(i), ":\n");
+                                                          block(code, in_switch,
+                                                                [&](indentation_level const in_case)
+                                                                {
+                                                                    start_line(code, in_case,
+                                                                               "var status = current_parser(input);\n");
+                                                                    start_line(code, in_case,
+                                                                               "if (status === undefined)\n");
+                                                                    block(code, in_case,
+                                                                          [&](indentation_level const in_if)
+                                                                          {
+                                                                              start_line(code, in_if,
+                                                                                         "return undefined;\n");
+                                                                          },
+                                                                          "\n");
+                                                                    start_line(code, in_case, "result.",
+                                                                               root->elements[i].name, " = status;\n");
+                                                                    start_line(code, in_case, "++members_parsed;\n");
+                                                                    if (i == (root->elements.size() - 1))
+                                                                    {
+                                                                        start_line(code, in_case, "return result;\n");
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        start_line(code, in_case, "current_parser = ");
+                                                                        generate_parser_creation(
+                                                                            code, in_case, root->elements[i + 1].what,
+                                                                            library);
+                                                                        Si::append(code, ";\n");
+                                                                        start_line(code, in_case, "break;\n");
+                                                                    }
+                                                                },
+                                                                "\n");
+                                                      }
+                                                  },
+                                                  "\n");
+                                        },
+                                        ";\n");
+                              },
+                              "()");
+                    }
                 });
         }
 

@@ -15,9 +15,12 @@ namespace warpcoil
                                {
                                    if (boost::range::equal(old_content, new_content))
                                    {
-                                       log << "Generated file does not change\n";
+                                       log << file << ": Generated file does not change\n";
                                        return true;
                                    }
+
+                                   log << file << " changed (was " << old_content.size() << " bytes, should be "
+                                       << new_content.size() << " bytes)\n";
 
                                    boost::system::error_code const error =
                                        ventura::write_file(ventura::safe_c_str(file_name), new_content);
@@ -65,6 +68,7 @@ namespace warpcoil
             log << "Requires output file name as the command line argument\n";
             return 1;
         }
+        char const *const file = command_line_arguments[1];
         Si::optional<ventura::absolute_path> const clang_format =
             (command_line_arguments.size() >= 3) ? ventura::absolute_path::create(command_line_arguments[2]) : Si::none;
         Si::optional<ventura::absolute_path> const clang_format_config_dir =
@@ -74,10 +78,10 @@ namespace warpcoil
         {
             if (!clang_format_config_dir)
             {
-                log << "Command line argument for the clang-format config directory missing\n";
+                log << file << ": Command line argument for the clang-format config directory missing\n";
                 return 1;
             }
-            log << "Formatting the code (originally " << code.size() << " bytes)\n";
+            log << file << ": Formatting the code (originally " << code.size() << " bytes)\n";
             auto formatted_code_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(formatted_code));
             ventura::process_parameters parameters;
             parameters.executable = *clang_format;
@@ -89,16 +93,16 @@ namespace warpcoil
             Si::error_or<int> result = ventura::run_process(parameters);
             if (result.is_error())
             {
-                log << "clang-format failed: " << result.error() << '\n';
+                log << file << ": clang-format failed: " << result.error() << '\n';
                 return 1;
             }
             if (result.get() != 0)
             {
-                log << "clang-format failed with return code " << result.get() << '\n';
+                log << file << ": clang-format failed with return code " << result.get() << '\n';
                 return 1;
             }
             code = Si::make_contiguous_range(formatted_code);
         }
-        return warpcoil::update_generated_file(command_line_arguments[1], code, std::cerr) ? 0 : 1;
+        return warpcoil::update_generated_file(file, code, std::cerr) ? 0 : 1;
     }
 }

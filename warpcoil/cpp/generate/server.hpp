@@ -6,8 +6,9 @@ namespace warpcoil
 {
     namespace cpp
     {
-        template <class CharSink>
-        void generate_serialization_server(CharSink &&code, indentation_level indentation, Si::memory_range name,
+        template <class CharSink1, class CharSink2>
+        void generate_serialization_server(CharSink1 &&code, shared_code_generator<CharSink2> &shared,
+                                           indentation_level indentation, Si::memory_range name,
                                            types::interface_definition const &definition)
         {
             using Si::append;
@@ -125,7 +126,7 @@ namespace warpcoil
                                 append(code, "{}, "
                                              "warpcoil::cpp::wrap_handler([this, request_id](boost::system::"
                                              "error_code ec, ");
-                                generate_type(code, parameter_type);
+                                generate_type(code, shared, parameter_type);
                                 append(code, " argument, Handler &handle_result)\n");
                                 block(
                                     code, in_method,
@@ -141,7 +142,8 @@ namespace warpcoil
                                                                     entry.second.parameters.size());
                                         append(code, "warpcoil::cpp::wrap_handler([this, request_id](boost::"
                                                      "system::error_code ec, ");
-                                        type_emptiness const result_empty = generate_type(code, entry.second.result);
+                                        type_emptiness const result_empty =
+                                            generate_type(code, shared, entry.second.result);
                                         switch (result_empty)
                                         {
                                         case type_emptiness::empty:
@@ -176,7 +178,8 @@ namespace warpcoil
 
                                                   case type_emptiness::non_empty:
                                                       generate_value_serialization(
-                                                          code, in_lambda, Si::make_c_str_range("response_writer"),
+                                                          code, shared, in_lambda,
+                                                          Si::make_c_str_range("response_writer"),
                                                           Si::make_c_str_range("result"), entry.second.result,
                                                           Si::make_c_str_range("return std::forward<Handler>(handle_"
                                                                                "result)(warpcoil::cpp::make_"

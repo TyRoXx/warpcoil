@@ -61,6 +61,17 @@ namespace warpcoil
             }
         };
 
+        bool less(type const &left, type const &right);
+
+        inline bool less(variant const &left, variant const &right)
+        {
+            return std::lexicographical_compare(left.elements.begin(), left.elements.end(), right.elements.begin(),
+                                                right.elements.end(), [](type const &left, type const &right)
+                                                {
+                                                    return less(left, right);
+                                                });
+        }
+
         struct tuple
         {
             std::vector<type> elements;
@@ -76,6 +87,15 @@ namespace warpcoil
             }
         };
 
+        inline bool less(tuple const &left, tuple const &right)
+        {
+            return std::lexicographical_compare(left.elements.begin(), left.elements.end(), right.elements.begin(),
+                                                right.elements.end(), [](type const &left, type const &right)
+                                                {
+                                                    return less(left, right);
+                                                });
+        }
+
         struct vector
         {
             integer length;
@@ -86,6 +106,21 @@ namespace warpcoil
                 return {length, types::clone(element)};
             }
         };
+
+        bool less(integer const &left, integer const &right);
+
+        inline bool less(vector const &left, vector const &right)
+        {
+            if (less(left.length, right.length))
+            {
+                return true;
+            }
+            if (less(right.length, left.length))
+            {
+                return false;
+            }
+            return less(left.element, right.element);
+        }
 
         struct structure
         {
@@ -107,6 +142,70 @@ namespace warpcoil
                 return result;
             }
         };
+
+        inline bool less(integer const &left, integer const &right)
+        {
+            return std::tie(left.minimum, left.maximum) < std::tie(right.minimum, right.maximum);
+        }
+
+        bool less(structure const &left, structure const &right);
+
+        inline bool less(type const &left, type const &right)
+        {
+            if (left.index() < right.index())
+            {
+                return true;
+            }
+            if (left.index() > right.index())
+            {
+                return false;
+            }
+            return Si::visit<bool>(
+                left,
+                [&right](integer const &left_value)
+                {
+                    return less(left_value, *Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                },
+                [&right](std::unique_ptr<variant> const &left_value)
+                {
+                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                },
+                [&right](std::unique_ptr<tuple> const &left_value)
+                {
+                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                },
+                [&right](std::unique_ptr<vector> const &left_value)
+                {
+                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                },
+                [&right](utf8 const &left_value)
+                {
+                    return less(left_value.code_units,
+                                Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right)->code_units);
+                },
+                [&right](std::unique_ptr<structure> const &left_value)
+                {
+                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                });
+        }
+
+        inline bool less(structure const &left, structure const &right)
+        {
+            return std::lexicographical_compare(left.elements.begin(), left.elements.end(), right.elements.begin(),
+                                                right.elements.end(),
+                                                [](structure::element const &left, structure::element const &right)
+                                                {
+                                                    if (less(left.what, right.what))
+                                                    {
+                                                        return true;
+                                                    }
+                                                    if (less(right.what, left.what))
+                                                    {
+                                                        return false;
+                                                    }
+                                                    return (left.name < right.name);
+                                                });
+        }
 
         struct parameter
         {

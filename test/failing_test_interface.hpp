@@ -88,5 +88,13 @@ namespace warpcoil
             Si::ignore_unused_variable_warning(on_result);
             BOOST_FAIL("unexpected call");
         }
+
+        void structure(structure_to_do argument,
+                       std::function<void(boost::system::error_code, structure_to_do_member)> on_result) override
+        {
+            Si::ignore_unused_variable_warning(argument);
+            Si::ignore_unused_variable_warning(on_result);
+            BOOST_FAIL("unexpected call");
+        }
     };
 }

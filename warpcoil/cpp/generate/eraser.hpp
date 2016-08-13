@@ -6,8 +6,9 @@ namespace warpcoil
 {
     namespace cpp
     {
-        template <class CharSink>
-        void generate_type_eraser(CharSink &&code, indentation_level indentation, Si::memory_range name,
+        template <class CharSink1, class CharSink2>
+        void generate_type_eraser(CharSink1 &&code, shared_code_generator<CharSink2> &shared,
+                                  indentation_level indentation, Si::memory_range name,
                                   types::interface_definition const &definition)
         {
             using Si::append;
@@ -31,9 +32,9 @@ namespace warpcoil
                           append(code, "void ");
                           append(code, entry.first);
                           append(code, "(");
-                          generate_parameters(code, entry.second.parameters);
+                          generate_parameters(code, shared, entry.second.parameters);
                           append(code, "std::function<void(boost::system::error_code, ");
-                          generate_type(code, entry.second.result);
+                          generate_type(code, shared, entry.second.result);
                           append(code, ")> on_result) override\n");
                           block(code, in_class,
                                 [&](indentation_level const in_method)
