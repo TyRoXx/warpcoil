@@ -9,10 +9,10 @@ namespace warpcoil
 {
     namespace cpp
     {
-        template <class... T>
-        struct tuple_parser
+        template <class Derived, class Result, class... T>
+        struct basic_tuple_parser
         {
-            typedef std::tuple<typename T::result_type...> result_type;
+            typedef Result result_type;
 
             parse_result<result_type> parse_byte(std::uint8_t const input)
             {
@@ -57,14 +57,14 @@ namespace warpcoil
             {
                 Parser parser;
 
-                internal_parse_result operator()(tuple_parser &parent, std::uint8_t const input)
+                internal_parse_result operator()(basic_tuple_parser &parent, std::uint8_t const input)
                 {
                     parse_result<typename Parser::result_type> element = parser.parse_byte(input);
                     return Si::visit<internal_parse_result>(
                         element,
                         [&](parse_complete<typename Parser::result_type> &message)
                         {
-                            std::get<I>(parent.result) = std::move(message.result);
+                            static_cast<Derived &>(parent).template get<I>(parent.result) = std::move(message.result);
                             return parent.go_to_next_state(std::integral_constant<std::size_t, I>(), message.input);
                         },
                         [](need_more_input)
@@ -87,7 +87,7 @@ namespace warpcoil
             {
                 typedef internal_parse_result result_type;
 
-                tuple_parser *parent;
+                basic_tuple_parser *parent;
                 std::uint8_t input;
 
                 template <class State>
@@ -141,6 +141,16 @@ namespace warpcoil
             typename make_current_element<typename ranges::v3::make_integer_sequence<sizeof...(T)>::type>::type
                 current_element;
             result_type result;
+        };
+
+        template <class... T>
+        struct tuple_parser : basic_tuple_parser<tuple_parser<T...>, std::tuple<typename T::result_type...>, T...>
+        {
+            template <std::size_t Index>
+            auto &get(std::tuple<typename T::result_type...> &result)
+            {
+                return std::get<Index>(result);
+            }
         };
 
         template <>

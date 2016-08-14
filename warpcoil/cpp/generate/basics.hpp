@@ -118,6 +118,42 @@ namespace warpcoil
                           }
                       },
                       ";\n");
+                start_line(m_code, m_indentation, "template <> struct warpcoil::cpp::structure_parser<");
+                generate_name_for_structure(m_code, required);
+                if (required.elements.empty())
+                {
+                    Si::append(m_code, ">\n");
+                    block(m_code, m_indentation,
+                          [&](indentation_level const in_struct)
+                          {
+                              start_line(m_code, in_struct, "typedef ");
+                              generate_name_for_structure(m_code, required);
+                              Si::append(m_code, " result_type;\n");
+                              // TODO
+                          },
+                          ";\n");
+                }
+                else
+                {
+                    Si::append(m_code, "> : warpcoil::cpp::basic_tuple_parser<warpcoil::cpp::structure_parser<");
+                    generate_name_for_structure(m_code, required);
+                    Si::append(m_code, ">, ");
+                    generate_name_for_structure(m_code, required);
+                    for (types::structure::element const &element : required.elements)
+                    {
+                        Si::append(m_code, ", ");
+                        generate_type(m_code, *this, element.what);
+                    }
+                    Si::append(m_code, ">\n ");
+                    block(m_code, m_indentation,
+                          [&](indentation_level const in_struct)
+                          {
+                              for (types::structure::element const &element : required.elements)
+                              {
+                              }
+                          },
+                          ";\n");
+                }
                 m_generated_structures.insert(required.clone());
             }
 
