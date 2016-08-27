@@ -64,7 +64,8 @@ namespace warpcoil
                         element,
                         [&](parse_complete<typename Parser::result_type> &message)
                         {
-                            static_cast<Derived &>(parent).template get<I>(parent.result) = std::move(message.result);
+                            static_cast<Derived &>(parent).get(
+                                parent.result, std::integral_constant<std::size_t, I>()) = std::move(message.result);
                             return parent.go_to_next_state(std::integral_constant<std::size_t, I>(), message.input);
                         },
                         [](need_more_input)
@@ -147,7 +148,7 @@ namespace warpcoil
         struct tuple_parser : basic_tuple_parser<tuple_parser<T...>, std::tuple<typename T::result_type...>, T...>
         {
             template <std::size_t Index>
-            auto &get(std::tuple<typename T::result_type...> &result)
+            auto &get(std::tuple<typename T::result_type...> &result, std::integral_constant<std::size_t, Index>)
             {
                 return std::get<Index>(result);
             }

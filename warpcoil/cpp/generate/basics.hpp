@@ -7,6 +7,7 @@
 #include <warpcoil/types.hpp>
 #include <warpcoil/block.hpp>
 #include <set>
+#include "parser.hpp"
 
 namespace warpcoil
 {
@@ -129,7 +130,14 @@ namespace warpcoil
                               start_line(m_code, in_struct, "typedef ");
                               generate_name_for_structure(m_code, required);
                               Si::append(m_code, " result_type;\n");
-                              // TODO
+                              start_line(m_code, in_struct,
+                                         "parse_result<result_type> parse_byte(std::uint8_t const) const "
+                                         "{ return "
+                                         "warpcoil::cpp::parse_complete<result_type>{result_type{}, "
+                                         "warpcoil::cpp::input_consumption::does_not_consume}; }\n");
+                              start_line(m_code, in_struct, "Si::optional<result_type> "
+                                                            "check_for_immediate_completion() const { return "
+                                                            "result_type{}; }\n");
                           },
                           ";\n");
                 }
@@ -142,14 +150,27 @@ namespace warpcoil
                     for (types::structure::element const &element : required.elements)
                     {
                         Si::append(m_code, ", ");
-                        generate_type(m_code, *this, element.what);
+                        generate_parser_type(m_code, element.what);
                     }
                     Si::append(m_code, ">\n ");
                     block(m_code, m_indentation,
                           [&](indentation_level const in_struct)
                           {
+                              std::size_t index = 0;
                               for (types::structure::element const &element : required.elements)
                               {
+                                  start_line(m_code, in_struct, "auto &get(");
+                                  generate_name_for_structure(m_code, required);
+                                  Si::append(m_code, " &result_, std::integral_constant<std::size_t, ");
+                                  Si::append(m_code, boost::lexical_cast<std::string>(index));
+                                  Si::append(m_code, ">) const\n");
+                                  block(m_code, in_struct,
+                                        [&](indentation_level const in_get)
+                                        {
+                                            start_line(m_code, in_get, "return result_.", element.name, ";\n");
+                                        },
+                                        "\n");
+                                  ++index;
                               }
                           },
                           ";\n");
