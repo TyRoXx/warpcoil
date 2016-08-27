@@ -1,10 +1,8 @@
 #pragma once
 
-#include <boost/lexical_cast.hpp>
-#include <silicium/sink/append.hpp>
-#include <silicium/sink/ptr_sink.hpp>
 #include <warpcoil/cpp/generate/shared_code_generator.hpp>
 #include <warpcoil/cpp/generate/comma_separator.hpp>
+#include <silicium/sink/ptr_sink.hpp>
 
 namespace warpcoil
 {
