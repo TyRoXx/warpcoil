@@ -123,6 +123,5 @@ if(WARPCOIL_BUILD_EXAMPLES)
 endif()
 
 if(WARPCOIL_USE_CLANG_FORMAT)
-    message(${formatted})
 	add_custom_target(clang-format COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${formatted} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
