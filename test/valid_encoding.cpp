@@ -167,7 +167,8 @@ BOOST_AUTO_TEST_CASE(async_server_structure)
         {
             client.structure(structure_to_do(), on_result);
         },
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 's', 't', 'r', 'u', 'c', 't', 'u', 'r', 'e'}, {1, 0, 0, 0, 0, 0, 0, 0, 0});
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 's', 't', 'r', 'u', 'c', 't', 'u', 'r', 'e'}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 2});
+    BOOST_CHECK_EQUAL(2u, result.member);
 }
 
 BOOST_AUTO_TEST_CASE(async_server_multiple_parameters)

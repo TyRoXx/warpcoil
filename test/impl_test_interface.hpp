@@ -81,7 +81,7 @@ namespace warpcoil
                        std::function<void(boost::system::error_code, structure_to_do_member)> on_result) override
         {
             Si::ignore_unused_variable_warning(argument);
-            on_result({}, structure_to_do_member());
+            on_result({}, structure_to_do_member{2u});
         }
     };
 }
