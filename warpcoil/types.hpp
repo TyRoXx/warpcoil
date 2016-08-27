@@ -8,6 +8,12 @@
 
 namespace warpcoil
 {
+    enum class type_emptiness
+    {
+        empty,
+        non_empty
+    };
+
     namespace types
     {
         struct integer
