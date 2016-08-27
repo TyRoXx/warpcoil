@@ -2,6 +2,7 @@
 
 #include <warpcoil/cpp/generate/shared_code_generator.hpp>
 #include <warpcoil/cpp/generate/comma_separator.hpp>
+#include <warpcoil/cpp/generate/generate_name_for_structure.hpp>
 #include <silicium/sink/ptr_sink.hpp>
 
 namespace warpcoil
@@ -25,17 +26,6 @@ namespace warpcoil
             else
             {
                 return Si::make_c_str_range("std::uint64_t");
-            }
-        }
-
-        template <class CharSink>
-        void generate_name_for_structure(CharSink &&name, types::structure const &structure)
-        {
-            Si::append(name, "structure_to_do");
-            for (types::structure::element const &element : structure.elements)
-            {
-                Si::append(name, "_");
-                Si::append(name, element.name);
             }
         }
 

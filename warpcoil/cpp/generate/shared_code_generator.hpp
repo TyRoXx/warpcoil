@@ -1,9 +1,9 @@
 #pragma once
 
-#include <boost/lexical_cast.hpp>
-#include <silicium/sink/append.hpp>
+#include <warpcoil/cpp/generate/generate_name_for_structure.hpp>
 #include <warpcoil/types.hpp>
 #include <warpcoil/block.hpp>
+#include <boost/lexical_cast.hpp>
 #include <set>
 
 namespace warpcoil
