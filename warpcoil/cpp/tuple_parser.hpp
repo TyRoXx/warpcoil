@@ -16,13 +16,13 @@ namespace warpcoil
 
             parse_result<result_type> parse_byte(std::uint8_t const input)
             {
-                switch (Si::apply_visitor(visitor{this, input}, current_element))
+                switch (Si::apply_visitor(visitor{this, input}, m_current_element))
                 {
                 case internal_parse_result::complete_and_consumed:
-                    return parse_complete<result_type>{std::move(result), input_consumption::consumed};
+                    return parse_complete<result_type>{std::move(m_result), input_consumption::consumed};
 
                 case internal_parse_result::complete_and_not_consumed:
-                    return parse_complete<result_type>{std::move(result), input_consumption::does_not_consume};
+                    return parse_complete<result_type>{std::move(m_result), input_consumption::does_not_consume};
 
                 case internal_parse_result::incomplete:
                     return need_more_input();
@@ -36,9 +36,9 @@ namespace warpcoil
             Si::optional<result_type> check_for_immediate_completion() const
             {
                 std::size_t arity = sizeof...(T);
-                if ((arity == 1) && Si::apply_visitor(immediate_completion_visitor(), this->current_element))
+                if ((arity == 1) && Si::apply_visitor(immediate_completion_visitor(), this->m_current_element))
                 {
-                    return std::move(result);
+                    return std::move(m_result);
                 }
                 return Si::none;
             }
@@ -65,7 +65,7 @@ namespace warpcoil
                         [&](parse_complete<typename Parser::result_type> &message)
                         {
                             static_cast<Derived &>(parent).get(
-                                parent.result, std::integral_constant<std::size_t, I>()) = std::move(message.result);
+                                parent.m_result, std::integral_constant<std::size_t, I>()) = std::move(message.result);
                             return parent.go_to_next_state(std::integral_constant<std::size_t, I>(), message.input);
                         },
                         [](need_more_input)
@@ -111,8 +111,8 @@ namespace warpcoil
             internal_parse_result go_to_next_state(std::integral_constant<std::size_t, CurrentElement>,
                                                    input_consumption const)
             {
-                current_element = typename boost::mpl::at<typename decltype(current_element)::element_types,
-                                                          boost::mpl::int_<CurrentElement + 1>>::type();
+                m_current_element = typename boost::mpl::at<typename decltype(m_current_element)::element_types,
+                                                            boost::mpl::int_<CurrentElement + 1>>::type();
                 return internal_parse_result::incomplete;
             }
 
@@ -140,8 +140,8 @@ namespace warpcoil
             };
 
             typename make_current_element<typename ranges::v3::make_integer_sequence<sizeof...(T)>::type>::type
-                current_element;
-            result_type result;
+                m_current_element;
+            result_type m_result;
         };
 
         template <class... T>

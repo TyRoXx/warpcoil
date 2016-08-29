@@ -96,13 +96,13 @@ namespace warpcoil
                                   generate_type(m_code, *this, element.what);
                                   Si::append(m_code, " &get(");
                                   warpcoil::cpp::generate_name_for_structure(m_code, required);
-                                  Si::append(m_code, " &result_, std::integral_constant<std::size_t, ");
+                                  Si::append(m_code, " &result, std::integral_constant<std::size_t, ");
                                   Si::append(m_code, boost::lexical_cast<std::string>(index));
                                   Si::append(m_code, ">) const\n");
                                   block(m_code, in_struct,
                                         [&](indentation_level const in_get)
                                         {
-                                            start_line(m_code, in_get, "return result_.", element.name, ";\n");
+                                            start_line(m_code, in_get, "return result.", element.name, ";\n");
                                         },
                                         "\n");
                                   ++index;
