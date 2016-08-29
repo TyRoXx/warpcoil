@@ -11,6 +11,9 @@ namespace warpcoil
     namespace cpp
     {
         template <class CharSink>
+        void generate_parser_type(CharSink &&code, types::type const &parsed);
+
+        template <class CharSink>
         struct shared_code_generator;
 
         template <class CharSink1, class CharSink2>
@@ -34,7 +37,7 @@ namespace warpcoil
                     return;
                 }
                 start_line(m_code, m_indentation, "struct ");
-                generate_name_for_structure(m_code, required);
+                warpcoil::cpp::generate_name_for_structure(m_code, required);
                 Si::append(m_code, "\n");
                 block(m_code, m_indentation,
                       [&](indentation_level const in_struct)
@@ -50,7 +53,7 @@ namespace warpcoil
                       },
                       ";\n");
                 start_line(m_code, m_indentation, "template <> struct warpcoil::cpp::structure_parser<");
-                generate_name_for_structure(m_code, required);
+                warpcoil::cpp::generate_name_for_structure(m_code, required);
                 if (required.elements.empty())
                 {
                     Si::append(m_code, ">\n");
@@ -58,7 +61,7 @@ namespace warpcoil
                           [&](indentation_level const in_struct)
                           {
                               start_line(m_code, in_struct, "typedef ");
-                              generate_name_for_structure(m_code, required);
+                              warpcoil::cpp::generate_name_for_structure(m_code, required);
                               Si::append(m_code, " result_type;\n");
                               start_line(m_code, in_struct,
                                          "parse_result<result_type> parse_byte(std::uint8_t const) const "
@@ -74,9 +77,9 @@ namespace warpcoil
                 else
                 {
                     Si::append(m_code, "> : warpcoil::cpp::basic_tuple_parser<warpcoil::cpp::structure_parser<");
-                    generate_name_for_structure(m_code, required);
+                    warpcoil::cpp::generate_name_for_structure(m_code, required);
                     Si::append(m_code, ">, ");
-                    generate_name_for_structure(m_code, required);
+                    warpcoil::cpp::generate_name_for_structure(m_code, required);
                     for (types::structure::element const &element : required.elements)
                     {
                         Si::append(m_code, ", ");
