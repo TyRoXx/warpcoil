@@ -89,8 +89,10 @@ namespace warpcoil
                               std::size_t index = 0;
                               for (types::structure::element const &element : required.elements)
                               {
-                                  start_line(m_code, in_struct, "auto &get(");
-                                  generate_name_for_structure(m_code, required);
+                                  start_line(m_code, in_struct, "");
+                                  generate_type(m_code, *this, element.what);
+                                  Si::append(m_code, " &get(");
+                                  warpcoil::cpp::generate_name_for_structure(m_code, required);
                                   Si::append(m_code, " &result_, std::integral_constant<std::size_t, ");
                                   Si::append(m_code, boost::lexical_cast<std::string>(index));
                                   Si::append(m_code, ">) const\n");
