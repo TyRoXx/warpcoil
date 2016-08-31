@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_excess)
         warpcoil::checkpoint parse_completed;
         parse_completed.enable();
         warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-                                         [&parse_completed](Si::error_or<std::uint32_t const> parsed)
+                                         [&parse_completed](Si::error_or<std::uint32_t> const parsed)
                                          {
                                              parse_completed.enter();
                                              BOOST_CHECK_EQUAL(0x99887766u, parsed.get());
