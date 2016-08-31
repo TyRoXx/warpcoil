@@ -7,9 +7,9 @@ namespace server
 {
     struct my_hello_service : async_hello_as_a_service
     {
-        void hello(std::string argument, std::function<void(boost::system::error_code, std::string)> on_result) override
+        void hello(std::string argument, std::function<void(Si::error_or<std::string>)> on_result) override
         {
-            on_result({}, "Hello, " + argument + "!");
+            on_result("Hello, " + argument + "!");
         }
     };
 }
@@ -48,10 +48,9 @@ int main()
                                     [&io, &client](boost::system::error_code ec)
                                     {
                                         Si::throw_if_error(ec);
-                                        client.hello("Alice", [](boost::system::error_code ec, std::string result)
+                                        client.hello("Alice", [](Si::error_or<std::string> result)
                                                      {
-                                                         Si::throw_if_error(ec);
-                                                         std::cout << result << '\n';
+                                                         std::cout << result.get() << '\n';
                                                      });
                                     });
 

@@ -9,11 +9,10 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_exact)
     beast::streambuf buffer;
     warpcoil::checkpoint parse_completed;
     warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-                                     [&parse_completed](boost::system::error_code const ec, std::uint32_t const parsed)
+                                     [&parse_completed](Si::error_or<std::uint32_t> const parsed)
                                      {
                                          parse_completed.enter();
-                                         BOOST_REQUIRE(!ec);
-                                         BOOST_CHECK_EQUAL(0xabcdef12u, parsed);
+                                         BOOST_CHECK_EQUAL(0xabcdef12u, parsed.get());
                                      });
     BOOST_REQUIRE(stream.respond);
     parse_completed.enable();
@@ -31,10 +30,10 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_empty_tuple)
     warpcoil::checkpoint parse_completed;
     parse_completed.enable();
     warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::tuple_parser<>(),
-                                     [&parse_completed](boost::system::error_code const ec, std::tuple<> const)
+                                     [&parse_completed](Si::error_or<std::tuple<>> const result)
                                      {
                                          parse_completed.enter();
-                                         BOOST_REQUIRE(!ec);
+                                         result.throw_if_error();
                                      });
     parse_completed.require_crossed();
     BOOST_REQUIRE(!stream.respond);
@@ -47,14 +46,12 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_excess)
     beast::streambuf buffer;
     {
         warpcoil::checkpoint parse_completed;
-        warpcoil::cpp::begin_parse_value(
-            stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-            [&parse_completed](boost::system::error_code const ec, std::uint32_t const parsed)
-            {
-                parse_completed.enter();
-                BOOST_REQUIRE(!ec);
-                BOOST_CHECK_EQUAL(0xabcdef12u, parsed);
-            });
+        warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
+                                         [&parse_completed](Si::error_or<std::uint32_t> const parsed)
+                                         {
+                                             parse_completed.enter();
+                                             BOOST_CHECK_EQUAL(0xabcdef12u, parsed.get());
+                                         });
         BOOST_REQUIRE(stream.respond);
         parse_completed.enable();
         std::array<std::uint8_t, 8> const input = {{0xab, 0xcd, 0xef, 0x12, 0x99, 0x88, 0x77, 0x66}};
@@ -70,14 +67,12 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_excess)
     {
         warpcoil::checkpoint parse_completed;
         parse_completed.enable();
-        warpcoil::cpp::begin_parse_value(
-            stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-            [&parse_completed](boost::system::error_code const ec, std::uint32_t const parsed)
-            {
-                parse_completed.enter();
-                BOOST_REQUIRE(!ec);
-                BOOST_CHECK_EQUAL(0x99887766u, parsed);
-            });
+        warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
+                                         [&parse_completed](Si::error_or<std::uint32_t const> parsed)
+                                         {
+                                             parse_completed.enter();
+                                             BOOST_CHECK_EQUAL(0x99887766u, parsed.get());
+                                         });
         parse_completed.require_crossed();
         BOOST_CHECK(!stream.respond);
     }
@@ -100,11 +95,10 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_immediate_completion)
         first_completed.enable();
         warpcoil::cpp::begin_parse_value(
             stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-            [&](boost::system::error_code const ec, std::uint32_t const parsed)
+            [&](Si::error_or<std::uint32_t> const parsed)
             {
                 first_completed.enter();
-                BOOST_REQUIRE(!ec);
-                BOOST_CHECK_EQUAL(0xabcdef12u, parsed);
+                BOOST_CHECK_EQUAL(0xabcdef12u, parsed.get());
                 BOOST_REQUIRE(!stream.respond);
                 BOOST_REQUIRE_EQUAL(4u, buffer.size());
                 BOOST_REQUIRE_EQUAL(0x99u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[0]);
@@ -113,11 +107,10 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_immediate_completion)
                 BOOST_REQUIRE_EQUAL(0x66u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[3]);
                 second_completed.enable();
                 warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-                                                 [&](boost::system::error_code const ec, std::uint32_t const parsed)
+                                                 [&](Si::error_or<std::uint32_t> const parsed2)
                                                  {
                                                      second_completed.enter();
-                                                     BOOST_REQUIRE(!ec);
-                                                     BOOST_CHECK_EQUAL(0x99887766u, parsed);
+                                                     BOOST_CHECK_EQUAL(0x99887766u, parsed2.get());
                                                      BOOST_REQUIRE(!stream.respond);
                                                      BOOST_REQUIRE_EQUAL(0u, buffer.size());
                                                  });

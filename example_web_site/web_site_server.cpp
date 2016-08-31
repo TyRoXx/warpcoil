@@ -59,18 +59,17 @@ namespace
 
         websocket_client_list all_clients;
 
-        void publish(std::string message,
-                     std::function<void(boost::system::error_code, std::tuple<>)> on_result) override
+        void publish(std::string message, std::function<void(Si::error_or<std::tuple<>>)> on_result) override
         {
             for (websocket_client &client : all_clients)
             {
-                client.viewer_client.display(message, [](boost::system::error_code const ec, std::tuple<>)
+                client.viewer_client.display(message, [](Si::error_or<std::tuple<>> result)
                                              {
-                                                 Si::throw_if_error(ec);
+                                                 result.throw_if_error();
                                              });
             }
             // does not make sense to wait for responses from the clients here
-            on_result({}, std::make_tuple());
+            on_result(std::make_tuple());
         }
     };
 

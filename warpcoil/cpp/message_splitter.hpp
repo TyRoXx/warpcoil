@@ -7,6 +7,7 @@
 #include <warpcoil/cpp/tuple_parser.hpp>
 #include <warpcoil/cpp/integer_parser.hpp>
 #include <warpcoil/cpp/utf8_parser.hpp>
+#include <silicium/error_or.hpp>
 
 namespace warpcoil
 {
@@ -38,13 +39,13 @@ namespace warpcoil
             void wait_for_response(ResponseHandler handler)
             {
                 assert(!waiting_for_response);
-                waiting_for_response = [handler](boost::system::error_code const ec, request_id const request) mutable
+                waiting_for_response = [handler](Si::error_or<request_id> const request) mutable
                 {
                     using boost::asio::asio_handler_invoke;
                     asio_handler_invoke(
                         [&]
                         {
-                            handler(ec, request);
+                            handler(request);
                         },
                         &handler);
                 };
@@ -62,14 +63,13 @@ namespace warpcoil
             void wait_for_request(RequestHandler handler)
             {
                 assert(!waiting_for_request);
-                waiting_for_request = [handler](boost::system::error_code const ec, request_id const id,
-                                                std::string method) mutable
+                waiting_for_request = [handler](Si::error_or<std::tuple<request_id, std::string>> request) mutable
                 {
                     using boost::asio::asio_handler_invoke;
                     asio_handler_invoke(
                         [&]
                         {
-                            handler(ec, id, std::move(method));
+                            handler(std::move(request));
                         },
                         &handler);
                 };
@@ -108,8 +108,8 @@ namespace warpcoil
             buffered_read_stream<AsyncReadStream> buffer;
             bool locked;
             std::function<void()> begin_parse_message;
-            std::function<void(boost::system::error_code, request_id, std::string)> waiting_for_request;
-            std::function<void(boost::system::error_code, request_id)> waiting_for_response;
+            std::function<void(Si::error_or<std::tuple<request_id, std::string>>)> waiting_for_request;
+            std::function<void(Si::error_or<request_id>)> waiting_for_response;
             bool parsing_header;
 
             template <class DummyHandler>
@@ -124,14 +124,14 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code const ec, message_type_int const type)
+                void operator()(Si::error_or<message_type_int> const type)
                 {
-                    if (!!ec)
+                    if (type.is_error())
                     {
-                        pipeline.on_error(ec);
+                        pipeline.on_error(type.error());
                         return;
                     }
-                    switch (static_cast<message_type>(type))
+                    switch (static_cast<message_type>(type.get()))
                     {
                     case message_type::response:
                         if (!pipeline.waiting_for_response)
@@ -181,12 +181,12 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code const ec, std::tuple<request_id, std::string> request)
+                void operator()(Si::error_or<std::tuple<request_id, std::string>> request)
                 {
                     assert(pipeline.waiting_for_request);
-                    if (!!ec)
+                    if (request.is_error())
                     {
-                        pipeline.on_error(ec);
+                        pipeline.on_error(request.error());
                         return;
                     }
 
@@ -196,8 +196,7 @@ namespace warpcoil
                     bool const continue_ = pipeline.waiting_for_response != nullptr;
 
                     assert(pipeline.waiting_for_request);
-                    Si::exchange(pipeline.waiting_for_request, nullptr)(ec, std::get<0>(request),
-                                                                        std::move(std::get<1>(request)));
+                    Si::exchange(pipeline.waiting_for_request, nullptr)(std::move(request.get()));
 
                     if (continue_ && pipeline.waiting_for_response && !pipeline.parsing_header)
                     {
@@ -226,12 +225,12 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code const ec, request_id const request)
+                void operator()(Si::error_or<request_id> const request)
                 {
                     assert(pipeline.waiting_for_response);
-                    if (!!ec)
+                    if (request.is_error())
                     {
-                        pipeline.on_error(ec);
+                        pipeline.on_error(request.error());
                         return;
                     }
 
@@ -241,7 +240,7 @@ namespace warpcoil
                     bool const continue_ = pipeline.waiting_for_request != nullptr;
 
                     assert(pipeline.waiting_for_response);
-                    Si::exchange(pipeline.waiting_for_response, nullptr)(ec, request);
+                    Si::exchange(pipeline.waiting_for_response, nullptr)(request);
 
                     if (continue_ && pipeline.waiting_for_request && !pipeline.parsing_header)
                     {
@@ -263,13 +262,13 @@ namespace warpcoil
                 bool const is_waiting_for_request = waiting_for_request != nullptr;
                 if (waiting_for_response)
                 {
-                    Si::exchange(waiting_for_response, nullptr)(ec, 0);
+                    Si::exchange(waiting_for_response, nullptr)(ec);
                 }
                 //"this" might be destroyed at this point if "waiting_for_request" was empty, so we cannot dereference
                 //"this" here.
                 if (is_waiting_for_request)
                 {
-                    Si::exchange(waiting_for_request, nullptr)(ec, 0, "");
+                    Si::exchange(waiting_for_request, nullptr)(ec);
                 }
             }
 

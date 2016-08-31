@@ -33,9 +33,9 @@ namespace warpcoil
                           append(code, entry.first);
                           append(code, "(");
                           generate_parameters(code, shared, entry.second.parameters);
-                          append(code, "std::function<void(boost::system::error_code, ");
+                          append(code, "std::function<void(Si::error_or<");
                           generate_type(code, shared, entry.second.result);
-                          append(code, ")> on_result) override\n");
+                          append(code, ">)> on_result) override\n");
                           block(code, in_class,
                                 [&](indentation_level const in_method)
                                 {

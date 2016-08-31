@@ -51,17 +51,15 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_simple)
         {
             BOOST_CHECK_EQUAL(0u, pending_requests(client));
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-            client.utf8("X", [&got_0](boost::system::error_code ec, std::string result)
+            client.utf8("X", [&got_0](Si::error_or<std::string> result)
                         {
-                            BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                            BOOST_CHECK_EQUAL("X123", result);
+                            BOOST_CHECK_EQUAL("X123", result.get());
                             got_0.enter();
                         });
             BOOST_CHECK_EQUAL(1u, pending_requests(client));
-            client.utf8("Y", [&got_1](boost::system::error_code ec, std::string result)
+            client.utf8("Y", [&got_1](Si::error_or<std::string> result)
                         {
-                            BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                            BOOST_CHECK_EQUAL("Y123", result);
+                            BOOST_CHECK_EQUAL("Y123", result.get());
                             got_1.enter();
                         });
             BOOST_CHECK_EQUAL(2u, pending_requests(client));
@@ -95,19 +93,18 @@ namespace
     void count_up(Client &client, std::uint16_t const first, std::uint16_t const last)
     {
         BOOST_CHECK_EQUAL(0u, pending_requests(client));
-        client.variant(
-            static_cast<std::uint32_t>(first),
-            [&client, first, last](boost::system::error_code ec, Si::variant<std::uint16_t, std::string> result)
-            {
-                BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                BOOST_REQUIRE_EQUAL((Si::variant<std::uint16_t, std::string>{static_cast<std::uint16_t>(first + 1)}),
-                                    result);
-                if (first == last)
-                {
-                    return;
-                }
-                count_up(client, static_cast<std::uint16_t>(first + 1), last);
-            });
+        client.variant(static_cast<std::uint32_t>(first),
+                       [&client, first, last](Si::error_or<Si::variant<std::uint16_t, std::string>> result)
+                       {
+                           BOOST_REQUIRE_EQUAL(
+                               (Si::variant<std::uint16_t, std::string>{static_cast<std::uint16_t>(first + 1)}),
+                               result.get());
+                           if (first == last)
+                           {
+                               return;
+                           }
+                           count_up(client, static_cast<std::uint16_t>(first + 1), last);
+                       });
         BOOST_CHECK_EQUAL(1u, pending_requests(client));
     }
 }
@@ -184,15 +181,14 @@ BOOST_AUTO_TEST_CASE(async_client_pipelining_many_requests_in_parallel)
             for (std::size_t i = 1; i <= request_count; ++i)
             {
                 BOOST_CHECK_EQUAL(i - 1, pending_requests(client));
-                client.variant(
-                    static_cast<std::uint32_t>(i),
-                    [i, &got_responses](boost::system::error_code ec, Si::variant<std::uint16_t, std::string> result)
-                    {
-                        BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                        BOOST_REQUIRE_EQUAL(
-                            (Si::variant<std::uint16_t, std::string>{static_cast<std::uint16_t>(i + 1)}), result);
-                        ++got_responses;
-                    });
+                client.variant(static_cast<std::uint32_t>(i),
+                               [i, &got_responses](Si::error_or<Si::variant<std::uint16_t, std::string>> result)
+                               {
+                                   BOOST_REQUIRE_EQUAL(
+                                       (Si::variant<std::uint16_t, std::string>{static_cast<std::uint16_t>(i + 1)}),
+                                       result.get());
+                                   ++got_responses;
+                               });
                 BOOST_CHECK_EQUAL(i, pending_requests(client));
             }
         });

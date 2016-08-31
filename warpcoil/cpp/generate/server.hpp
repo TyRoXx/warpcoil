@@ -61,17 +61,15 @@ namespace warpcoil
                     block(code, in_class,
                           [&](indentation_level const in_method)
                           {
-                              start_line(code, in_method, "requests.wait_for_request("
-                                                          "warpcoil::cpp::wrap_handler([this"
-                                                          "](boost::system::error_code ec, "
-                                                          "warpcoil::request_id const request_id, "
-                                                          "std::string const &method, "
-                                                          "Handler &handle_result)\n");
+                              start_line(code, in_method, "requests.wait_for_request(warpcoil::cpp::wrap_handler([this]"
+                                                          "(Si::error_or<std::tuple<warpcoil::request_id, "
+                                                          "std::string>> const &request, Handler &handle_result)\n");
                               block(code, in_method,
                                     [&](indentation_level const on_result)
                                     {
-                                        start_line(code, on_result,
-                                                   "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
+                                        start_line(code, on_result, "if (request.is_error()) { "
+                                                                    "std::forward<Handler>(handle_result)(request."
+                                                                    "error()); return; }\n");
                                         bool first = true;
                                         for (auto const &entry : definition.methods)
                                         {
@@ -84,7 +82,7 @@ namespace warpcoil
                                             {
                                                 append(code, "else ");
                                             }
-                                            append(code, "if (boost::range::equal(method, "
+                                            append(code, "if (boost::range::equal(std::get<1>(request.get()), "
                                                          "Si::make_c_str_range(\"");
                                             append(code, entry.first);
                                             append(code, "\")))\n");
@@ -94,8 +92,9 @@ namespace warpcoil
                                                       in_here.render(code);
                                                       append(code, "begin_receive_method_argument_of_");
                                                       append(code, entry.first);
-                                                      append(code, "(requests.lock_input(), request_id, "
-                                                                   "std::forward<Handler>(handle_result));\n");
+                                                      append(code,
+                                                             "(requests.lock_input(), std::get<0>(request.get()), "
+                                                             "std::forward<Handler>(handle_result));\n");
                                                   },
                                                   "\n");
                                         }
@@ -116,50 +115,41 @@ namespace warpcoil
                             code,
                             "(warpcoil::cpp::buffered_read_stream<AsyncReadStream> &input, warpcoil::request_id const "
                             "request_id, Handler &&handle_result)\n");
-                        block(
-                            code, in_class,
-                            [&](indentation_level const in_method)
-                            {
-                                start_line(code, in_method, "begin_parse_value(input.input, input.buffer, ");
-                                types::type const parameter_type = get_parameter_type(entry.second.parameters);
-                                generate_parser_type(code, parameter_type);
-                                append(code, "{}, "
-                                             "warpcoil::cpp::wrap_handler([this, request_id](boost::system::"
-                                             "error_code ec, ");
-                                generate_type(code, shared, parameter_type);
-                                append(code, " argument, Handler &handle_result)\n");
-                                block(
-                                    code, in_method,
-                                    [&](indentation_level const on_result)
-                                    {
-                                        start_line(code, in_method, "requests.unlock_input();\n");
-                                        start_line(code, in_method,
-                                                   "if (!!ec) { std::forward<Handler>(handle_result)(ec); return; }\n");
-                                        start_line(code, on_result, "implementation.");
-                                        append(code, entry.first);
-                                        append(code, "(");
-                                        move_arguments_out_of_tuple(code, Si::make_c_str_range("argument"),
-                                                                    entry.second.parameters.size());
-                                        append(code, "warpcoil::cpp::wrap_handler([this, request_id](boost::"
-                                                     "system::error_code ec, ");
-                                        type_emptiness const result_empty =
-                                            generate_type(code, shared, entry.second.result);
-                                        switch (result_empty)
-                                        {
-                                        case type_emptiness::empty:
-                                            break;
-
-                                        case type_emptiness::non_empty:
-                                            append(code, " result");
-                                            break;
-                                        }
-                                        append(code, ", Handler &handle_result)\n");
-                                        block(code, on_result,
+                        block(code, in_class,
+                              [&](indentation_level const in_method)
+                              {
+                                  start_line(code, in_method, "begin_parse_value(input.input, input.buffer, ");
+                                  types::type const parameter_type = get_parameter_type(entry.second.parameters);
+                                  generate_parser_type(code, parameter_type);
+                                  append(code, "{}, "
+                                               "warpcoil::cpp::wrap_handler([this, request_id](Si::error_or<");
+                                  generate_type(code, shared, parameter_type);
+                                  append(code, "> argument, Handler &handle_result)\n");
+                                  block(
+                                      code, in_method,
+                                      [&](indentation_level const on_result)
+                                      {
+                                          start_line(code, in_method, "requests.unlock_input();\n");
+                                          start_line(code, in_method, "if (argument.is_error()) { "
+                                                                      "std::forward<Handler>(handle_result)(argument."
+                                                                      "error()); return; }\n");
+                                          start_line(code, on_result, "implementation.");
+                                          append(code, entry.first);
+                                          append(code, "(");
+                                          move_arguments_out_of_tuple(code, Si::make_c_str_range("argument.get()"),
+                                                                      entry.second.parameters.size());
+                                          append(code, "warpcoil::cpp::wrap_handler([this, request_id](Si::error_or<");
+                                          type_emptiness const result_empty =
+                                              generate_type(code, shared, entry.second.result);
+                                          append(code, "> result");
+                                          append(code, ", Handler &handle_result)\n");
+                                          block(
+                                              code, on_result,
                                               [&](indentation_level const in_lambda)
                                               {
                                                   start_line(code, in_lambda,
-                                                             "if (!!ec) { "
-                                                             "std::forward<Handler>(handle_result)(ec); "
+                                                             "if (result.is_error()) { "
+                                                             "std::forward<Handler>(handle_result)(result.error()); "
                                                              "return; }\n");
                                                   start_line(code, in_lambda, "auto response_writer = "
                                                                               "Si::Sink<std::uint8_t, "
@@ -180,7 +170,7 @@ namespace warpcoil
                                                       generate_value_serialization(
                                                           code, shared, in_lambda,
                                                           Si::make_c_str_range("response_writer"),
-                                                          Si::make_c_str_range("result"), entry.second.result,
+                                                          Si::make_c_str_range("result.get()"), entry.second.result,
                                                           Si::make_c_str_range("return std::forward<Handler>(handle_"
                                                                                "result)(warpcoil::cpp::make_"
                                                                                "invalid_input_error())"));
@@ -188,9 +178,7 @@ namespace warpcoil
                                                   }
                                                   start_line(code, in_lambda,
                                                              "responses.send_buffer(warpcoil::cpp::wrap_handler([]("
-                                                             "boost::"
-                                                             "system::error_code ec, "
-                                                             "Handler &handle_result)\n");
+                                                             "boost::system::error_code ec, Handler &handle_result)\n");
                                                   block(code, in_lambda,
                                                         [&](indentation_level const in_read)
                                                         {
@@ -200,10 +188,10 @@ namespace warpcoil
                                                         ", std::forward<Handler>(handle_result)));\n");
                                               },
                                               ", std::forward<Handler>(handle_result)));\n");
-                                    },
-                                    ", std::forward<Handler>(handle_result)));\n");
-                            },
-                            "\n");
+                                      },
+                                      ", std::forward<Handler>(handle_result)));\n");
+                              },
+                              "\n");
                     }
                 },
                 ";\n\n");

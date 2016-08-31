@@ -27,20 +27,20 @@ namespace warpcoil
             template <std::size_t Index, std::size_t MethodCount, class Method, class State>
             void start_method(Method &&method, std::shared_ptr<State> const &state)
             {
-                method.start([state](boost::system::error_code ec, typename std::decay<Method>::type::result element)
+                method.start([state](Si::error_or<typename std::decay<Method>::type::result> element)
                              {
-                                 if (!ec)
+                                 if (!element.is_error())
                                  {
-                                     std::get<Index>(state->total_result) = std::move(element);
+                                     std::get<Index>(state->total_result) = std::move(element.get());
                                      ++state->completed;
                                      if (state->completed == MethodCount)
                                      {
-                                         state->handler(ec, std::move(state->total_result));
+                                         state->handler(std::move(state->total_result));
                                      }
                                  }
                                  else if (!Si::exchange(state->errored, true))
                                  {
-                                     state->handler(ec, {});
+                                     state->handler(element.error());
                                  }
                              });
             }
@@ -57,7 +57,7 @@ namespace warpcoil
             struct result_of_callback;
 
             template <class Result>
-            struct result_of_callback<std::function<void(boost::system::error_code, Result)>>
+            struct result_of_callback<std::function<void(Si::error_or<Result, boost::system::error_code>)>>
             {
                 using type = Result;
             };
@@ -127,11 +127,10 @@ BOOST_AUTO_TEST_CASE(wait_for_all_1)
     warpcoil::checkpoint got_result;
     got_result.enable();
     warpcoil::wait_for_all(
-        [&got_result](boost::system::error_code ec, std::tuple<std::string> result)
+        [&got_result](Si::error_or<std::tuple<std::string>> result)
         {
             got_result.enter();
-            BOOST_CHECK(!ec);
-            BOOST_CHECK_EQUAL("Hello123", std::get<0>(result));
+            BOOST_CHECK_EQUAL("Hello123", std::get<0>(result.get()));
         },
         warpcoil::method(server, &warpcoil::impl_test_interface::utf8, "Hello"));
 }
@@ -142,12 +141,11 @@ BOOST_AUTO_TEST_CASE(wait_for_all_2)
     warpcoil::checkpoint got_result;
     got_result.enable();
     warpcoil::wait_for_all(
-        [&got_result](boost::system::error_code ec, std::tuple<std::string, std::uint16_t> result)
+        [&got_result](Si::error_or<std::tuple<std::string, std::uint16_t>> result)
         {
             got_result.enter();
-            BOOST_CHECK(!ec);
-            BOOST_CHECK_EQUAL("Hello123", std::get<0>(result));
-            BOOST_CHECK_EQUAL(123u, std::get<1>(result));
+            BOOST_CHECK_EQUAL("Hello123", std::get<0>(result.get()));
+            BOOST_CHECK_EQUAL(123u, std::get<1>(result.get()));
         },
         warpcoil::method(server, &warpcoil::impl_test_interface::utf8, "Hello"),
         warpcoil::method(server, &warpcoil::impl_test_interface::atypical_int, static_cast<boost::uint16_t>(123)));

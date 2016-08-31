@@ -30,14 +30,13 @@ BOOST_AUTO_TEST_CASE(bidirectional_with_sockets)
                 std::make_shared<async_test_interface_server<decltype(server_impl_a), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl_a, *splitter_a,
                                                                                             *writer);
-            client_a->utf8("Y", [splitter_a, &request_answered_a, client_a, writer,
-                                 server_a](boost::system::error_code ec, std::string result)
-                           {
-                               BOOST_TEST_MESSAGE("Got answer on A");
-                               request_answered_a.enter();
-                               BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                               BOOST_CHECK_EQUAL("Y123", result);
-                           });
+            client_a->utf8(
+                "Y", [splitter_a, &request_answered_a, client_a, writer, server_a](Si::error_or<std::string> result)
+                {
+                    BOOST_TEST_MESSAGE("Got answer on A");
+                    request_answered_a.enter();
+                    BOOST_CHECK_EQUAL("Y123", result.get());
+                });
             BOOST_TEST_MESSAGE("Sent request on A");
             BOOST_CHECK_EQUAL(1u, pending_requests(*client_a));
             server_a->serve_one_request([server_a, splitter_a, writer, client_a](boost::system::error_code ec)
@@ -64,12 +63,11 @@ BOOST_AUTO_TEST_CASE(bidirectional_with_sockets)
                 std::make_shared<async_test_interface_server<decltype(server_impl_b), boost::asio::ip::tcp::socket,
                                                              boost::asio::ip::tcp::socket>>(server_impl_b, splitter_b,
                                                                                             writer);
-            client_b.utf8("X", [&request_answered_b, server_b](boost::system::error_code ec, std::string result)
+            client_b.utf8("X", [&request_answered_b, server_b](Si::error_or<std::string> result)
                           {
                               BOOST_TEST_MESSAGE("Got answer on B");
                               request_answered_b.enter();
-                              BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                              BOOST_CHECK_EQUAL("X123", result);
+                              BOOST_CHECK_EQUAL("X123", result.get());
                           });
             BOOST_TEST_MESSAGE("Sent request on B");
             BOOST_CHECK_EQUAL(1u, pending_requests(client_b));
@@ -98,13 +96,12 @@ BOOST_AUTO_TEST_CASE(bidirectional)
     auto server_a = std::make_shared<
         async_test_interface_server<decltype(server_impl_a), decltype(a_reading), decltype(a_writing)>>(
         server_impl_a, *splitter_a, *writer_a);
-    client_a->utf8("Y", [splitter_a, &request_answered_a, client_a, writer_a, server_a](boost::system::error_code ec,
-                                                                                        std::string result)
+    client_a->utf8("Y",
+                   [splitter_a, &request_answered_a, client_a, writer_a, server_a](Si::error_or<std::string> result)
                    {
                        BOOST_TEST_MESSAGE("Got answer on A");
                        request_answered_a.enter();
-                       BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                       BOOST_CHECK_EQUAL("Y123", result);
+                       BOOST_CHECK_EQUAL("Y123", result.get());
                    });
     BOOST_TEST_MESSAGE("Sent request on A");
     BOOST_CHECK_EQUAL(1u, pending_requests(*client_a));
@@ -125,12 +122,11 @@ BOOST_AUTO_TEST_CASE(bidirectional)
         auto server_b = std::make_shared<
             async_test_interface_server<decltype(server_impl_b), decltype(b_reading), decltype(b_writing)>>(
             server_impl_b, splitter_b, writer_b);
-        client_b.utf8("X", [&request_answered_b, server_b](boost::system::error_code ec, std::string result)
+        client_b.utf8("X", [&request_answered_b, server_b](Si::error_or<std::string> result)
                       {
                           BOOST_TEST_MESSAGE("Got answer on B");
                           request_answered_b.enter();
-                          BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                          BOOST_CHECK_EQUAL("X123", result);
+                          BOOST_CHECK_EQUAL("X123", result.get());
                       });
         BOOST_TEST_MESSAGE("Sent request on B");
         BOOST_CHECK_EQUAL(1u, pending_requests(client_b));
@@ -197,13 +193,12 @@ BOOST_AUTO_TEST_CASE(bidirectional_request_merged_with_response_regression_test)
     auto server_a = std::make_shared<
         async_test_interface_server<decltype(server_impl_a), decltype(a_reading), decltype(a_writing)>>(
         server_impl_a, *splitter_a, *writer_a);
-    client_a->utf8("Y", [splitter_a, &request_answered_a, client_a, writer_a, server_a](boost::system::error_code ec,
-                                                                                        std::string result)
+    client_a->utf8("Y",
+                   [splitter_a, &request_answered_a, client_a, writer_a, server_a](Si::error_or<std::string> result)
                    {
                        BOOST_TEST_MESSAGE("Got answer on A");
                        request_answered_a.enter();
-                       BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                       BOOST_CHECK_EQUAL("Y123", result);
+                       BOOST_CHECK_EQUAL("Y123", result.get());
                    });
     BOOST_TEST_MESSAGE("Sent request on A");
     BOOST_CHECK_EQUAL(1u, pending_requests(*client_a));
@@ -224,12 +219,11 @@ BOOST_AUTO_TEST_CASE(bidirectional_request_merged_with_response_regression_test)
         auto server_b = std::make_shared<
             async_test_interface_server<decltype(server_impl_b), decltype(b_reading), decltype(b_writing)>>(
             server_impl_b, splitter_b, writer_b);
-        client_b.utf8("X", [&request_answered_b, server_b](boost::system::error_code ec, std::string result)
+        client_b.utf8("X", [&request_answered_b, server_b](Si::error_or<std::string> result)
                       {
                           BOOST_TEST_MESSAGE("Got answer on B");
                           request_answered_b.enter();
-                          BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-                          BOOST_CHECK_EQUAL("X123", result);
+                          BOOST_CHECK_EQUAL("X123", result.get());
                       });
         BOOST_TEST_MESSAGE("Sent request on B");
         BOOST_CHECK_EQUAL(1u, pending_requests(client_b));

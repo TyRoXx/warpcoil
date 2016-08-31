@@ -12,18 +12,17 @@ namespace
     struct my_hello_service_a : async_benchmark_service_a
     {
         void evaluate(std::tuple<std::uint64_t, std::uint64_t> argument,
-                      std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
+                      std::function<void(Si::error_or<std::uint64_t>)> on_result) override
         {
-            on_result({}, std::get<0>(argument) * std::get<1>(argument));
+            on_result(std::get<0>(argument) * std::get<1>(argument));
         }
     };
 
     struct my_hello_service_b : async_benchmark_service_b
     {
-        void evaluate(std::string argument,
-                      std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
+        void evaluate(std::string argument, std::function<void(Si::error_or<std::uint64_t>)> on_result) override
         {
-            on_result({}, argument.size());
+            on_result(argument.size());
         }
     };
 
@@ -74,12 +73,10 @@ namespace
             [](boost::asio::io_service &io, auto &client, auto &server)
             {
                 warpcoil::checkpoint client_side;
-                client.evaluate(std::make_tuple(34, 45),
-                                [&client_side](boost::system::error_code ec, std::uint64_t result)
+                client.evaluate(std::make_tuple(34, 45), [&client_side](Si::error_or<std::uint64_t> result)
                                 {
                                     client_side.enter();
-                                    Si::throw_if_error(ec);
-                                    if (result != (34u * 45u))
+                                    if (result.get() != (34u * 45u))
                                     {
                                         boost::throw_exception(std::logic_error("wrong result"));
                                     }
@@ -123,12 +120,10 @@ namespace
             [&message_content](boost::asio::io_service &io, auto &client, auto &server)
             {
                 warpcoil::checkpoint client_side;
-                client.evaluate(message_content,
-                                [&client_side, &message_content](boost::system::error_code ec, std::uint64_t result)
+                client.evaluate(message_content, [&client_side, &message_content](Si::error_or<std::uint64_t> result)
                                 {
                                     client_side.enter();
-                                    Si::throw_if_error(ec);
-                                    if (result != message_content.size())
+                                    if (result.get() != message_content.size())
                                     {
                                         boost::throw_exception(std::logic_error("wrong result"));
                                     }

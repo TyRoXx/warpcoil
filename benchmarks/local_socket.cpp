@@ -10,9 +10,9 @@ namespace
     struct my_hello_service : async_benchmark_service_a
     {
         void evaluate(std::tuple<std::uint64_t, std::uint64_t> argument,
-                      std::function<void(boost::system::error_code, std::uint64_t)> on_result) override
+                      std::function<void(Si::error_or<std::uint64_t>)> on_result) override
         {
-            on_result({}, std::get<0>(argument) * std::get<1>(argument));
+            on_result(std::get<0>(argument) * std::get<1>(argument));
         }
     };
 
@@ -48,11 +48,10 @@ namespace
         while (state.KeepRunning())
         {
             warpcoil::checkpoint client_side;
-            client.evaluate(std::make_tuple(34, 45), [&client_side](boost::system::error_code ec, std::uint64_t result)
+            client.evaluate(std::make_tuple(34, 45), [&client_side](Si::error_or<std::uint64_t> result)
                             {
                                 client_side.enter();
-                                Si::throw_if_error(ec);
-                                if (result != (34u * 45u))
+                                if (result.get() != (34u * 45u))
                                 {
                                     boost::throw_exception(std::logic_error("wrong result"));
                                 }

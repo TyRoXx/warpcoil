@@ -55,10 +55,10 @@ namespace warpcoil
                                     start_line(code, in_method, "using handler_type = typename "
                                                                 "boost::asio::handler_type<"
                                                                 "decltype(token), "
-                                                                "void(boost::system::error_code,"
+                                                                "void(Si::error_or<"
                                                                 " ");
                                     generate_type(code, shared, entry.second.result);
-                                    append(code, ")>::type;\n");
+                                    append(code, ">)>::type;\n");
                                     start_line(code, in_method, "handler_type "
                                                                 "handler(std::forward<"
                                                                 "CompletionToken>(token));\n");
@@ -89,11 +89,7 @@ namespace warpcoil
                                               append(code, "\")));\n");
 
                                               std::string error_handling =
-                                                  "handler(warpcoil::cpp::make_invalid_input_error(), ";
-                                              generate_type(Si::make_container_sink(error_handling), shared,
-                                                            entry.second.result);
-                                              error_handling +=
-                                                  "{}); return "
+                                                  "handler(warpcoil::cpp::make_invalid_input_error()); return "
                                                   "warpcoil::cpp::client_pipeline_request_status::failure";
 
                                               for (types::parameter const &param : entry.second.parameters)

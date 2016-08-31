@@ -19,8 +19,7 @@ namespace
 {
     template <class Result>
     Result test_simple_request_response(
-        std::function<void(async_test_interface &, std::function<void(boost::system::error_code, Result)>)>
-            begin_request,
+        std::function<void(async_test_interface &, std::function<void(Si::error_or<Result>)>)> begin_request,
         std::vector<std::uint8_t> expected_request, std::vector<std::uint8_t> expected_response)
     {
         warpcoil::impl_test_interface server_impl;
@@ -53,12 +52,10 @@ namespace
         warpcoil::checkpoint response_received;
         Result returned_result;
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};
-        begin_request(type_erased_client,
-                      [&response_received, &returned_result](boost::system::error_code ec, Result result)
+        begin_request(type_erased_client, [&response_received, &returned_result](Si::error_or<Result> result)
                       {
                           response_received.enter();
-                          BOOST_REQUIRE(!ec);
-                          returned_result = std::move(result);
+                          returned_result = std::move(result.get());
                       });
 
         BOOST_REQUIRE(server_requests.respond);
@@ -104,7 +101,7 @@ namespace
 BOOST_AUTO_TEST_CASE(async_server_utf8)
 {
     std::string result = test_simple_request_response<std::string>(
-        [](async_test_interface &client, std::function<void(boost::system::error_code, std::string)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::string>)> on_result)
         {
             client.utf8("Name", on_result);
         },
@@ -116,8 +113,7 @@ BOOST_AUTO_TEST_CASE(async_server_utf8)
 BOOST_AUTO_TEST_CASE(async_server_vector)
 {
     std::vector<std::uint64_t> result = test_simple_request_response<std::vector<std::uint64_t>>(
-        [](async_test_interface &client,
-           std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::vector<std::uint64_t>>)> on_result)
         {
             client.vectors(std::vector<std::uint64_t>{3, 2, 1}, on_result);
         },
@@ -134,7 +130,7 @@ BOOST_AUTO_TEST_CASE(async_server_tuple)
     std::tuple<std::uint64_t, std::uint64_t> result =
         test_simple_request_response<std::tuple<std::uint64_t, std::uint64_t>>(
             [](async_test_interface &client,
-               std::function<void(boost::system::error_code, std::tuple<std::uint64_t, std::uint64_t>)> on_result)
+               std::function<void(Si::error_or<std::tuple<std::uint64_t, std::uint64_t>>)> on_result)
             {
                 client.two_results(123, on_result);
             },
@@ -148,7 +144,7 @@ BOOST_AUTO_TEST_CASE(async_server_tuple)
 BOOST_AUTO_TEST_CASE(async_server_tuple_empty)
 {
     std::tuple<> result = test_simple_request_response<std::tuple<>>(
-        [](async_test_interface &client, std::function<void(boost::system::error_code, std::tuple<>)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::tuple<>>)> on_result)
         {
             client.no_result_no_parameter({}, on_result);
         },
@@ -162,8 +158,7 @@ BOOST_AUTO_TEST_CASE(async_server_tuple_empty)
 BOOST_AUTO_TEST_CASE(async_server_structure)
 {
     structure_to_do_member result = test_simple_request_response<structure_to_do_member>(
-        [](async_test_interface &client,
-           std::function<void(boost::system::error_code, structure_to_do_member)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<structure_to_do_member>)> on_result)
         {
             client.structure(structure_to_do(), on_result);
         },
@@ -174,7 +169,7 @@ BOOST_AUTO_TEST_CASE(async_server_structure)
 BOOST_AUTO_TEST_CASE(async_server_multiple_parameters)
 {
     std::uint8_t const result = test_simple_request_response<std::uint8_t>(
-        [](async_test_interface &client, std::function<void(boost::system::error_code, std::uint8_t)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::uint8_t>)> on_result)
         {
             client.real_multi_parameters("abc", 123, on_result);
         },
@@ -190,7 +185,7 @@ BOOST_AUTO_TEST_CASE(async_server_variant_first)
     Si::variant<std::uint16_t, std::string> const result =
         test_simple_request_response<Si::variant<std::uint16_t, std::string>>(
             [](async_test_interface &client,
-               std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result)
+               std::function<void(Si::error_or<Si::variant<std::uint16_t, std::string>>)> on_result)
             {
                 client.variant(static_cast<std::uint32_t>(0x11223344), on_result);
             },
@@ -205,7 +200,7 @@ BOOST_AUTO_TEST_CASE(async_server_variant_second)
     Si::variant<std::uint16_t, std::string> const result =
         test_simple_request_response<Si::variant<std::uint16_t, std::string>>(
             [](async_test_interface &client,
-               std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result)
+               std::function<void(Si::error_or<Si::variant<std::uint16_t, std::string>>)> on_result)
             {
                 client.variant(std::string("abc"), on_result);
             },
@@ -219,7 +214,7 @@ BOOST_DATA_TEST_CASE(async_server_integer, boost::unit_test::data::make(std::arr
                      number)
 {
     std::uint16_t result = test_simple_request_response<std::uint16_t>(
-        [number](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
+        [number](async_test_interface &client, std::function<void(Si::error_or<std::uint16_t>)> on_result)
         {
             client.atypical_int(number, on_result);
         },

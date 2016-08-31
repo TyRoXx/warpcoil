@@ -24,7 +24,7 @@ namespace warpcoil
                     request,
                     expected_response{[handler](boost::system::error_code const error) mutable
                                       {
-                                          handler(error, typename ResultParser::result_type{});
+                                          handler(error);
                                       },
                                       [this, handler]() mutable
                                       {
@@ -86,15 +86,15 @@ namespace warpcoil
             {
                 state = response_state::parsing_header;
                 incoming.wait_for_response(wrap_handler(
-                    [this](boost::system::error_code const ec, request_id const request, DummyHandler const &)
+                    [this](Si::error_or<request_id> const request, DummyHandler const &)
                     {
                         assert(state == response_state::parsing_header);
-                        if (!!ec)
+                        if (request.is_error())
                         {
-                            on_error(ec);
+                            on_error(request.error());
                             return;
                         }
-                        auto const entry_found = expected_responses.find(request);
+                        auto const entry_found = expected_responses.find(request.get());
                         if (entry_found == expected_responses.end())
                         {
                             state = response_state::not_expecting_response;
@@ -121,12 +121,12 @@ namespace warpcoil
                 {
                 }
 
-                void operator()(boost::system::error_code ec, Result result)
+                void operator()(Si::error_or<Result> result)
                 {
                     assert(pipeline.state == response_state::parsing_result);
-                    if (!!ec)
+                    if (result.is_error())
                     {
-                        pipeline.on_error(ec);
+                        pipeline.on_error(result.error());
                         return;
                     }
                     pipeline.incoming.unlock_input();
@@ -138,7 +138,7 @@ namespace warpcoil
                     {
                         pipeline.parse_header(handler);
                     }
-                    handler(ec, std::move(result));
+                    handler(std::move(result));
                 }
 
                 template <class Function>

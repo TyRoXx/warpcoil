@@ -7,9 +7,9 @@ namespace server
 {
     struct my_hello_service : async_hello_as_a_service
     {
-        void hello(std::string argument, std::function<void(boost::system::error_code, std::string)> on_result) override
+        void hello(std::string argument, std::function<void(Si::error_or<std::string>)> on_result) override
         {
-            on_result({}, "Hello, " + argument + "!");
+            on_result("Hello, " + argument + "!");
         }
     };
 }
@@ -49,7 +49,7 @@ int main()
                            async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(writer, splitter);
                            connecting_socket.async_connect(
                                ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()), yield);
-                           std::string result = client.hello("Alice", yield);
+                           Si::error_or<std::string> result = client.hello("Alice", yield);
                            std::cout << result << '\n';
                        });
 

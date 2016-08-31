@@ -92,11 +92,10 @@ BOOST_AUTO_TEST_CASE(websocket)
                     auto client = std::make_shared<async_test_interface_client<decltype(*session), decltype(*session)>>(
                         *writer, *splitter);
                     client->utf8("Alice", [client, writer, splitter, session,
-                                           &received_response](boost::system::error_code ec, std::string result)
+                                           &received_response](Si::error_or<std::string> result)
                                  {
                                      received_response.enter();
-                                     Si::throw_if_error(ec);
-                                     BOOST_CHECK_EQUAL("Alice123", result);
+                                     BOOST_CHECK_EQUAL("Alice123", result.get());
                                  });
                 });
         });

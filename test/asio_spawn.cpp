@@ -45,18 +45,18 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
         [&io, &writer, &client, &ok2](boost::system::error_code ec)
         {
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
-            boost::asio::spawn(
-                io, [&client, &ok2](boost::asio::yield_context yield)
-                {
-                    std::vector<std::uint64_t> result = client.vectors(std::vector<std::uint64_t>{12, 34, 56}, yield);
-                    std::vector<std::uint64_t> const expected{56, 34, 12};
-                    BOOST_CHECK(expected == result);
+            boost::asio::spawn(io, [&client, &ok2](boost::asio::yield_context yield)
+                               {
+                                   Si::error_or<std::vector<std::uint64_t>> result =
+                                       client.vectors(std::vector<std::uint64_t>{12, 34, 56}, yield);
+                                   std::vector<std::uint64_t> const expected{56, 34, 12};
+                                   BOOST_CHECK(expected == result.get());
 
-                    BOOST_CHECK_EQUAL("hello123", client.utf8("hello", yield));
+                                   BOOST_CHECK_EQUAL("hello123", client.utf8("hello", yield).get());
 
-                    BOOST_REQUIRE(!ok2);
-                    ok2 = true;
-                });
+                                   BOOST_REQUIRE(!ok2);
+                                   ok2 = true;
+                               });
         });
     io.run();
     BOOST_CHECK(ok1);

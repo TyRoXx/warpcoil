@@ -60,8 +60,7 @@ namespace
 {
     template <class Result>
     void test_invalid_client_request(
-        std::function<void(async_test_interface &, std::function<void(boost::system::error_code, Result)>)>
-            begin_request)
+        std::function<void(async_test_interface &, std::function<void(Si::error_or<Result>)>)> begin_request)
     {
         warpcoil::async_write_stream client_requests;
         warpcoil::async_read_stream client_responses;
@@ -73,10 +72,9 @@ namespace
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};
         warpcoil::checkpoint request_rejected;
         request_rejected.enable();
-        begin_request(type_erased_client, [&request_rejected](boost::system::error_code ec, Result result)
+        begin_request(type_erased_client, [&request_rejected](Si::error_or<Result> result)
                       {
-                          BOOST_REQUIRE_EQUAL(warpcoil::cpp::make_invalid_input_error(), ec);
-                          Si::ignore_unused_variable_warning(result);
+                          BOOST_REQUIRE_EQUAL(warpcoil::cpp::make_invalid_input_error(), result.error());
                           request_rejected.enter();
                       });
         request_rejected.require_crossed();
@@ -88,7 +86,7 @@ namespace
 BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_request)
 {
     test_invalid_client_request<std::string>(
-        [](async_test_interface &client, std::function<void(boost::system::error_code, std::string)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::string>)> on_result)
         {
             client.utf8("Name\xff", on_result);
         });
@@ -97,7 +95,7 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_request)
 BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_length_request)
 {
     test_invalid_client_request<std::string>(
-        [](async_test_interface &client, std::function<void(boost::system::error_code, std::string)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::string>)> on_result)
         {
             client.utf8(std::string(256, 'a'), on_result);
         });
@@ -106,8 +104,7 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_length_request)
 BOOST_AUTO_TEST_CASE(async_client_invalid_vector_length_request)
 {
     test_invalid_client_request<std::vector<std::uint64_t>>(
-        [](async_test_interface &client,
-           std::function<void(boost::system::error_code, std::vector<std::uint64_t>)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::vector<std::uint64_t>>)> on_result)
         {
             client.vectors_256(std::vector<std::uint64_t>(256), on_result);
         });
@@ -116,7 +113,7 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_vector_length_request)
 BOOST_AUTO_TEST_CASE(async_client_invalid_int_request_too_small)
 {
     test_invalid_client_request<std::uint16_t>(
-        [](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::uint16_t>)> on_result)
         {
             client.atypical_int(0, on_result);
         });
@@ -125,7 +122,7 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_int_request_too_small)
 BOOST_AUTO_TEST_CASE(async_client_invalid_int_request_too_large)
 {
     test_invalid_client_request<std::uint16_t>(
-        [](async_test_interface &client, std::function<void(boost::system::error_code, std::uint16_t)> on_result)
+        [](async_test_interface &client, std::function<void(Si::error_or<std::uint16_t>)> on_result)
         {
             client.atypical_int(1001, on_result);
         });
@@ -135,7 +132,7 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_variant_element_request)
 {
     test_invalid_client_request<Si::variant<std::uint16_t, std::string>>(
         [](async_test_interface &client,
-           std::function<void(boost::system::error_code, Si::variant<std::uint16_t, std::string>)> on_result)
+           std::function<void(Si::error_or<Si::variant<std::uint16_t, std::string>>)> on_result)
         {
             client.variant(std::string("Name\xff"), on_result);
         });
