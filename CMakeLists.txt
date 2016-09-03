@@ -125,3 +125,5 @@ endif()
 if(WARPCOIL_USE_CLANG_FORMAT)
 	add_custom_target(clang-format COMMAND ${WARPCOIL_CLANG_FORMAT} -i ${formatted} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
+
+add_custom_target(conan-install COMMAND conan install ${CMAKE_SOURCE_DIR} --build=missing WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
