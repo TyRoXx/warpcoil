@@ -271,6 +271,7 @@ int main()
         catch (std::exception const &ex)
         {
             std::cerr << "Exception: " << ex.what() << '\n';
+            io.reset();
         }
     }
 }
