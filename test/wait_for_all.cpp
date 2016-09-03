@@ -1,4 +1,3 @@
-#include "generated.hpp"
 #include "impl_test_interface.hpp"
 #include "checkpoint.hpp"
 #include <boost/mpl/back.hpp>

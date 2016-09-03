@@ -1,5 +1,7 @@
 #pragma once
 
+#include "generated.hpp"
+
 namespace warpcoil
 {
     struct impl_test_interface : async_test_interface
