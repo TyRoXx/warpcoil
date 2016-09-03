@@ -90,7 +90,7 @@ namespace
     {
         boost::asio::ip::tcp::socket socket;
         beast::streambuf receive_buffer;
-        beast::http::request_v1<beast::http::empty_body> request;
+        beast::http::request_v1<beast::http::string_body> request;
 
         explicit http_client(boost::asio::ip::tcp::socket socket, beast::streambuf receive_buffer)
             : socket(std::move(socket))
