@@ -2,8 +2,9 @@
 
 #include <warpcoil/block.hpp>
 #include <warpcoil/types.hpp>
+#include <warpcoil/comma_separator.hpp>
 #include <boost/lexical_cast.hpp>
-#include "cpp/generate/basics.hpp"
+#include <silicium/sink/ptr_sink.hpp>
 
 namespace warpcoil
 {
@@ -670,7 +671,7 @@ namespace warpcoil
                                                 start_line(code, in_function, "state = initial_state;\n");
                                                 start_line(code, in_function, "server_implementation.", method.first,
                                                            "(");
-                                                auto comma = cpp::make_comma_separator(Si::ref_sink(code));
+                                                auto comma = warpcoil::make_comma_separator(Si::ref_sink(code));
                                                 for (size_t i = 0; i < method.second.parameters.size(); ++i)
                                                 {
                                                     comma.add_element();

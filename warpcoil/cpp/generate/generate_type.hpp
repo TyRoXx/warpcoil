@@ -1,7 +1,7 @@
 #pragma once
 
 #include <warpcoil/cpp/generate/shared_code_generator.hpp>
-#include <warpcoil/cpp/generate/comma_separator.hpp>
+#include <warpcoil/comma_separator.hpp>
 #include <warpcoil/cpp/generate/generate_name_for_structure.hpp>
 #include <silicium/sink/ptr_sink.hpp>
 
@@ -15,18 +15,15 @@ namespace warpcoil
             {
                 return Si::make_c_str_range("std::uint8_t");
             }
-            else if (range.maximum <= 0xffffu)
+            if (range.maximum <= 0xffffu)
             {
                 return Si::make_c_str_range("std::uint16_t");
             }
-            else if (range.maximum <= 0xffffffffu)
+            if (range.maximum <= 0xffffffffu)
             {
                 return Si::make_c_str_range("std::uint32_t");
             }
-            else
-            {
-                return Si::make_c_str_range("std::uint64_t");
-            }
+            return Si::make_c_str_range("std::uint64_t");
         }
 
         template <class CharSink1, class CharSink2>
@@ -86,29 +83,6 @@ namespace warpcoil
                     generate_name_for_structure(code, *root);
                     return (root->elements.empty() ? type_emptiness::empty : type_emptiness::non_empty);
                 });
-        }
-
-        template <class CharSink1, class CharSink2>
-        type_emptiness generate_parameters(CharSink1 &&code, shared_code_generator<CharSink2> &shared,
-                                           std::vector<types::parameter> const &parameters)
-        {
-            type_emptiness total_emptiness = type_emptiness::empty;
-            for (types::parameter const &param : parameters)
-            {
-                switch (generate_type(code, shared, param.type_))
-                {
-                case type_emptiness::empty:
-                    break;
-
-                case type_emptiness::non_empty:
-                    total_emptiness = type_emptiness::non_empty;
-                    break;
-                }
-                Si::append(code, " ");
-                Si::append(code, param.name);
-                Si::append(code, ", ");
-            }
-            return total_emptiness;
         }
     }
 }

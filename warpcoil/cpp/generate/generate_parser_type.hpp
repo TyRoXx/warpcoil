@@ -1,6 +1,6 @@
 #pragma once
 
-#include <warpcoil/cpp/generate/basics.hpp>
+#include <warpcoil/cpp/generate/generate_name_for_structure.hpp>
 
 namespace warpcoil
 {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <warpcoil/cpp/generate/interface.hpp>
-#include <warpcoil/cpp/generate/eraser.hpp>
-#include <warpcoil/cpp/generate/client.hpp>
-#include <warpcoil/cpp/generate/server.hpp>
+#include <warpcoil/cpp/generate/generate_interface.hpp>
+#include <warpcoil/cpp/generate/generate_type_eraser.hpp>
+#include <warpcoil/cpp/generate/generate_serialization_server.hpp>
+#include <warpcoil/cpp/generate/generate_serialization_client.hpp>
 
 namespace warpcoil
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <warpcoil/block.hpp>
-#include <warpcoil/cpp/generate/basics.hpp>
+#include <warpcoil/cpp/generate/shared_code_generator.hpp>
 
 namespace warpcoil
 {

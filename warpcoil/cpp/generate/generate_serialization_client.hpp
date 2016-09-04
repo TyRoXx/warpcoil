@@ -1,7 +1,7 @@
 #pragma once
 
-#include <warpcoil/cpp/generate/parser.hpp>
-#include <warpcoil/cpp/generate/serialization.hpp>
+#include <warpcoil/cpp/generate/generate_parameters.hpp>
+#include <warpcoil/cpp/generate/generate_value_serialization.hpp>
 
 namespace warpcoil
 {

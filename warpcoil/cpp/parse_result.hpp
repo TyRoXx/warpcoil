@@ -1,8 +1,7 @@
 #pragma once
 
-#include <boost/system/error_code.hpp>
+#include <warpcoil/cpp/invalid_input_error.hpp>
 #include <silicium/variant.hpp>
-#include <silicium/optional.hpp>
 
 namespace warpcoil
 {
@@ -24,29 +23,6 @@ namespace warpcoil
         struct need_more_input
         {
         };
-
-        struct invalid_input
-        {
-        };
-
-        struct invalid_input_error_category : boost::system::error_category
-        {
-            const char *name() const BOOST_SYSTEM_NOEXCEPT override
-            {
-                return "invalid_input";
-            }
-
-            std::string message(int) const override
-            {
-                return "invalid input";
-            }
-        };
-
-        inline boost::system::error_code make_invalid_input_error()
-        {
-            static invalid_input_error_category const category;
-            return boost::system::error_code(1, category);
-        }
 
         template <class T>
         using parse_result = Si::variant<parse_complete<T>, need_more_input, invalid_input>;
