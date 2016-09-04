@@ -5,8 +5,8 @@
 
 BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_single)
 {
-    warpcoil::async_read_stream stream;
-    warpcoil::cpp::message_splitter<warpcoil::async_read_stream> splitter(stream);
+    warpcoil::async_read_dummy_stream stream;
+    warpcoil::cpp::message_splitter<warpcoil::async_read_dummy_stream> splitter(stream);
     BOOST_REQUIRE(!stream.respond);
     warpcoil::checkpoint got_request;
     splitter.wait_for_request([&got_request](Si::error_or<std::tuple<warpcoil::request_id, std::string>> const request)
@@ -25,8 +25,8 @@ BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_single)
 
 BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_and_response)
 {
-    warpcoil::async_read_stream stream;
-    warpcoil::cpp::message_splitter<warpcoil::async_read_stream> splitter(stream);
+    warpcoil::async_read_dummy_stream stream;
+    warpcoil::cpp::message_splitter<warpcoil::async_read_dummy_stream> splitter(stream);
     BOOST_REQUIRE(!stream.respond);
     warpcoil::checkpoint got_request;
     splitter.wait_for_request([&got_request](Si::error_or<std::tuple<warpcoil::request_id, std::string>> const request)
@@ -54,8 +54,8 @@ BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_and_response)
 
 BOOST_AUTO_TEST_CASE(message_splitter_wait_for_request_and_response_single_bytes)
 {
-    warpcoil::async_read_stream stream;
-    warpcoil::cpp::message_splitter<warpcoil::async_read_stream> splitter(stream);
+    warpcoil::async_read_dummy_stream stream;
+    warpcoil::cpp::message_splitter<warpcoil::async_read_dummy_stream> splitter(stream);
     BOOST_REQUIRE(!stream.respond);
     warpcoil::checkpoint got_request;
     splitter.wait_for_request([&got_request](Si::error_or<std::tuple<warpcoil::request_id, std::string>> const request)

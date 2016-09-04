@@ -5,10 +5,12 @@
 #include <boost/asio/async_result.hpp>
 #include <silicium/memory_range.hpp>
 #include <silicium/error_or.hpp>
+#include <boost/asio/io_service.hpp>
+#include <beast/websocket/teardown.hpp>
 
 namespace warpcoil
 {
-    struct async_write_stream
+    struct async_write_dummy_stream
     {
         std::vector<std::vector<std::uint8_t>> written;
         std::function<void(boost::system::error_code, std::size_t)> handle_result;
@@ -31,7 +33,7 @@ namespace warpcoil
         }
     };
 
-    struct async_read_stream
+    struct async_read_dummy_stream
     {
         std::function<void(Si::error_or<Si::memory_range>)> respond;
 
@@ -60,4 +62,35 @@ namespace warpcoil
             return result.get();
         }
     };
+
+    struct async_read_write_dummy_stream : async_write_dummy_stream, async_read_dummy_stream
+    {
+        boost::asio::io_service &io;
+
+        explicit async_read_write_dummy_stream(boost::asio::io_service &io)
+            : io(io)
+        {
+        }
+
+        boost::asio::io_service &get_io_service() const
+        {
+            return io;
+        }
+    };
+}
+
+namespace beast
+{
+    namespace websocket
+    {
+        template <class TeardownHandler>
+        void async_teardown(beast::websocket::teardown_tag, warpcoil::async_read_write_dummy_stream &stream,
+                            TeardownHandler &&handler)
+        {
+            stream.get_io_service().post([handler = std::forward<TeardownHandler>(handler)]() mutable
+                                         {
+                                             std::forward<TeardownHandler>(handler)(boost::system::error_code());
+                                         });
+        }
+    }
 }

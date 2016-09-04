@@ -5,7 +5,7 @@
 
 BOOST_AUTO_TEST_CASE(begin_parse_value_exact)
 {
-    warpcoil::async_read_stream stream;
+    warpcoil::async_read_dummy_stream stream;
     beast::streambuf buffer;
     warpcoil::checkpoint parse_completed;
     warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_exact)
 
 BOOST_AUTO_TEST_CASE(begin_parse_value_empty_tuple)
 {
-    warpcoil::async_read_stream stream;
+    warpcoil::async_read_dummy_stream stream;
     beast::streambuf buffer;
     warpcoil::checkpoint parse_completed;
     parse_completed.enable();
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_empty_tuple)
 
 BOOST_AUTO_TEST_CASE(begin_parse_value_excess)
 {
-    warpcoil::async_read_stream stream;
+    warpcoil::async_read_dummy_stream stream;
     beast::streambuf buffer;
     {
         warpcoil::checkpoint parse_completed;
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_excess)
 
 BOOST_AUTO_TEST_CASE(begin_parse_value_immediate_completion)
 {
-    warpcoil::async_read_stream stream;
+    warpcoil::async_read_dummy_stream stream;
     ::beast::streambuf buffer;
     {
         std::array<std::uint8_t, 8> const initial_content = {{0xab, 0xcd, 0xef, 0x12, 0x99, 0x88, 0x77, 0x66}};

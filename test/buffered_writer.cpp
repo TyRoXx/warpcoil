@@ -7,8 +7,8 @@
 
 BOOST_AUTO_TEST_CASE(buffered_writer_single_send)
 {
-    warpcoil::async_write_stream stream;
-    warpcoil::cpp::buffered_writer<warpcoil::async_write_stream> buffered(stream);
+    warpcoil::async_write_dummy_stream stream;
+    warpcoil::cpp::buffered_writer<warpcoil::async_write_dummy_stream> buffered(stream);
     BOOST_REQUIRE(!stream.handle_result);
     BOOST_REQUIRE(!stream.handle_result);
     {
@@ -34,8 +34,8 @@ BOOST_AUTO_TEST_CASE(buffered_writer_single_send)
 
 BOOST_AUTO_TEST_CASE(buffered_writer_buffer_during_send)
 {
-    warpcoil::async_write_stream stream;
-    warpcoil::cpp::buffered_writer<warpcoil::async_write_stream> buffered(stream);
+    warpcoil::async_write_dummy_stream stream;
+    warpcoil::cpp::buffered_writer<warpcoil::async_write_dummy_stream> buffered(stream);
     BOOST_REQUIRE(!stream.handle_result);
     BOOST_REQUIRE(!stream.handle_result);
     {
@@ -80,8 +80,8 @@ BOOST_AUTO_TEST_CASE(buffered_writer_buffer_during_send)
 
 BOOST_AUTO_TEST_CASE(buffered_writer_long_queue)
 {
-    warpcoil::async_write_stream stream;
-    warpcoil::cpp::buffered_writer<warpcoil::async_write_stream> buffered(stream);
+    warpcoil::async_write_dummy_stream stream;
+    warpcoil::cpp::buffered_writer<warpcoil::async_write_dummy_stream> buffered(stream);
     BOOST_REQUIRE(!stream.handle_result);
     BOOST_REQUIRE(!stream.handle_result);
     std::vector<std::uint8_t> expected;
@@ -114,8 +114,8 @@ BOOST_AUTO_TEST_CASE(buffered_writer_long_queue)
 
 BOOST_AUTO_TEST_CASE(buffered_writer_extend_queue)
 {
-    warpcoil::async_write_stream stream;
-    warpcoil::cpp::buffered_writer<warpcoil::async_write_stream> buffered(stream);
+    warpcoil::async_write_dummy_stream stream;
+    warpcoil::cpp::buffered_writer<warpcoil::async_write_dummy_stream> buffered(stream);
     BOOST_TEST_REQUIRE(!stream.handle_result);
     BOOST_TEST_REQUIRE(!stream.handle_result);
     {

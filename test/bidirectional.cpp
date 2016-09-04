@@ -84,8 +84,8 @@ BOOST_AUTO_TEST_CASE(bidirectional_with_sockets)
 
 BOOST_AUTO_TEST_CASE(bidirectional)
 {
-    warpcoil::async_read_stream a_reading;
-    warpcoil::async_write_stream a_writing;
+    warpcoil::async_read_dummy_stream a_reading;
+    warpcoil::async_write_dummy_stream a_writing;
     warpcoil::impl_test_interface server_impl_a;
     warpcoil::checkpoint request_answered_a;
     warpcoil::checkpoint request_answered_b;
@@ -111,8 +111,8 @@ BOOST_AUTO_TEST_CASE(bidirectional)
                                     BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
                                 });
     request_answered_b.enable();
-    warpcoil::async_read_stream b_reading;
-    warpcoil::async_write_stream b_writing;
+    warpcoil::async_read_dummy_stream b_reading;
+    warpcoil::async_write_dummy_stream b_writing;
     warpcoil::cpp::message_splitter<decltype(b_reading)> splitter_b(b_reading);
     warpcoil::impl_test_interface server_impl_b;
     warpcoil::cpp::buffered_writer<decltype(b_writing)> writer_b(b_writing);
@@ -181,8 +181,8 @@ BOOST_AUTO_TEST_CASE(bidirectional)
 
 BOOST_AUTO_TEST_CASE(bidirectional_request_merged_with_response_regression_test)
 {
-    warpcoil::async_read_stream a_reading;
-    warpcoil::async_write_stream a_writing;
+    warpcoil::async_read_dummy_stream a_reading;
+    warpcoil::async_write_dummy_stream a_writing;
     warpcoil::impl_test_interface server_impl_a;
     warpcoil::checkpoint request_answered_a;
     warpcoil::checkpoint request_answered_b;
@@ -208,8 +208,8 @@ BOOST_AUTO_TEST_CASE(bidirectional_request_merged_with_response_regression_test)
                                     BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
                                 });
     request_answered_b.enable();
-    warpcoil::async_read_stream b_reading;
-    warpcoil::async_write_stream b_writing;
+    warpcoil::async_read_dummy_stream b_reading;
+    warpcoil::async_write_dummy_stream b_writing;
     warpcoil::cpp::message_splitter<decltype(b_reading)> splitter_b(b_reading);
     warpcoil::impl_test_interface server_impl_b;
     warpcoil::cpp::buffered_writer<decltype(b_writing)> writer_b(b_writing);

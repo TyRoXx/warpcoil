@@ -11,12 +11,12 @@ namespace
     void test_invalid_server_request(std::vector<std::uint8_t> expected_request)
     {
         warpcoil::failing_test_interface server_impl;
-        warpcoil::async_read_stream server_requests;
-        warpcoil::async_write_stream server_responses;
+        warpcoil::async_read_dummy_stream server_requests;
+        warpcoil::async_write_dummy_stream server_responses;
         warpcoil::cpp::message_splitter<decltype(server_requests)> splitter(server_requests);
         warpcoil::cpp::buffered_writer<decltype(server_responses)> writer(server_responses);
-        async_test_interface_server<decltype(server_impl), warpcoil::async_read_stream, warpcoil::async_write_stream>
-            server(server_impl, splitter, writer);
+        async_test_interface_server<decltype(server_impl), warpcoil::async_read_dummy_stream,
+                                    warpcoil::async_write_dummy_stream> server(server_impl, splitter, writer);
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
         warpcoil::checkpoint request_served;
@@ -62,11 +62,12 @@ namespace
     void test_invalid_client_request(
         std::function<void(async_test_interface &, std::function<void(Si::error_or<Result>)>)> begin_request)
     {
-        warpcoil::async_write_stream client_requests;
-        warpcoil::async_read_stream client_responses;
+        warpcoil::async_write_dummy_stream client_requests;
+        warpcoil::async_read_dummy_stream client_responses;
         warpcoil::cpp::message_splitter<decltype(client_responses)> splitter(client_responses);
         warpcoil::cpp::buffered_writer<decltype(client_requests)> writer(client_requests);
-        async_test_interface_client<warpcoil::async_write_stream, warpcoil::async_read_stream> client(writer, splitter);
+        async_test_interface_client<warpcoil::async_write_dummy_stream, warpcoil::async_read_dummy_stream> client(
+            writer, splitter);
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};

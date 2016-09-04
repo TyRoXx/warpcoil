@@ -23,12 +23,13 @@ namespace
         std::vector<std::uint8_t> expected_request, std::vector<std::uint8_t> expected_response)
     {
         warpcoil::impl_test_interface server_impl;
-        warpcoil::async_read_stream server_requests;
-        warpcoil::async_write_stream server_responses;
+        warpcoil::async_read_dummy_stream server_requests;
+        warpcoil::async_write_dummy_stream server_responses;
         warpcoil::cpp::message_splitter<decltype(server_requests)> server_splitter(server_requests);
         warpcoil::cpp::buffered_writer<decltype(server_responses)> server_writer(server_responses);
-        async_test_interface_server<decltype(server_impl), warpcoil::async_read_stream, warpcoil::async_write_stream>
-            server(server_impl, server_splitter, server_writer);
+        async_test_interface_server<decltype(server_impl), warpcoil::async_read_dummy_stream,
+                                    warpcoil::async_write_dummy_stream> server(server_impl, server_splitter,
+                                                                               server_writer);
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
         warpcoil::checkpoint request_served;
@@ -40,12 +41,12 @@ namespace
         BOOST_REQUIRE(server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
 
-        warpcoil::async_write_stream client_requests;
-        warpcoil::async_read_stream client_responses;
+        warpcoil::async_write_dummy_stream client_requests;
+        warpcoil::async_read_dummy_stream client_responses;
         warpcoil::cpp::message_splitter<decltype(client_responses)> client_splitter(client_responses);
         warpcoil::cpp::buffered_writer<decltype(client_requests)> client_writer(client_requests);
-        async_test_interface_client<warpcoil::async_write_stream, warpcoil::async_read_stream> client(client_writer,
-                                                                                                      client_splitter);
+        async_test_interface_client<warpcoil::async_write_dummy_stream, warpcoil::async_read_dummy_stream> client(
+            client_writer, client_splitter);
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
 
