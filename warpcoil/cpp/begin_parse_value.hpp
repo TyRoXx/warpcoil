@@ -5,6 +5,7 @@
 #include <boost/system/error_code.hpp>
 #include <warpcoil/cpp/parse_result.hpp>
 #include <beast/core/streambuf.hpp>
+#include <silicium/optional.hpp>
 
 namespace warpcoil
 {
