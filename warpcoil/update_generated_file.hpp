@@ -15,7 +15,7 @@ namespace warpcoil
                                {
                                    if (boost::range::equal(old_content, new_content))
                                    {
-                                       log << file << ": Generated file does not change\n";
+                                       log << file << " Generated file does not change\n";
                                        return true;
                                    }
 
@@ -81,7 +81,7 @@ namespace warpcoil
                 log << file << ": Command line argument for the clang-format config directory missing\n";
                 return 1;
             }
-            log << file << ": Formatting the code (originally " << code.size() << " bytes)\n";
+            log << file << " Formatting the code (originally " << code.size() << " bytes)\n";
             auto formatted_code_writer = Si::Sink<char, Si::success>::erase(Si::make_container_sink(formatted_code));
             ventura::process_parameters parameters;
             parameters.executable = *clang_format;
