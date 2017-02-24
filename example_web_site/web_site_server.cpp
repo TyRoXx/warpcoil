@@ -77,7 +77,7 @@ namespace
     {
         boost::asio::ip::tcp::socket socket;
         beast::streambuf receive_buffer;
-        beast::http::response_v1<beast::http::string_body> response;
+        beast::http::response<beast::http::string_body> response;
 
         explicit file_client(boost::asio::ip::tcp::socket socket, beast::streambuf receive_buffer)
             : socket(std::move(socket))
@@ -90,7 +90,7 @@ namespace
     {
         boost::asio::ip::tcp::socket socket;
         beast::streambuf receive_buffer;
-        beast::http::request_v1<beast::http::string_body> request;
+        beast::http::request<beast::http::string_body> request;
 
         explicit http_client(boost::asio::ip::tcp::socket socket, beast::streambuf receive_buffer)
             : socket(std::move(socket))
@@ -107,9 +107,9 @@ namespace
                                  boost::string_ref const content_type)
     {
         client->response.version = 11;
-        client->response.headers.insert("Content-Length",
-                                        boost::lexical_cast<std::string>(client->response.body.size()));
-        client->response.headers.insert("Content-Type", content_type);
+        client->response.fields.insert("Content-Length",
+                                       boost::lexical_cast<std::string>(client->response.body.size()));
+        client->response.fields.insert("Content-Type", content_type);
         beast::http::async_write(client->socket, client->response, [client, is_keep_alive, &server_impl,
                                                                     document_root](boost::system::error_code const ec)
                                  {
