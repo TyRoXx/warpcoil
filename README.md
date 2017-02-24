@@ -24,6 +24,10 @@
 # dependencies
 
 ## C++
+Supported compilers:
+* Visual C++ 2015
+* GCC 4.9
+
 Install the required C++ libraries with the Conan package manager (https://conan.io).
 
 ## clang-format
