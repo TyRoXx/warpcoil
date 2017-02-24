@@ -10,7 +10,7 @@ namespace warpcoil
 {
     namespace javascript
     {
-        size_t find_number_of_bytes_required(std::uint64_t const maximum)
+        inline size_t find_number_of_bytes_required(std::uint64_t const maximum)
         {
             if (maximum < 0x100)
             {
