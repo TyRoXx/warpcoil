@@ -20,7 +20,7 @@ env:
  - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Debug   CONAN="-s compiler.version=4.9 -s build_type=Debug"   COVERAGE=YES
 
 install:
- - wget https://s3-eu-west-1.amazonaws.com/conanio-production/downloads/conan-ubuntu-64_0_12_0.deb -O conan.deb || exit 1
+ - wget https://github.com/conan-io/conan/releases/download/0.19.2/conan-ubuntu-64_0_19_2.deb -O conan.deb || exit 1
  - sudo dpkg -i conan.deb || exit 1
  - rm conan.deb || exit 1
  - conan --version
