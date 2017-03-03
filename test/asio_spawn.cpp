@@ -215,3 +215,155 @@ BOOST_AUTO_TEST_CASE(pipe_write_buffering)
     io.run();
     BOOST_TEST(ok);
 }
+
+namespace warpcoil
+{
+    constexpr struct use_future_type
+    {
+    } use_future;
+
+    namespace detail
+    {
+        template <class Result>
+        struct future_handler
+        {
+            std::shared_ptr<Si::variant<Si::unit, std::function<void(Result)>, Result>> state;
+
+            explicit future_handler(use_future_type)
+                : state(std::make_shared<Si::variant<Si::unit, std::function<void(Result)>, Result>>())
+            {
+            }
+
+            void operator()(Result result)
+            {
+                Si::visit<void>(*state,
+                                [this, &result](Si::unit)
+                                {
+                                    *state = std::move(result);
+                                },
+                                [&result](std::function<void(Result)> &handler)
+                                {
+                                    handler(std::move(result));
+                                },
+                                [](Result &)
+                                {
+                                    SILICIUM_UNREACHABLE();
+                                });
+            }
+        };
+    }
+
+    template <class Result>
+    struct future
+    {
+        explicit future(std::function<void(std::function<void(Result)>)> wait)
+            : _wait(std::move(wait))
+        {
+        }
+
+        template <class CompletionToken>
+        auto async_wait(CompletionToken &&token)
+        {
+            using handler_type = typename boost::asio::handler_type<decltype(token), void(Result)>::type;
+            handler_type handler(std::forward<CompletionToken>(token));
+            boost::asio::async_result<handler_type> result(handler);
+            _wait(std::move(handler));
+            return result.get();
+        }
+
+    private:
+        std::function<void(std::function<void(Result)>)> _wait;
+    };
+}
+
+namespace boost
+{
+    namespace asio
+    {
+        template <class Result>
+        struct async_result<warpcoil::detail::future_handler<Result>>
+        {
+            explicit async_result(warpcoil::detail::future_handler<Result> const &handler)
+                : _handler(handler)
+            {
+                assert(_handler.state);
+            }
+
+            warpcoil::future<Result> get()
+            {
+                assert(_handler.state);
+                return warpcoil::future<Result>([state = std::move(_handler.state)](
+                    std::function<void(Result)> handle_result)
+                                                {
+                                                    Si::visit<void>(*state,
+                                                                    [&state, &handle_result](Si::unit)
+                                                                    {
+                                                                        *state = std::move(handle_result);
+                                                                    },
+                                                                    [](std::function<void(Result)> &)
+                                                                    {
+                                                                        SILICIUM_UNREACHABLE();
+                                                                    },
+                                                                    [&handle_result](Result &result)
+                                                                    {
+                                                                        handle_result(std::move(result));
+                                                                    });
+                                                });
+            }
+
+        private:
+            warpcoil::detail::future_handler<Result> _handler;
+        };
+
+        template <class Result>
+        struct handler_type<warpcoil::use_future_type, void(Result)>
+        {
+            using type = warpcoil::detail::future_handler<Result>;
+        };
+    }
+}
+
+BOOST_AUTO_TEST_CASE(asio_spawn_future)
+{
+    size_t const copying = 5;
+    for (size_t buffer_size = 1; buffer_size <= (copying + 1); ++buffer_size)
+    {
+        boost::asio::io_service io;
+        pipe transfer(io, buffer_size);
+        boost::uint8_t const element = 23;
+
+        // produce
+        boost::asio::spawn(io, [&](boost::asio::yield_context yield)
+                           {
+                               size_t i = 0;
+                               for (; i < copying; ++i)
+                               {
+                                   warpcoil::future<Si::error_or<std::tuple<>>> writing =
+                                       transfer.write(std::vector<boost::uint8_t>(1, element), warpcoil::use_future);
+                                   writing.async_wait(yield);
+                               }
+                               BOOST_TEST(copying == i);
+                           });
+
+        bool ok = false;
+        // consume
+        boost::asio::spawn(io, [&](boost::asio::yield_context yield)
+                           {
+                               size_t i = 0;
+                               for (; i < copying;)
+                               {
+                                   warpcoil::future<Si::error_or<std::vector<boost::uint8_t>>> reading =
+                                       transfer.read(warpcoil::use_future);
+                                   std::vector<boost::uint8_t> received = reading.async_wait(yield).get();
+                                   BOOST_TEST(boost::algorithm::all_of_equal(received, element));
+                                   i += received.size();
+                               }
+                               BOOST_TEST(copying == i);
+                               ok = true;
+                           });
+
+        BOOST_TEST(!ok);
+        io.run();
+        BOOST_TEST(ok);
+    }
+}
