@@ -4,7 +4,7 @@ platform:
 
 install:
   - cmd: echo "Downloading conan..."
-  - ps: wget https://github.com/conan-io/conan/releases/download/0.19.2/conan-win_0_19_2.exe -OutFile conan_installer.exe
+  - ps: wget https://github.com/conan-io/conan/releases/download/0.20.2/conan-win_0_20_2.exe -OutFile conan_installer.exe
   - cmd: conan_installer.exe /VERYSILENT
   - cmd: set PATH=%PATH%;C:\Program Files (x86)\Conan\conan
   - cmd: conan --version
