@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
     BOOST_CHECK(ok2);
 }
 
-namespace
+namespace warpcoil
 {
     struct pipe
     {
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(asio_spawn_concurrency)
     for (size_t buffer_size = 1; buffer_size <= (copying + 1); ++buffer_size)
     {
         boost::asio::io_service io;
-        pipe transfer(io, buffer_size);
+        warpcoil::pipe transfer(io, buffer_size);
         boost::uint8_t const element = 23;
 
         // produce
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(asio_spawn_concurrency)
 BOOST_AUTO_TEST_CASE(pipe_write_buffering)
 {
     boost::asio::io_service io;
-    pipe transfer(io, 3);
+    warpcoil::pipe transfer(io, 3);
     boost::uint8_t const element = 23;
 
     bool ok = false;
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(asio_spawn_future)
     for (size_t buffer_size = 1; buffer_size <= (copying + 1); ++buffer_size)
     {
         boost::asio::io_service io;
-        pipe transfer(io, buffer_size);
+        warpcoil::pipe transfer(io, buffer_size);
         boost::uint8_t const element = 23;
 
         // produce
