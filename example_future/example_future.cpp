@@ -21,31 +21,32 @@ namespace
                         asio::yield_context yield)
     {
         using warpcoil::future;
+        using warpcoil::then;
+        using warpcoil::when_all;
 
         asio::ip::tcp::socket socket(io, asio::ip::tcp::v4());
 
         asio::steady_timer timeout(io);
         timeout.expires_from_now(std::chrono::seconds(2));
 
-        warpcoil::when_all(timeout.async_wait(warpcoil::then([&](boost::system::error_code)
-                                                             {
-                                                                 socket.cancel();
-                                                             })),
-                           socket.async_connect(
-                               server, warpcoil::then([&](boost::system::error_code ec)
-                                                      {
-                                                          timeout.cancel();
-                                                          if (!!ec)
-                                                          {
-                                                              std::cerr << server
-                                                                        << " Failed with error "
-                                                                        << ec << '\n';
-                                                          }
-                                                          else
-                                                          {
-                                                              std::cerr << server << " Succeeded\n";
-                                                          }
-                                                      })))
+        when_all(timeout.async_wait(then([&](boost::system::error_code)
+                                         {
+                                             socket.cancel();
+                                         })),
+                 socket.async_connect(server, then([&](boost::system::error_code ec)
+                                                   {
+                                                       timeout.cancel();
+                                                       if (!!ec)
+                                                       {
+                                                           std::cerr << server
+                                                                     << " Failed with error " << ec
+                                                                     << '\n';
+                                                       }
+                                                       else
+                                                       {
+                                                           std::cerr << server << " Succeeded\n";
+                                                       }
+                                                   })))
             .async_wait(yield);
     }
 }
