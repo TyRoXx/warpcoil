@@ -14,8 +14,8 @@ namespace warpcoil
         template <class AsyncReadStream, class Parser, class ResultHandler>
         struct parse_operation
         {
-            explicit parse_operation(AsyncReadStream &input, ::beast::streambuf &receive_buffer, Parser parser,
-                                     ResultHandler on_result)
+            explicit parse_operation(AsyncReadStream &input, ::beast::streambuf &receive_buffer,
+                                     Parser parser, ResultHandler on_result)
                 : m_input(input)
                 , m_receive_buffer(receive_buffer)
                 , m_parser(std::move(parser))
@@ -27,7 +27,8 @@ namespace warpcoil
             void start() &&
             {
                 using boost::asio::asio_handler_invoke;
-                if (Si::optional<typename Parser::result_type> completed = m_parser.check_for_immediate_completion())
+                if (Si::optional<typename Parser::result_type> completed =
+                        m_parser.check_for_immediate_completion())
                 {
                     if (IsSurelyCalledInHandlerContext)
                     {
@@ -35,17 +36,20 @@ namespace warpcoil
                     }
                     else
                     {
-                        asio_handler_invoke(std::bind(std::ref(m_on_result), std::move(*completed)), &m_on_result);
+                        asio_handler_invoke(std::bind(std::ref(m_on_result), std::move(*completed)),
+                                            &m_on_result);
                     }
                     return;
                 }
                 std::size_t consumed = 0;
                 for (auto const &buffer_piece : m_receive_buffer.data())
                 {
-                    std::uint8_t const *const data = boost::asio::buffer_cast<std::uint8_t const *>(buffer_piece);
+                    std::uint8_t const *const data =
+                        boost::asio::buffer_cast<std::uint8_t const *>(buffer_piece);
                     for (std::size_t i = 0, c = boost::asio::buffer_size(buffer_piece); i < c; ++i)
                     {
-                        parse_result<typename Parser::result_type> response = m_parser.parse_byte(data[i]);
+                        parse_result<typename Parser::result_type> response =
+                            m_parser.parse_byte(data[i]);
                         if (Si::visit<bool>(
                                 response,
                                 [&](parse_complete<typename Parser::result_type> &message)
@@ -66,7 +70,8 @@ namespace warpcoil
                                     }
                                     else
                                     {
-                                        asio_handler_invoke(std::bind(std::ref(m_on_result), std::move(message.result)),
+                                        asio_handler_invoke(std::bind(std::ref(m_on_result),
+                                                                      std::move(message.result)),
                                                             &m_on_result);
                                     }
                                     return true;
@@ -84,8 +89,9 @@ namespace warpcoil
                                     }
                                     else
                                     {
-                                        asio_handler_invoke(
-                                            std::bind(std::ref(m_on_result), make_invalid_input_error()), &m_on_result);
+                                        asio_handler_invoke(std::bind(std::ref(m_on_result),
+                                                                      make_invalid_input_error()),
+                                                            &m_on_result);
                                     }
                                     return true;
                                 }))
@@ -102,7 +108,8 @@ namespace warpcoil
             {
                 if (!!ec)
                 {
-                    // No asio_handler_invoke because we assume that this method gets called only in the correct
+                    // No asio_handler_invoke because we assume that this method
+                    // gets called only in the correct
                     // context.
                     m_on_result(ec);
                     return;
@@ -126,11 +133,12 @@ namespace warpcoil
         };
 
         template <class AsyncReadStream, class Parser, class ResultHandler>
-        void begin_parse_value(AsyncReadStream &input, ::beast::streambuf &receive_buffer, Parser parser,
-                               ResultHandler &&on_result)
+        void begin_parse_value(AsyncReadStream &input, ::beast::streambuf &receive_buffer,
+                               Parser parser, ResultHandler &&on_result)
         {
-            parse_operation<AsyncReadStream, Parser, typename std::decay<ResultHandler>::type> operation(
-                input, receive_buffer, std::move(parser), std::forward<ResultHandler>(on_result));
+            parse_operation<AsyncReadStream, Parser, typename std::decay<ResultHandler>::type>
+                operation(input, receive_buffer, std::move(parser),
+                          std::forward<ResultHandler>(on_result));
             std::move(operation).template start<false>();
         }
     }

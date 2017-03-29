@@ -16,14 +16,16 @@ namespace
         warpcoil::cpp::message_splitter<decltype(server_requests)> splitter(server_requests);
         warpcoil::cpp::buffered_writer<decltype(server_responses)> writer(server_responses);
         async_test_interface_server<decltype(server_impl), warpcoil::async_read_dummy_stream,
-                                    warpcoil::async_write_dummy_stream> server(server_impl, splitter, writer);
+                                    warpcoil::async_write_dummy_stream> server(server_impl,
+                                                                               splitter, writer);
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
         warpcoil::checkpoint request_served;
         server.serve_one_request([&request_served](boost::system::error_code ec)
                                  {
                                      request_served.enter();
-                                     BOOST_CHECK_EQUAL(warpcoil::cpp::make_invalid_input_error(), ec);
+                                     BOOST_CHECK_EQUAL(warpcoil::cpp::make_invalid_input_error(),
+                                                       ec);
                                  });
         BOOST_REQUIRE(server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
@@ -38,36 +40,41 @@ namespace
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_utf8_request)
 {
-    test_invalid_server_request({0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 'u', 't', 'f', '8', 5, 'N', 'a', 'm', 'e', 0xff});
+    test_invalid_server_request(
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 'u', 't', 'f', '8', 5, 'N', 'a', 'm', 'e', 0xff});
 }
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_variant_request_a)
 {
-    test_invalid_server_request({0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 2, 0, 0, 0, 0});
+    test_invalid_server_request(
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 2, 0, 0, 0, 0});
 }
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_variant_request_b)
 {
-    test_invalid_server_request({0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 255, 0, 0, 0, 0});
+    test_invalid_server_request(
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 255, 0, 0, 0, 0});
 }
 
 BOOST_AUTO_TEST_CASE(async_server_invalid_message_type)
 {
-    test_invalid_server_request({1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'});
+    test_invalid_server_request(
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 'u', 't', 'f', '8', 4, 'N', 'a', 'm', 'e'});
 }
 
 namespace
 {
     template <class Result>
     void test_invalid_client_request(
-        std::function<void(async_test_interface &, std::function<void(Si::error_or<Result>)>)> begin_request)
+        std::function<void(async_test_interface &, std::function<void(Si::error_or<Result>)>)>
+            begin_request)
     {
         warpcoil::async_write_dummy_stream client_requests;
         warpcoil::async_read_dummy_stream client_responses;
         warpcoil::cpp::message_splitter<decltype(client_responses)> splitter(client_responses);
         warpcoil::cpp::buffered_writer<decltype(client_requests)> writer(client_requests);
-        async_test_interface_client<warpcoil::async_write_dummy_stream, warpcoil::async_read_dummy_stream> client(
-            writer, splitter);
+        async_test_interface_client<warpcoil::async_write_dummy_stream,
+                                    warpcoil::async_read_dummy_stream> client(writer, splitter);
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};
@@ -75,7 +82,8 @@ namespace
         request_rejected.enable();
         begin_request(type_erased_client, [&request_rejected](Si::error_or<Result> result)
                       {
-                          BOOST_REQUIRE_EQUAL(warpcoil::cpp::make_invalid_input_error(), result.error());
+                          BOOST_REQUIRE_EQUAL(warpcoil::cpp::make_invalid_input_error(),
+                                              result.error());
                           request_rejected.enter();
                       });
         request_rejected.require_crossed();
@@ -105,7 +113,8 @@ BOOST_AUTO_TEST_CASE(async_client_invalid_utf8_length_request)
 BOOST_AUTO_TEST_CASE(async_client_invalid_vector_length_request)
 {
     test_invalid_client_request<std::vector<std::uint64_t>>(
-        [](async_test_interface &client, std::function<void(Si::error_or<std::vector<std::uint64_t>>)> on_result)
+        [](async_test_interface &client,
+           std::function<void(Si::error_or<std::vector<std::uint64_t>>)> on_result)
         {
             client.vectors_256(std::vector<std::uint64_t>(256), on_result);
         });

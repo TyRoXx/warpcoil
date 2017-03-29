@@ -27,8 +27,8 @@ namespace
         my_hello_service server_impl;
         warpcoil::cpp::message_splitter<ip::tcp::socket> server_splitter(accepted_socket);
         warpcoil::cpp::buffered_writer<ip::tcp::socket> server_writer(accepted_socket);
-        async_benchmark_service_a_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket> server(
-            server_impl, server_splitter, server_writer);
+        async_benchmark_service_a_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket>
+            server(server_impl, server_splitter, server_writer);
         acceptor.async_accept(accepted_socket, [](boost::system::error_code ec)
                               {
                                   Si::throw_if_error(ec);
@@ -37,18 +37,21 @@ namespace
         ip::tcp::socket client_socket(io);
         warpcoil::cpp::message_splitter<decltype(client_socket)> client_splitter(client_socket);
         warpcoil::cpp::buffered_writer<ip::tcp::socket> client_writer(client_socket);
-        async_benchmark_service_a_client<ip::tcp::socket, ip::tcp::socket> client(client_writer, client_splitter);
-        client_socket.async_connect(ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
-                                    [](boost::system::error_code ec)
-                                    {
-                                        Si::throw_if_error(ec);
-                                    });
+        async_benchmark_service_a_client<ip::tcp::socket, ip::tcp::socket> client(client_writer,
+                                                                                  client_splitter);
+        client_socket.async_connect(
+            ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
+            [](boost::system::error_code ec)
+            {
+                Si::throw_if_error(ec);
+            });
         io.run();
 
         while (state.KeepRunning())
         {
             warpcoil::checkpoint client_side;
-            client.evaluate(std::make_tuple(34, 45), [&client_side](Si::error_or<std::uint64_t> result)
+            client.evaluate(std::make_tuple(34, 45),
+                            [&client_side](Si::error_or<std::uint64_t> result)
                             {
                                 client_side.enter();
                                 if (result.get() != (34u * 45u))

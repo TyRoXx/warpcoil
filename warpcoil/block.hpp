@@ -38,7 +38,8 @@ namespace warpcoil
     }
 
     template <class CharSink, class ContentGenerator>
-    void continuation_block(CharSink &&code, indentation_level indentation, ContentGenerator &&content, char const *end)
+    void continuation_block(CharSink &&code, indentation_level indentation,
+                            ContentGenerator &&content, char const *end)
     {
         Si::append(code, "{\n");
         {
@@ -51,7 +52,8 @@ namespace warpcoil
     }
 
     template <class CharSink, class ContentGenerator>
-    void block(CharSink &&code, indentation_level indentation, ContentGenerator &&content, char const *end)
+    void block(CharSink &&code, indentation_level indentation, ContentGenerator &&content,
+               char const *end)
     {
         indentation.render(code);
         continuation_block(code, indentation, content, end);

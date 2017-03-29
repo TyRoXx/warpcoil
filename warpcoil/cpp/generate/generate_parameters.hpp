@@ -7,7 +7,8 @@ namespace warpcoil
     namespace cpp
     {
         template <class CharSink1, class CharSink2>
-        type_emptiness generate_parameters(CharSink1 &&code, shared_code_generator<CharSink2> &shared,
+        type_emptiness generate_parameters(CharSink1 &&code,
+                                           shared_code_generator<CharSink2> &shared,
                                            std::vector<types::parameter> const &parameters)
         {
             type_emptiness total_emptiness = type_emptiness::empty;

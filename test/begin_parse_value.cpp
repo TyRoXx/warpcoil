@@ -46,33 +46,40 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_excess)
     beast::streambuf buffer;
     {
         warpcoil::checkpoint parse_completed;
-        warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-                                         [&parse_completed](Si::error_or<std::uint32_t> const parsed)
-                                         {
-                                             parse_completed.enter();
-                                             BOOST_CHECK_EQUAL(0xabcdef12u, parsed.get());
-                                         });
+        warpcoil::cpp::begin_parse_value(
+            stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
+            [&parse_completed](Si::error_or<std::uint32_t> const parsed)
+            {
+                parse_completed.enter();
+                BOOST_CHECK_EQUAL(0xabcdef12u, parsed.get());
+            });
         BOOST_REQUIRE(stream.respond);
         parse_completed.enable();
-        std::array<std::uint8_t, 8> const input = {{0xab, 0xcd, 0xef, 0x12, 0x99, 0x88, 0x77, 0x66}};
+        std::array<std::uint8_t, 8> const input = {
+            {0xab, 0xcd, 0xef, 0x12, 0x99, 0x88, 0x77, 0x66}};
         Si::exchange(stream.respond, nullptr)(Si::make_memory_range(input));
         parse_completed.require_crossed();
     }
     BOOST_REQUIRE(!stream.respond);
     BOOST_REQUIRE_EQUAL(4u, buffer.size());
-    BOOST_REQUIRE_EQUAL(0x99u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[0]);
-    BOOST_REQUIRE_EQUAL(0x88u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[1]);
-    BOOST_REQUIRE_EQUAL(0x77u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[2]);
-    BOOST_REQUIRE_EQUAL(0x66u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[3]);
+    BOOST_REQUIRE_EQUAL(0x99u,
+                        boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[0]);
+    BOOST_REQUIRE_EQUAL(0x88u,
+                        boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[1]);
+    BOOST_REQUIRE_EQUAL(0x77u,
+                        boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[2]);
+    BOOST_REQUIRE_EQUAL(0x66u,
+                        boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[3]);
     {
         warpcoil::checkpoint parse_completed;
         parse_completed.enable();
-        warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
-                                         [&parse_completed](Si::error_or<std::uint32_t> const parsed)
-                                         {
-                                             parse_completed.enter();
-                                             BOOST_CHECK_EQUAL(0x99887766u, parsed.get());
-                                         });
+        warpcoil::cpp::begin_parse_value(
+            stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
+            [&parse_completed](Si::error_or<std::uint32_t> const parsed)
+            {
+                parse_completed.enter();
+                BOOST_CHECK_EQUAL(0x99887766u, parsed.get());
+            });
         parse_completed.require_crossed();
         BOOST_CHECK(!stream.respond);
     }
@@ -84,9 +91,11 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_immediate_completion)
     warpcoil::async_read_dummy_stream stream;
     ::beast::streambuf buffer;
     {
-        std::array<std::uint8_t, 8> const initial_content = {{0xab, 0xcd, 0xef, 0x12, 0x99, 0x88, 0x77, 0x66}};
+        std::array<std::uint8_t, 8> const initial_content = {
+            {0xab, 0xcd, 0xef, 0x12, 0x99, 0x88, 0x77, 0x66}};
         auto to = buffer.prepare(initial_content.size());
-        BOOST_REQUIRE_EQUAL(initial_content.size(), boost::asio::buffer_copy(to, boost::asio::buffer(initial_content)));
+        BOOST_REQUIRE_EQUAL(initial_content.size(),
+                            boost::asio::buffer_copy(to, boost::asio::buffer(initial_content)));
         buffer.commit(initial_content.size());
     }
     {
@@ -101,12 +110,17 @@ BOOST_AUTO_TEST_CASE(begin_parse_value_immediate_completion)
                 BOOST_CHECK_EQUAL(0xabcdef12u, parsed.get());
                 BOOST_REQUIRE(!stream.respond);
                 BOOST_REQUIRE_EQUAL(4u, buffer.size());
-                BOOST_REQUIRE_EQUAL(0x99u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[0]);
-                BOOST_REQUIRE_EQUAL(0x88u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[1]);
-                BOOST_REQUIRE_EQUAL(0x77u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[2]);
-                BOOST_REQUIRE_EQUAL(0x66u, boost::asio::buffer_cast<std::uint8_t const *>(*buffer.data().begin())[3]);
+                BOOST_REQUIRE_EQUAL(0x99u, boost::asio::buffer_cast<std::uint8_t const *>(
+                                               *buffer.data().begin())[0]);
+                BOOST_REQUIRE_EQUAL(0x88u, boost::asio::buffer_cast<std::uint8_t const *>(
+                                               *buffer.data().begin())[1]);
+                BOOST_REQUIRE_EQUAL(0x77u, boost::asio::buffer_cast<std::uint8_t const *>(
+                                               *buffer.data().begin())[2]);
+                BOOST_REQUIRE_EQUAL(0x66u, boost::asio::buffer_cast<std::uint8_t const *>(
+                                               *buffer.data().begin())[3]);
                 second_completed.enable();
-                warpcoil::cpp::begin_parse_value(stream, buffer, warpcoil::cpp::integer_parser<std::uint32_t>(),
+                warpcoil::cpp::begin_parse_value(stream, buffer,
+                                                 warpcoil::cpp::integer_parser<std::uint32_t>(),
                                                  [&](Si::error_or<std::uint32_t> const parsed2)
                                                  {
                                                      second_completed.enter();

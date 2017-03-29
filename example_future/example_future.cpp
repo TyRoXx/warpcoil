@@ -9,14 +9,16 @@ namespace
 {
     namespace asio = boost::asio;
 
-    void delay(std::chrono::steady_clock::duration duration, asio::io_service &io, asio::yield_context yield)
+    void delay(std::chrono::steady_clock::duration duration, asio::io_service &io,
+               asio::yield_context yield)
     {
         asio::steady_timer timeout(io);
         timeout.expires_from_now(duration);
         timeout.async_wait(yield);
     }
 
-    void try_to_connect(asio::ip::tcp::endpoint server, asio::io_service &io, asio::yield_context yield)
+    void try_to_connect(asio::ip::tcp::endpoint server, asio::io_service &io,
+                        asio::yield_context yield)
     {
         using warpcoil::future;
 
@@ -29,20 +31,21 @@ namespace
                                                              {
                                                                  socket.cancel();
                                                              })),
-                           socket.async_connect(server, warpcoil::then([&](boost::system::error_code ec)
-                                                                       {
-                                                                           timeout.cancel();
-                                                                           if (!!ec)
-                                                                           {
-                                                                               std::cerr << server
-                                                                                         << " Failed with error " << ec
-                                                                                         << '\n';
-                                                                           }
-                                                                           else
-                                                                           {
-                                                                               std::cerr << server << " Succeeded\n";
-                                                                           }
-                                                                       })))
+                           socket.async_connect(
+                               server, warpcoil::then([&](boost::system::error_code ec)
+                                                      {
+                                                          timeout.cancel();
+                                                          if (!!ec)
+                                                          {
+                                                              std::cerr << server
+                                                                        << " Failed with error "
+                                                                        << ec << '\n';
+                                                          }
+                                                          else
+                                                          {
+                                                              std::cerr << server << " Succeeded\n";
+                                                          }
+                                                      })))
             .async_wait(yield);
     }
 }
@@ -52,7 +55,8 @@ int main()
     boost::asio::io_service io;
 #ifdef _MSC_VER
     {
-        // WinSock initialization crashes with an access violation if done within a Boost coroutine, so we do it here:
+        // WinSock initialization crashes with an access violation if done
+        // within a Boost coroutine, so we do it here:
         asio::ip::tcp::socket dummy(io, asio::ip::tcp::v4());
     }
 #endif
@@ -61,8 +65,9 @@ int main()
                            for (;;)
                            {
                                try_to_connect(
-                                   asio::ip::tcp::endpoint(asio::ip::address_v4::from_string("172.217.20.195"), 80), io,
-                                   yield);
+                                   asio::ip::tcp::endpoint(
+                                       asio::ip::address_v4::from_string("172.217.20.195"), 80),
+                                   io, yield);
                                delay(std::chrono::seconds(1), io, yield);
                            }
                        });
@@ -70,7 +75,8 @@ int main()
                        {
                            for (;;)
                            {
-                               try_to_connect(asio::ip::tcp::endpoint(asio::ip::address_v4::from_string("1.2.3.4"), 80),
+                               try_to_connect(asio::ip::tcp::endpoint(
+                                                  asio::ip::address_v4::from_string("1.2.3.4"), 80),
                                               io, yield);
                            }
                        });

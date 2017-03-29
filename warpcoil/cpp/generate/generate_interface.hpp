@@ -8,7 +8,8 @@ namespace warpcoil
     namespace cpp
     {
         template <class CharSink>
-        void move_arguments_out_of_tuple(CharSink &&code, Si::memory_range tuple_name, std::size_t count)
+        void move_arguments_out_of_tuple(CharSink &&code, Si::memory_range tuple_name,
+                                         std::size_t count)
         {
             for (size_t i = 0; i < count; ++i)
             {

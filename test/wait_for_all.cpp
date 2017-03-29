@@ -26,29 +26,32 @@ namespace warpcoil
             template <std::size_t Index, std::size_t MethodCount, class Method, class State>
             void start_method(Method &&method, std::shared_ptr<State> const &state)
             {
-                method.start([state](Si::error_or<typename std::decay<Method>::type::result> element)
-                             {
-                                 if (!element.is_error())
-                                 {
-                                     std::get<Index>(state->total_result) = std::move(element.get());
-                                     ++state->completed;
-                                     if (state->completed == MethodCount)
-                                     {
-                                         state->handler(std::move(state->total_result));
-                                     }
-                                 }
-                                 else if (!Si::exchange(state->errored, true))
-                                 {
-                                     state->handler(element.error());
-                                 }
-                             });
+                method.start(
+                    [state](Si::error_or<typename std::decay<Method>::type::result> element)
+                    {
+                        if (!element.is_error())
+                        {
+                            std::get<Index>(state->total_result) = std::move(element.get());
+                            ++state->completed;
+                            if (state->completed == MethodCount)
+                            {
+                                state->handler(std::move(state->total_result));
+                            }
+                        }
+                        else if (!Si::exchange(state->errored, true))
+                        {
+                            state->handler(element.error());
+                        }
+                    });
             }
 
             template <class State, class... Methods, std::size_t... Indices>
-            void start_methods(std::shared_ptr<State> state, std::integer_sequence<std::size_t, Indices...>,
+            void start_methods(std::shared_ptr<State> state,
+                               std::integer_sequence<std::size_t, Indices...>,
                                Methods &&... methods)
             {
-                Si::unit dummy[] = {(start_method<Indices, sizeof...(Methods)>(methods, state), Si::unit())...};
+                Si::unit dummy[] = {
+                    (start_method<Indices, sizeof...(Methods)>(methods, state), Si::unit())...};
                 Si::ignore_unused_variable_warning(dummy);
             }
 
@@ -56,7 +59,8 @@ namespace warpcoil
             struct result_of_callback;
 
             template <class Result>
-            struct result_of_callback<std::function<void(Si::error_or<Result, boost::system::error_code>)>>
+            struct result_of_callback<
+                std::function<void(Si::error_or<Result, boost::system::error_code>)>>
             {
                 using type = Result;
             };
@@ -77,8 +81,10 @@ namespace warpcoil
             template <typename F, typename Tuple>
             decltype(auto) apply_from_tuple(F &&fn, Tuple &&t)
             {
-                std::size_t constexpr tSize = std::tuple_size<typename std::remove_reference<Tuple>::type>::value;
-                return apply_tuple_impl(std::forward<F>(fn), std::forward<Tuple>(t), std::make_index_sequence<tSize>());
+                std::size_t constexpr tSize =
+                    std::tuple_size<typename std::remove_reference<Tuple>::type>::value;
+                return apply_tuple_impl(std::forward<F>(fn), std::forward<Tuple>(t),
+                                        std::make_index_sequence<tSize>());
             }
         }
 
@@ -87,12 +93,14 @@ namespace warpcoil
         {
             BOOST_STATIC_ASSERT(sizeof...(Methods) >= 1);
             using total_result = std::tuple<typename std::decay<Methods>::type::result...>;
-            using handler_type = typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
-                                                                                          total_result)>::type;
+            using handler_type =
+                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
+                                                                         total_result)>::type;
             auto state = std::make_shared<detail::wait_for_all_state<handler_type, total_result>>(
                 std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(state->handler);
-            start_methods(std::move(state), std::make_integer_sequence<std::size_t, sizeof...(Methods)>(),
+            start_methods(std::move(state),
+                          std::make_integer_sequence<std::size_t, sizeof...(Methods)>(),
                           std::forward<Methods>(methods)...);
             return result.get();
         }
@@ -101,8 +109,11 @@ namespace warpcoil
         auto method(Interface &callee, void (Interface::*method_ptr)(Parameter0, Parameters...),
                     Arguments &&... arguments)
         {
-            auto start = [&callee, method_ptr, arguments = std::make_tuple(std::forward<Arguments>(arguments)...) ](
-                auto &&callback) mutable
+            auto start = [
+                &callee,
+                method_ptr,
+                arguments = std::make_tuple(std::forward<Arguments>(arguments)...)
+            ](auto &&callback) mutable
             {
                 using callback_type = decltype(callback);
                 detail::apply_from_tuple(
@@ -113,7 +124,8 @@ namespace warpcoil
                     },
                     std::move(arguments));
             };
-            using std_function_callback = typename boost::mpl::back<boost::mpl::vector<Parameters...>>::type;
+            using std_function_callback =
+                typename boost::mpl::back<boost::mpl::vector<Parameters...>>::type;
             using result = typename detail::result_of_callback<std_function_callback>::type;
             return detail::method_holder<result, decltype(start)>{std::move(start)};
         }
@@ -147,5 +159,6 @@ BOOST_AUTO_TEST_CASE(wait_for_all_2)
             BOOST_CHECK_EQUAL(123u, std::get<1>(result.get()));
         },
         warpcoil::method(server, &warpcoil::impl_test_interface::utf8, "Hello"),
-        warpcoil::method(server, &warpcoil::impl_test_interface::atypical_int, static_cast<boost::uint16_t>(123)));
+        warpcoil::method(server, &warpcoil::impl_test_interface::atypical_int,
+                         static_cast<boost::uint16_t>(123)));
 }

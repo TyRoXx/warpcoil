@@ -10,7 +10,8 @@ namespace warpcoil
     namespace cpp
     {
         template <class CharSink1, class CharSink2>
-        void generate_serializable_interface(CharSink1 &&code, shared_code_generator<CharSink2> &shared,
+        void generate_serializable_interface(CharSink1 &&code,
+                                             shared_code_generator<CharSink2> &shared,
                                              indentation_level indentation, Si::memory_range name,
                                              types::interface_definition const &definition)
         {

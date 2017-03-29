@@ -20,7 +20,8 @@ namespace
             {
                 if (run.benchmark_name == "MediumRequestAndResponseOverInProcessPipe/4k")
                 {
-                    // These values should be about right for the super slow processors on travis-ci.
+                    // These values should be about right for the super slow
+                    // processors on travis-ci.
                     const double required_bytes =
 #ifdef NDEBUG
                         1200000
@@ -37,15 +38,17 @@ namespace
                         else
                         {
                             std::cerr << run.benchmark_name
-                                      << " is much faster than required which is suspicious: " << run.bytes_per_second
-                                      << " bytes/s (" << required_bytes << " required)\n";
+                                      << " is much faster than required which "
+                                         "is suspicious: "
+                                      << run.bytes_per_second << " bytes/s (" << required_bytes
+                                      << " required)\n";
                             ok = false;
                         }
                     }
                     else
                     {
-                        std::cerr << run.benchmark_name << " is too slow: " << run.bytes_per_second << " bytes/s ("
-                                  << required_bytes << " required)\n";
+                        std::cerr << run.benchmark_name << " is too slow: " << run.bytes_per_second
+                                  << " bytes/s (" << required_bytes << " required)\n";
                         ok = false;
                     }
                 }

@@ -36,7 +36,8 @@ namespace warpcoil
         template <class Function, class ActualHandler>
         auto wrap_handler(Function &&wrapper, ActualHandler &&handler)
         {
-            return wrapped_handler<typename std::decay<Function>::type, typename std::decay<ActualHandler>::type>(
+            return wrapped_handler<typename std::decay<Function>::type,
+                                   typename std::decay<ActualHandler>::type>(
                 std::forward<Function>(wrapper), std::forward<ActualHandler>(handler));
         }
     }

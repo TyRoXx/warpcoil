@@ -20,13 +20,16 @@ namespace warpcoil
         {
             BOOST_REQUIRE(!handle_result);
             using handler_type =
-                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code, std::size_t)>::type;
+                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
+                                                                         std::size_t)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
             for (auto const &buffer : buffers)
             {
-                std::uint8_t const *const data = boost::asio::buffer_cast<std::uint8_t const *>(buffer);
-                written.emplace_back(std::vector<std::uint8_t>(data, data + boost::asio::buffer_size(buffer)));
+                std::uint8_t const *const data =
+                    boost::asio::buffer_cast<std::uint8_t const *>(buffer);
+                written.emplace_back(
+                    std::vector<std::uint8_t>(data, data + boost::asio::buffer_size(buffer)));
             }
             handle_result = std::move(handler);
             return result.get();
@@ -42,10 +45,12 @@ namespace warpcoil
         {
             BOOST_REQUIRE(!respond);
             using handler_type =
-                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code, std::size_t)>::type;
+                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
+                                                                         std::size_t)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
-            respond = [ buffers, handler = std::move(handler) ](Si::error_or<Si::memory_range> response) mutable
+            respond = [ buffers, handler = std::move(handler) ](
+                Si::error_or<Si::memory_range> response) mutable
             {
                 if (response.is_error())
                 {
@@ -54,7 +59,8 @@ namespace warpcoil
                 else
                 {
                     std::size_t const bytes = boost::asio::buffer_copy(
-                        buffers, boost::asio::buffer(response.get().begin(), response.get().size()));
+                        buffers,
+                        boost::asio::buffer(response.get().begin(), response.get().size()));
                     BOOST_REQUIRE_EQUAL(static_cast<size_t>(response.get().size()), bytes);
                     std::move(handler)({}, bytes);
                 }
@@ -84,12 +90,15 @@ namespace beast
     namespace websocket
     {
         template <class TeardownHandler>
-        void async_teardown(beast::websocket::teardown_tag, warpcoil::async_read_write_dummy_stream &stream,
+        void async_teardown(beast::websocket::teardown_tag,
+                            warpcoil::async_read_write_dummy_stream &stream,
                             TeardownHandler &&handler)
         {
-            stream.get_io_service().post([handler = std::forward<TeardownHandler>(handler)]() mutable
+            stream.get_io_service().post([handler =
+                                              std::forward<TeardownHandler>(handler)]() mutable
                                          {
-                                             std::forward<TeardownHandler>(handler)(boost::system::error_code());
+                                             std::forward<TeardownHandler>(handler)(
+                                                 boost::system::error_code());
                                          });
         }
     }

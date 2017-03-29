@@ -15,13 +15,14 @@ int main(int argc, char **argv)
     auto interfaces_writer = Si::make_container_sink(interfaces);
     {
         types::interface_definition definition;
-        definition.add_method("hello", types::utf8{types::integer{0, 255}})("name",
-                                                                            types::utf8{types::integer{0, 255}});
+        definition.add_method("hello", types::utf8{types::integer{0, 255}})(
+            "name", types::utf8{types::integer{0, 255}});
         indentation_level const top_level;
         cpp::generate_serializable_interface(interfaces_writer, shared, top_level,
-                                             Si::make_c_str_range("hello_as_a_service"), definition);
+                                             Si::make_c_str_range("hello_as_a_service"),
+                                             definition);
     }
     file.insert(file.end(), interfaces.begin(), interfaces.end());
-    return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc), std::cerr,
-                                                Si::make_contiguous_range(file));
+    return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc),
+                                                std::cerr, Si::make_contiguous_range(file));
 }

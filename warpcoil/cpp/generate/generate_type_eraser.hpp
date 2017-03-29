@@ -40,7 +40,8 @@ namespace warpcoil
                                 [&](indentation_level const in_method)
                                 {
                                     start_line(code, in_method, "return client.", entry.first, "(");
-                                    for (types::parameter const &parameter : entry.second.parameters)
+                                    for (types::parameter const &parameter :
+                                         entry.second.parameters)
                                     {
                                         append(code, "std::move(");
                                         append(code, parameter.name);

@@ -19,7 +19,8 @@ namespace
 {
     template <class Result>
     Result test_simple_request_response(
-        std::function<void(async_test_interface &, std::function<void(Si::error_or<Result>)>)> begin_request,
+        std::function<void(async_test_interface &, std::function<void(Si::error_or<Result>)>)>
+            begin_request,
         std::vector<std::uint8_t> expected_request, std::vector<std::uint8_t> expected_response)
     {
         warpcoil::impl_test_interface server_impl;
@@ -28,7 +29,8 @@ namespace
         warpcoil::cpp::message_splitter<decltype(server_requests)> server_splitter(server_requests);
         warpcoil::cpp::buffered_writer<decltype(server_responses)> server_writer(server_responses);
         async_test_interface_server<decltype(server_impl), warpcoil::async_read_dummy_stream,
-                                    warpcoil::async_write_dummy_stream> server(server_impl, server_splitter,
+                                    warpcoil::async_write_dummy_stream> server(server_impl,
+                                                                               server_splitter,
                                                                                server_writer);
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(!server_responses.handle_result);
@@ -43,17 +45,20 @@ namespace
 
         warpcoil::async_write_dummy_stream client_requests;
         warpcoil::async_read_dummy_stream client_responses;
-        warpcoil::cpp::message_splitter<decltype(client_responses)> client_splitter(client_responses);
+        warpcoil::cpp::message_splitter<decltype(client_responses)> client_splitter(
+            client_responses);
         warpcoil::cpp::buffered_writer<decltype(client_requests)> client_writer(client_requests);
-        async_test_interface_client<warpcoil::async_write_dummy_stream, warpcoil::async_read_dummy_stream> client(
-            client_writer, client_splitter);
+        async_test_interface_client<warpcoil::async_write_dummy_stream,
+                                    warpcoil::async_read_dummy_stream> client(client_writer,
+                                                                              client_splitter);
         BOOST_REQUIRE(!client_responses.respond);
         BOOST_REQUIRE(!client_requests.handle_result);
 
         warpcoil::checkpoint response_received;
         Result returned_result;
         async_type_erased_test_interface<decltype(client)> type_erased_client{client};
-        begin_request(type_erased_client, [&response_received, &returned_result](Si::error_or<Result> result)
+        begin_request(type_erased_client,
+                      [&response_received, &returned_result](Si::error_or<Result> result)
                       {
                           response_received.enter();
                           returned_result = std::move(result.get());
@@ -65,9 +70,11 @@ namespace
         BOOST_REQUIRE(client_responses.respond);
         BOOST_REQUIRE(client_requests.handle_result);
         std::vector<std::vector<std::uint8_t>> const expected_request_buffers = {expected_request};
-        BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_request_buffers.begin(), expected_request_buffers.end(),
-                                        client_requests.written.begin(), client_requests.written.end());
-        Si::exchange(server_requests.respond, nullptr)(Si::make_memory_range(client_requests.written[0]));
+        BOOST_REQUIRE_EQUAL_COLLECTIONS(
+            expected_request_buffers.begin(), expected_request_buffers.end(),
+            client_requests.written.begin(), client_requests.written.end());
+        Si::exchange(server_requests.respond,
+                     nullptr)(Si::make_memory_range(client_requests.written[0]));
         client_requests.written.clear();
 
         Si::exchange(client_requests.handle_result, nullptr)({}, expected_request.size());
@@ -75,9 +82,11 @@ namespace
 
         BOOST_REQUIRE(!server_requests.respond);
         BOOST_REQUIRE(server_responses.handle_result);
-        std::vector<std::vector<std::uint8_t>> const expected_response_buffers = {expected_response};
-        BOOST_REQUIRE_EQUAL_COLLECTIONS(expected_response_buffers.begin(), expected_response_buffers.end(),
-                                        server_responses.written.begin(), server_responses.written.end());
+        std::vector<std::vector<std::uint8_t>> const expected_response_buffers = {
+            expected_response};
+        BOOST_REQUIRE_EQUAL_COLLECTIONS(
+            expected_response_buffers.begin(), expected_response_buffers.end(),
+            server_responses.written.begin(), server_responses.written.end());
         request_served.enable();
         Si::exchange(server_responses.handle_result, nullptr)({}, expected_response.size());
         request_served.require_crossed();
@@ -114,14 +123,15 @@ BOOST_AUTO_TEST_CASE(async_server_utf8)
 BOOST_AUTO_TEST_CASE(async_server_vector)
 {
     std::vector<std::uint64_t> result = test_simple_request_response<std::vector<std::uint64_t>>(
-        [](async_test_interface &client, std::function<void(Si::error_or<std::vector<std::uint64_t>>)> on_result)
+        [](async_test_interface &client,
+           std::function<void(Si::error_or<std::vector<std::uint64_t>>)> on_result)
         {
             client.vectors(std::vector<std::uint64_t>{3, 2, 1}, on_result);
         },
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'e', 'c', 't', 'o', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0,
-         3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0,
-         0, 0, 0, 3});
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'e', 'c', 't', 'o', 'r', 's', 0, 0, 0, 0, 0, 0, 0, 3, 0,
+         0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+         0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3});
     std::vector<std::uint64_t> const expected = {1, 2, 3};
     BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(), result.begin(), result.end());
 }
@@ -131,12 +141,13 @@ BOOST_AUTO_TEST_CASE(async_server_tuple)
     std::tuple<std::uint64_t, std::uint64_t> result =
         test_simple_request_response<std::tuple<std::uint64_t, std::uint64_t>>(
             [](async_test_interface &client,
-               std::function<void(Si::error_or<std::tuple<std::uint64_t, std::uint64_t>>)> on_result)
+               std::function<void(Si::error_or<std::tuple<std::uint64_t, std::uint64_t>>)>
+                   on_result)
             {
                 client.two_results(123, on_result);
             },
-            {0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 't', 'w', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', 's', 0, 0, 0, 0, 0, 0, 0,
-             123},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 't', 'w', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', 's',
+             0, 0, 0, 0, 0, 0, 0, 123},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0, 123});
     std::tuple<std::uint64_t, std::uint64_t> const expected{123, 123};
     BOOST_CHECK(expected == result);
@@ -149,8 +160,8 @@ BOOST_AUTO_TEST_CASE(async_server_tuple_empty)
         {
             client.no_result_no_parameter({}, on_result);
         },
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 'n', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', '_', 'n', 'o', '_', 'p', 'a', 'r',
-         'a', 'm', 'e', 't', 'e', 'r'},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 'n', 'o', '_', 'r', 'e', 's', 'u', 'l', 't', '_', 'n', 'o',
+         '_', 'p', 'a', 'r', 'a', 'm', 'e', 't', 'e', 'r'},
         {1, 0, 0, 0, 0, 0, 0, 0, 0});
     std::tuple<> const expected;
     BOOST_CHECK(expected == result);
@@ -159,11 +170,13 @@ BOOST_AUTO_TEST_CASE(async_server_tuple_empty)
 BOOST_AUTO_TEST_CASE(async_server_structure)
 {
     structure_to_do_member result = test_simple_request_response<structure_to_do_member>(
-        [](async_test_interface &client, std::function<void(Si::error_or<structure_to_do_member>)> on_result)
+        [](async_test_interface &client,
+           std::function<void(Si::error_or<structure_to_do_member>)> on_result)
         {
             client.structure(structure_to_do(), on_result);
         },
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 's', 't', 'r', 'u', 'c', 't', 'u', 'r', 'e'}, {1, 0, 0, 0, 0, 0, 0, 0, 0, 2});
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 's', 't', 'r', 'u', 'c', 't', 'u', 'r', 'e'},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 2});
     BOOST_CHECK_EQUAL(2u, result.member);
 }
 
@@ -174,8 +187,8 @@ BOOST_AUTO_TEST_CASE(async_server_multiple_parameters)
         {
             client.real_multi_parameters("abc", 123, on_result);
         },
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 'r', 'e', 'a', 'l', '_', 'm', 'u', 'l', 't', 'i', '_', 'p', 'a', 'r', 'a', 'm',
-         'e', 't', 'e', 'r', 's', 3, 'a', 'b', 'c', 0, 123},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 'r', 'e', 'a', 'l', '_', 'm', 'u', 'l', 't', 'i', '_', 'p',
+         'a', 'r', 'a', 'm', 'e', 't', 'e', 'r', 's', 3, 'a', 'b', 'c', 0, 123},
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 126});
     std::uint8_t const expected{126};
     BOOST_CHECK_EQUAL(expected, result);
@@ -190,7 +203,8 @@ BOOST_AUTO_TEST_CASE(async_server_variant_first)
             {
                 client.variant(static_cast<std::uint32_t>(0x11223344), on_result);
             },
-            {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 0, 0x11, 0x22, 0x33, 0x44},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 'v', 'a', 'r', 'i', 'a', 'n', 't', 0, 0x11, 0x22, 0x33,
+             0x44},
             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x33, 0x45});
     Si::variant<std::uint16_t, std::string> const expected{static_cast<std::uint16_t>(0x3345)};
     BOOST_CHECK(expected == result);
@@ -211,16 +225,19 @@ BOOST_AUTO_TEST_CASE(async_server_variant_second)
     BOOST_CHECK(expected == result);
 }
 
-BOOST_DATA_TEST_CASE(async_server_integer, boost::unit_test::data::make(std::array<std::uint16_t, 3>{{1, 10, 1000}}),
+BOOST_DATA_TEST_CASE(async_server_integer,
+                     boost::unit_test::data::make(std::array<std::uint16_t, 3>{{1, 10, 1000}}),
                      number)
 {
     std::uint16_t result = test_simple_request_response<std::uint16_t>(
-        [number](async_test_interface &client, std::function<void(Si::error_or<std::uint16_t>)> on_result)
+        [number](async_test_interface &client,
+                 std::function<void(Si::error_or<std::uint16_t>)> on_result)
         {
             client.atypical_int(number, on_result);
         },
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 'a', 't', 'y', 'p', 'i', 'c', 'a', 'l', '_', 'i', 'n', 't',
          static_cast<std::uint8_t>(number / 256), static_cast<std::uint8_t>(number % 256)},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<std::uint8_t>(number / 256), static_cast<std::uint8_t>(number % 256)});
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<std::uint8_t>(number / 256),
+         static_cast<std::uint8_t>(number % 256)});
     BOOST_CHECK_EQUAL(number, result);
 }

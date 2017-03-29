@@ -7,7 +7,8 @@ namespace server
 {
     struct my_hello_service : async_hello_as_a_service
     {
-        void hello(std::string argument, std::function<void(Si::error_or<std::string>)> on_result) override
+        void hello(std::string argument,
+                   std::function<void(Si::error_or<std::string>)> on_result) override
         {
             on_result("Hello, " + argument + "!");
         }
@@ -28,11 +29,14 @@ int main()
         accepted_socket, [&accepted_socket, &server_impl](boost::system::error_code ec)
         {
             Si::throw_if_error(ec);
-            auto splitter = std::make_shared<warpcoil::cpp::message_splitter<ip::tcp::socket>>(accepted_socket);
-            auto writer = std::make_shared<warpcoil::cpp::buffered_writer<ip::tcp::socket>>(accepted_socket);
-            auto server = std::make_shared<
-                async_hello_as_a_service_server<decltype(server_impl), ip::tcp::socket, ip::tcp::socket>>(
-                server_impl, *splitter, *writer);
+            auto splitter =
+                std::make_shared<warpcoil::cpp::message_splitter<ip::tcp::socket>>(accepted_socket);
+            auto writer =
+                std::make_shared<warpcoil::cpp::buffered_writer<ip::tcp::socket>>(accepted_socket);
+            auto server =
+                std::make_shared<async_hello_as_a_service_server<decltype(server_impl),
+                                                                 ip::tcp::socket, ip::tcp::socket>>(
+                    server_impl, *splitter, *writer);
             server->serve_one_request([server, splitter, writer](boost::system::error_code ec)
                                       {
                                           Si::throw_if_error(ec);
@@ -44,15 +48,16 @@ int main()
     warpcoil::cpp::message_splitter<decltype(connecting_socket)> splitter(connecting_socket);
     warpcoil::cpp::buffered_writer<ip::tcp::socket> writer(connecting_socket);
     async_hello_as_a_service_client<ip::tcp::socket, ip::tcp::socket> client(writer, splitter);
-    connecting_socket.async_connect(ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
-                                    [&io, &client](boost::system::error_code ec)
-                                    {
-                                        Si::throw_if_error(ec);
-                                        client.hello("Alice", [](Si::error_or<std::string> result)
-                                                     {
-                                                         std::cout << result.get() << '\n';
-                                                     });
-                                    });
+    connecting_socket.async_connect(
+        ip::tcp::endpoint(ip::address_v4::loopback(), acceptor.local_endpoint().port()),
+        [&io, &client](boost::system::error_code ec)
+        {
+            Si::throw_if_error(ec);
+            client.hello("Alice", [](Si::error_or<std::string> result)
+                         {
+                             std::cout << result.get() << '\n';
+                         });
+        });
 
     io.run();
 }

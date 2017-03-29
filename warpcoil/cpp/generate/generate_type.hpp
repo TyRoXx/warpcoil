@@ -48,7 +48,8 @@ namespace warpcoil
                         generate_type(code, shared, element);
                     }
                     Si::append(code, ">");
-                    return root->elements.empty() ? type_emptiness::empty : type_emptiness::non_empty;
+                    return root->elements.empty() ? type_emptiness::empty
+                                                  : type_emptiness::non_empty;
                 },
                 [&](std::unique_ptr<types::tuple> const &root)
                 {
@@ -61,7 +62,8 @@ namespace warpcoil
                         generate_type(code, shared, element);
                     }
                     Si::append(code, ">");
-                    return root->elements.empty() ? type_emptiness::empty : type_emptiness::non_empty;
+                    return root->elements.empty() ? type_emptiness::empty
+                                                  : type_emptiness::non_empty;
                 },
                 [&](std::unique_ptr<types::vector> const &root)
                 {
@@ -81,7 +83,8 @@ namespace warpcoil
                     assert(root);
                     shared.require_structure(*root);
                     generate_name_for_structure(code, *root);
-                    return (root->elements.empty() ? type_emptiness::empty : type_emptiness::non_empty);
+                    return (root->elements.empty() ? type_emptiness::empty
+                                                   : type_emptiness::non_empty);
                 });
         }
     }

@@ -10,7 +10,8 @@
 BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
 {
     boost::asio::io_service io;
-    boost::asio::ip::tcp::acceptor acceptor(io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v6(), 0), true);
+    boost::asio::ip::tcp::acceptor acceptor(
+        io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v6(), 0), true);
     acceptor.listen();
     boost::asio::ip::tcp::socket accepted_socket(io);
     bool ok1 = false;
@@ -22,14 +23,15 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
             boost::asio::spawn(
                 io, [&server_impl, &accepted_socket, &ok1](boost::asio::yield_context yield)
                 {
-                    auto server_splitter =
-                        std::make_shared<warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(
-                            accepted_socket);
-                    auto writer =
-                        std::make_shared<warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(accepted_socket);
+                    auto server_splitter = std::make_shared<
+                        warpcoil::cpp::message_splitter<boost::asio::ip::tcp::socket>>(
+                        accepted_socket);
+                    auto writer = std::make_shared<
+                        warpcoil::cpp::buffered_writer<boost::asio::ip::tcp::socket>>(
+                        accepted_socket);
                     async_test_interface_server<decltype(server_impl), boost::asio::ip::tcp::socket,
-                                                boost::asio::ip::tcp::socket> server(server_impl, *server_splitter,
-                                                                                     *writer);
+                                                boost::asio::ip::tcp::socket>
+                        server(server_impl, *server_splitter, *writer);
                     server.serve_one_request(yield);
                     server.serve_one_request(yield);
                     BOOST_REQUIRE(!ok1);
@@ -39,17 +41,19 @@ BOOST_AUTO_TEST_CASE(async_server_with_asio_spawn)
     boost::asio::ip::tcp::socket socket(io);
     warpcoil::cpp::message_splitter<decltype(socket)> splitter(socket);
     warpcoil::cpp::buffered_writer<decltype(socket)> writer(socket);
-    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(writer, splitter);
+    async_test_interface_client<boost::asio::ip::tcp::socket, boost::asio::ip::tcp::socket> client(
+        writer, splitter);
     bool ok2 = false;
     socket.async_connect(
-        boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), acceptor.local_endpoint().port()),
+        boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(),
+                                       acceptor.local_endpoint().port()),
         [&io, &writer, &client, &ok2](boost::system::error_code ec)
         {
             BOOST_REQUIRE_EQUAL(boost::system::error_code(), ec);
             boost::asio::spawn(io, [&client, &ok2](boost::asio::yield_context yield)
                                {
-                                   Si::error_or<std::vector<std::uint64_t>> result =
-                                       client.vectors(std::vector<std::uint64_t>{12, 34, 56}, yield);
+                                   Si::error_or<std::vector<std::uint64_t>> result = client.vectors(
+                                       std::vector<std::uint64_t>{12, 34, 56}, yield);
                                    std::vector<std::uint64_t> const expected{56, 34, 12};
                                    BOOST_CHECK(expected == result.get());
 

@@ -20,20 +20,23 @@ namespace
 
     struct my_hello_service_b : async_benchmark_service_b
     {
-        void evaluate(std::string argument, std::function<void(Si::error_or<std::uint64_t>)> on_result) override
+        void evaluate(std::string argument,
+                      std::function<void(Si::error_or<std::uint64_t>)> on_result) override
         {
             on_result(argument.size());
         }
     };
 
     template <class ClientServerProvider, class LoopBody>
-    void BenchmarkWithInProcessPipe(benchmark::State &state, ClientServerProvider const &provider, LoopBody const &body)
+    void BenchmarkWithInProcessPipe(benchmark::State &state, ClientServerProvider const &provider,
+                                    LoopBody const &body)
     {
         boost::asio::io_service io;
         warpcoil::byte_counter<warpcoil::in_process_pipe> client_to_server(io);
         warpcoil::byte_counter<warpcoil::in_process_pipe> server_to_client(io);
 
-        provider(client_to_server, server_to_client, [&io, &state, &body](auto &client, auto &server)
+        provider(client_to_server, server_to_client,
+                 [&io, &state, &body](auto &client, auto &server)
                  {
                      while (state.KeepRunning())
                      {
@@ -57,23 +60,30 @@ namespace
                warpcoil::byte_counter<warpcoil::in_process_pipe> &server_to_client, auto &&user)
             {
                 my_hello_service_a server_impl;
-                warpcoil::cpp::message_splitter<decltype(client_to_server)> server_splitter(client_to_server);
-                warpcoil::cpp::buffered_writer<decltype(server_to_client)> server_writer(server_to_client);
+                warpcoil::cpp::message_splitter<decltype(client_to_server)> server_splitter(
+                    client_to_server);
+                warpcoil::cpp::buffered_writer<decltype(server_to_client)> server_writer(
+                    server_to_client);
                 async_benchmark_service_a_server<decltype(server_impl), decltype(client_to_server),
-                                                 decltype(server_to_client)> server(server_impl, server_splitter,
+                                                 decltype(server_to_client)> server(server_impl,
+                                                                                    server_splitter,
                                                                                     server_writer);
 
-                warpcoil::cpp::message_splitter<decltype(server_to_client)> client_splitter(server_to_client);
-                warpcoil::cpp::buffered_writer<decltype(client_to_server)> client_writer(client_to_server);
-                async_benchmark_service_a_client<decltype(server_to_client), decltype(client_to_server)> client(
-                    client_writer, client_splitter);
+                warpcoil::cpp::message_splitter<decltype(server_to_client)> client_splitter(
+                    server_to_client);
+                warpcoil::cpp::buffered_writer<decltype(client_to_server)> client_writer(
+                    client_to_server);
+                async_benchmark_service_a_client<
+                    decltype(server_to_client), decltype(client_to_server)> client(client_writer,
+                                                                                   client_splitter);
 
                 user(client, server);
             },
             [](boost::asio::io_service &io, auto &client, auto &server)
             {
                 warpcoil::checkpoint client_side;
-                client.evaluate(std::make_tuple(34, 45), [&client_side](Si::error_or<std::uint64_t> result)
+                client.evaluate(std::make_tuple(34, 45),
+                                [&client_side](Si::error_or<std::uint64_t> result)
                                 {
                                     client_side.enter();
                                     if (result.get() != (34u * 45u))
@@ -104,23 +114,30 @@ namespace
                warpcoil::byte_counter<warpcoil::in_process_pipe> &server_to_client, auto &&user)
             {
                 my_hello_service_b server_impl;
-                warpcoil::cpp::message_splitter<decltype(client_to_server)> server_splitter(client_to_server);
-                warpcoil::cpp::buffered_writer<decltype(server_to_client)> server_writer(server_to_client);
+                warpcoil::cpp::message_splitter<decltype(client_to_server)> server_splitter(
+                    client_to_server);
+                warpcoil::cpp::buffered_writer<decltype(server_to_client)> server_writer(
+                    server_to_client);
                 async_benchmark_service_b_server<decltype(server_impl), decltype(client_to_server),
-                                                 decltype(server_to_client)> server(server_impl, server_splitter,
+                                                 decltype(server_to_client)> server(server_impl,
+                                                                                    server_splitter,
                                                                                     server_writer);
 
-                warpcoil::cpp::message_splitter<decltype(server_to_client)> client_splitter(server_to_client);
-                warpcoil::cpp::buffered_writer<decltype(client_to_server)> client_writer(client_to_server);
-                async_benchmark_service_b_client<decltype(server_to_client), decltype(client_to_server)> client(
-                    client_writer, client_splitter);
+                warpcoil::cpp::message_splitter<decltype(server_to_client)> client_splitter(
+                    server_to_client);
+                warpcoil::cpp::buffered_writer<decltype(client_to_server)> client_writer(
+                    client_to_server);
+                async_benchmark_service_b_client<
+                    decltype(server_to_client), decltype(client_to_server)> client(client_writer,
+                                                                                   client_splitter);
 
                 user(client, server);
             },
             [&message_content](boost::asio::io_service &io, auto &client, auto &server)
             {
                 warpcoil::checkpoint client_side;
-                client.evaluate(message_content, [&client_side, &message_content](Si::error_or<std::uint64_t> result)
+                client.evaluate(message_content,
+                                [&client_side, &message_content](Si::error_or<std::uint64_t> result)
                                 {
                                     client_side.enter();
                                     if (result.get() != message_content.size())

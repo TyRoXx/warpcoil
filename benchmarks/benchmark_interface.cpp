@@ -24,6 +24,6 @@ int main(int argc, char **argv)
                                              warpcoil::create_benchmark_interface_b());
     }
     file.insert(file.end(), interfaces.begin(), interfaces.end());
-    return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc), std::cerr,
-                                                Si::make_contiguous_range(file));
+    return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc),
+                                                std::cerr, Si::make_contiguous_range(file));
 }

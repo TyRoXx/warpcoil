@@ -12,7 +12,8 @@ namespace
         {
         }
 
-        void make_directory(std::string path, std::function<void(Si::error_or<std::tuple<>>)> on_result) override
+        void make_directory(std::string path,
+                            std::function<void(Si::error_or<std::tuple<>>)> on_result) override
         {
             boost::system::error_code ec =
                 ventura::create_directories(m_root / ventura::relative_path(path), Si::return_);
@@ -26,7 +27,8 @@ namespace
             }
         }
 
-        void remove(std::string path, std::function<void(Si::error_or<std::tuple<>>)> on_result) override
+        void remove(std::string path,
+                    std::function<void(Si::error_or<std::tuple<>>)> on_result) override
         {
             Si::error_or<boost::uintmax_t> ec =
                 ventura::remove_all(m_root / ventura::relative_path(path), Si::variant_);

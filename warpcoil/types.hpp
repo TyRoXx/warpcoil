@@ -44,8 +44,8 @@ namespace warpcoil
         struct vector;
         struct structure;
 
-        typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>, std::unique_ptr<vector>, utf8,
-                            std::unique_ptr<structure>> type;
+        typedef Si::variant<integer, std::unique_ptr<variant>, std::unique_ptr<tuple>,
+                            std::unique_ptr<vector>, utf8, std::unique_ptr<structure>> type;
 
         BOOST_STATIC_ASSERT((std::is_nothrow_move_constructible<type>::value));
         BOOST_STATIC_ASSERT((std::is_nothrow_move_assignable<type>::value));
@@ -71,8 +71,9 @@ namespace warpcoil
 
         inline bool less(variant const &left, variant const &right)
         {
-            return std::lexicographical_compare(left.elements.begin(), left.elements.end(), right.elements.begin(),
-                                                right.elements.end(), [](type const &left, type const &right)
+            return std::lexicographical_compare(left.elements.begin(), left.elements.end(),
+                                                right.elements.begin(), right.elements.end(),
+                                                [](type const &left, type const &right)
                                                 {
                                                     return less(left, right);
                                                 });
@@ -95,8 +96,9 @@ namespace warpcoil
 
         inline bool less(tuple const &left, tuple const &right)
         {
-            return std::lexicographical_compare(left.elements.begin(), left.elements.end(), right.elements.begin(),
-                                                right.elements.end(), [](type const &left, type const &right)
+            return std::lexicographical_compare(left.elements.begin(), left.elements.end(),
+                                                right.elements.begin(), right.elements.end(),
+                                                [](type const &left, type const &right)
                                                 {
                                                     return less(left, right);
                                                 });
@@ -170,47 +172,54 @@ namespace warpcoil
                 left,
                 [&right](integer const &left_value)
                 {
-                    return less(left_value, *Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                    return less(left_value,
+                                *Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
                 },
                 [&right](std::unique_ptr<variant> const &left_value)
                 {
-                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                    return less(*left_value,
+                                **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
                 },
                 [&right](std::unique_ptr<tuple> const &left_value)
                 {
-                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                    return less(*left_value,
+                                **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
                 },
                 [&right](std::unique_ptr<vector> const &left_value)
                 {
-                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                    return less(*left_value,
+                                **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
                 },
                 [&right](utf8 const &left_value)
                 {
-                    return less(left_value.code_units,
-                                Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right)->code_units);
+                    return less(
+                        left_value.code_units,
+                        Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right)->code_units);
                 },
                 [&right](std::unique_ptr<structure> const &left_value)
                 {
-                    return less(*left_value, **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
+                    return less(*left_value,
+                                **Si::try_get_ptr<std::decay<decltype(left_value)>::type>(right));
                 });
         }
 
         inline bool less(structure const &left, structure const &right)
         {
-            return std::lexicographical_compare(left.elements.begin(), left.elements.end(), right.elements.begin(),
-                                                right.elements.end(),
-                                                [](structure::element const &left, structure::element const &right)
-                                                {
-                                                    if (less(left.what, right.what))
-                                                    {
-                                                        return true;
-                                                    }
-                                                    if (less(right.what, left.what))
-                                                    {
-                                                        return false;
-                                                    }
-                                                    return (left.name < right.name);
-                                                });
+            return std::lexicographical_compare(
+                left.elements.begin(), left.elements.end(), right.elements.begin(),
+                right.elements.end(),
+                [](structure::element const &left, structure::element const &right)
+                {
+                    if (less(left.what, right.what))
+                    {
+                        return true;
+                    }
+                    if (less(right.what, left.what))
+                    {
+                        return false;
+                    }
+                    return (left.name < right.name);
+                });
         }
 
         struct parameter
@@ -272,14 +281,16 @@ namespace warpcoil
             auto add_method(identifier name, type result)
             {
                 method &target =
-                    methods.insert(std::make_pair(std::move(name), method{std::move(result), {}})).first->second;
+                    methods.insert(std::make_pair(std::move(name), method{std::move(result), {}}))
+                        .first->second;
                 struct parameter_maker
                 {
                     method &target;
 
                     parameter_maker operator()(identifier name, type type_) const
                     {
-                        target.parameters.emplace_back(parameter{std::move(name), std::move(type_)});
+                        target.parameters.emplace_back(
+                            parameter{std::move(name), std::move(type_)});
                         return *this;
                     }
                 };

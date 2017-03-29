@@ -27,7 +27,8 @@ namespace warpcoil
             assert(!write_callback);
             assert(!boost::empty(buffers));
             using handler_type =
-                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code, std::size_t)>::type;
+                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
+                                                                         std::size_t)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
             using boost::begin;
@@ -43,7 +44,8 @@ namespace warpcoil
             assert(!read_callback);
             assert(!boost::empty(buffers));
             using handler_type =
-                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code, std::size_t)>::type;
+                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
+                                                                         std::size_t)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
             using boost::begin;

@@ -20,17 +20,19 @@ namespace warpcoil
         auto async_write_some(ConstBufferSequence const &buffers, CompletionToken &&token)
         {
             using handler_type =
-                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code, std::size_t)>::type;
+                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
+                                                                         std::size_t)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
-            underlying.async_write_some(buffers, warpcoil::cpp::wrap_handler(
-                                                     [this](boost::system::error_code ec, std::size_t bytes_transferred,
-                                                            decltype(handler) &handler)
-                                                     {
-                                                         written += bytes_transferred;
-                                                         handler(ec, bytes_transferred);
-                                                     },
-                                                     std::move(handler)));
+            underlying.async_write_some(
+                buffers, warpcoil::cpp::wrap_handler(
+                             [this](boost::system::error_code ec, std::size_t bytes_transferred,
+                                    decltype(handler) &handler)
+                             {
+                                 written += bytes_transferred;
+                                 handler(ec, bytes_transferred);
+                             },
+                             std::move(handler)));
             return result.get();
         }
 
@@ -38,17 +40,19 @@ namespace warpcoil
         auto async_read_some(MutableBufferSequence const &buffers, CompletionToken &&token)
         {
             using handler_type =
-                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code, std::size_t)>::type;
+                typename boost::asio::handler_type<decltype(token), void(boost::system::error_code,
+                                                                         std::size_t)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
-            underlying.async_read_some(buffers, warpcoil::cpp::wrap_handler(
-                                                    [this](boost::system::error_code ec, std::size_t bytes_transferred,
-                                                           decltype(handler) &handler)
-                                                    {
-                                                        read += bytes_transferred;
-                                                        handler(ec, bytes_transferred);
-                                                    },
-                                                    std::move(handler)));
+            underlying.async_read_some(
+                buffers, warpcoil::cpp::wrap_handler(
+                             [this](boost::system::error_code ec, std::size_t bytes_transferred,
+                                    decltype(handler) &handler)
+                             {
+                                 read += bytes_transferred;
+                                 handler(ec, bytes_transferred);
+                             },
+                             std::move(handler)));
             return result.get();
         }
     };

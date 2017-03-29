@@ -20,7 +20,8 @@ namespace warpcoil
             std::shared_ptr<Si::variant<Si::unit, std::function<void(Result)>, Result>> state;
 
             explicit future_handler(use_future_type)
-                : state(std::make_shared<Si::variant<Si::unit, std::function<void(Result)>, Result>>())
+                : state(std::make_shared<
+                        Si::variant<Si::unit, std::function<void(Result)>, Result>>())
             {
             }
 
@@ -49,7 +50,8 @@ namespace warpcoil
         struct apply_transform
         {
             template <class Transformation, class Input, class HandleResult>
-            static void apply(Transformation &&transform, Input &&input, HandleResult &&handle_result)
+            static void apply(Transformation &&transform, Input &&input,
+                              HandleResult &&handle_result)
             {
                 std::forward<HandleResult>(handle_result)(
                     std::forward<Transformation>(transform)(std::forward<Input>(input)));
@@ -60,7 +62,8 @@ namespace warpcoil
         struct apply_transform<void>
         {
             template <class Transformation, class Input, class HandleResult>
-            static void apply(Transformation &&transform, Input &&input, HandleResult &&handle_result)
+            static void apply(Transformation &&transform, Input &&input,
+                              HandleResult &&handle_result)
             {
                 std::forward<Transformation>(transform)(std::forward<Input>(input));
                 std::forward<HandleResult>(handle_result)();
@@ -80,7 +83,8 @@ namespace warpcoil
         auto async_wait(CompletionToken &&token)
         {
             assert(_wait);
-            using handler_type = typename boost::asio::handler_type<decltype(token), void(Result)>::type;
+            using handler_type =
+                typename boost::asio::handler_type<decltype(token), void(Result)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
             _wait(std::move(handler));
@@ -97,12 +101,14 @@ namespace warpcoil
                 [ wait = std::move(wait), transform = std::forward<Transformation>(transform) ](
                     std::function<void(transformed_result)> on_result) mutable
                 {
-                    wait([ on_result = std::move(on_result),
-                           transform = std::forward<Transformation>(transform) ](Result intermediate) mutable
+                    wait([
+                        on_result = std::move(on_result),
+                        transform = std::forward<Transformation>(transform)
+                    ](Result intermediate) mutable
                          {
-                             detail::apply_transform<transformed_result>::apply(std::forward<Transformation>(transform),
-                                                                                std::forward<Result>(intermediate),
-                                                                                std::move(on_result));
+                             detail::apply_transform<transformed_result>::apply(
+                                 std::forward<Transformation>(transform),
+                                 std::forward<Result>(intermediate), std::move(on_result));
                          });
                 });
         }
@@ -155,19 +161,20 @@ namespace boost
                 return warpcoil::future<Result>([state = std::move(_handler.state)](
                     std::function<void(Result)> handle_result)
                                                 {
-                                                    Si::visit<void>(*state,
-                                                                    [&state, &handle_result](Si::unit)
-                                                                    {
-                                                                        *state = std::move(handle_result);
-                                                                    },
-                                                                    [](std::function<void(Result)> &)
-                                                                    {
-                                                                        SILICIUM_UNREACHABLE();
-                                                                    },
-                                                                    [&handle_result](Result &result)
-                                                                    {
-                                                                        handle_result(std::move(result));
-                                                                    });
+                                                    Si::visit<void>(
+                                                        *state,
+                                                        [&state, &handle_result](Si::unit)
+                                                        {
+                                                            *state = std::move(handle_result);
+                                                        },
+                                                        [](std::function<void(Result)> &)
+                                                        {
+                                                            SILICIUM_UNREACHABLE();
+                                                        },
+                                                        [&handle_result](Result &result)
+                                                        {
+                                                            handle_result(std::move(result));
+                                                        });
                                                 });
             }
 

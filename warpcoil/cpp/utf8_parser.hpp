@@ -18,16 +18,18 @@ namespace warpcoil
                     step,
                     [this, input](Length &parser) -> parse_result<result_type>
                     {
-                        parse_result<typename Length::result_type> const length = parser.parse_byte(input);
+                        parse_result<typename Length::result_type> const length =
+                            parser.parse_byte(input);
                         return Si::visit<parse_result<result_type>>(
                             length,
-                            [this](
-                                parse_complete<typename Length::result_type> const length) -> parse_result<result_type>
+                            [this](parse_complete<typename Length::result_type> const length)
+                                -> parse_result<result_type>
                             {
                                 result.resize(length.result);
                                 if (result.empty())
                                 {
-                                    return parse_complete<result_type>{std::move(result), length.input};
+                                    return parse_complete<result_type>{std::move(result),
+                                                                       length.input};
                                 }
                                 step = parsing_element{0};
                                 return need_more_input();
@@ -48,7 +50,8 @@ namespace warpcoil
                         {
                             if (utf8::is_valid(result.begin(), result.end()))
                             {
-                                return parse_complete<result_type>{std::move(result), input_consumption::consumed};
+                                return parse_complete<result_type>{std::move(result),
+                                                                   input_consumption::consumed};
                             }
                             else
                             {

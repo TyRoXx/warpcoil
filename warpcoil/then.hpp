@@ -53,7 +53,8 @@ namespace boost
 
             std::shared_ptr<std::function<void()>> finished;
 
-            explicit async_result(warpcoil::detail::then_handler<Action, ActionInput> const &handler)
+            explicit async_result(
+                warpcoil::detail::then_handler<Action, ActionInput> const &handler)
                 : finished(handler.finished)
             {
             }
@@ -61,7 +62,8 @@ namespace boost
             warpcoil::future<void> get()
             {
                 assert(finished);
-                return warpcoil::future<void>([finished = std::move(finished)](std::function<void()> on_result)
+                return warpcoil::future<void>([finished = std::move(finished)](
+                    std::function<void()> on_result)
                                               {
                                                   assert(on_result);
                                                   assert(!*finished);

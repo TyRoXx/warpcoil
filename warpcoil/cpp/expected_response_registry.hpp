@@ -21,20 +21,22 @@ namespace warpcoil
             void expect_response(request_id const request, ResultHandler handler)
             {
                 expected_responses.insert(std::make_pair(
-                    request,
-                    expected_response{[handler](boost::system::error_code const error) mutable
-                                      {
-                                          handler(error);
-                                      },
-                                      [this, handler]() mutable
-                                      {
-                                          assert(state == response_state::parsing_result);
-                                          buffered_read_stream<AsyncReadStream> &input = incoming.lock_input();
-                                          begin_parse_value(
-                                              input.input, input.buffer, ResultParser(),
-                                              parse_result_operation<ResultHandler, typename ResultParser::result_type>(
-                                                  *this, std::move(handler)));
-                                      }}));
+                    request, expected_response{
+                                 [handler](boost::system::error_code const error) mutable
+                                 {
+                                     handler(error);
+                                 },
+                                 [this, handler]() mutable
+                                 {
+                                     assert(state == response_state::parsing_result);
+                                     buffered_read_stream<AsyncReadStream> &input =
+                                         incoming.lock_input();
+                                     begin_parse_value(
+                                         input.input, input.buffer, ResultParser(),
+                                         parse_result_operation<ResultHandler,
+                                                                typename ResultParser::result_type>(
+                                             *this, std::move(handler)));
+                                 }}));
                 switch (state)
                 {
                 case response_state::not_expecting_response:
@@ -54,7 +56,8 @@ namespace warpcoil
 
             void on_error(boost::system::error_code ec)
             {
-                std::map<request_id, expected_response> local_expected_responses = std::move(expected_responses);
+                std::map<request_id, expected_response> local_expected_responses =
+                    std::move(expected_responses);
                 assert(expected_responses.empty());
                 state = response_state::not_expecting_response;
                 for (auto const &entry : local_expected_responses)
@@ -101,7 +104,8 @@ namespace warpcoil
                             on_error(make_invalid_input_error());
                             return;
                         }
-                        std::function<void()> parse_result = std::move(entry_found->second.parse_result);
+                        std::function<void()> parse_result =
+                            std::move(entry_found->second.parse_result);
                         expected_responses.erase(entry_found);
                         state = response_state::parsing_result;
                         parse_result();
@@ -115,7 +119,8 @@ namespace warpcoil
                 expected_response_registry &pipeline;
                 ResultHandler handler;
 
-                explicit parse_result_operation(expected_response_registry &pipeline, ResultHandler handler)
+                explicit parse_result_operation(expected_response_registry &pipeline,
+                                                ResultHandler handler)
                     : pipeline(pipeline)
                     , handler(std::move(handler))
                 {

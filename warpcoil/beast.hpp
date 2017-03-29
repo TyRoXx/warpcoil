@@ -49,11 +49,13 @@ namespace warpcoil
         template <class WebsocketStream>
         struct async_stream_adaptor
         {
-            explicit async_stream_adaptor(WebsocketStream websocket, ::beast::streambuf receive_buffer)
+            explicit async_stream_adaptor(WebsocketStream websocket,
+                                          ::beast::streambuf receive_buffer)
                 : m_websocket(std::forward<WebsocketStream>(websocket))
                 , m_receive_buffer(std::move(receive_buffer))
             {
-                m_websocket.set_option(::beast::websocket::message_type{::beast::websocket::opcode::binary});
+                m_websocket.set_option(
+                    ::beast::websocket::message_type{::beast::websocket::opcode::binary});
             }
 
             WebsocketStream &next_layer()
@@ -69,20 +71,23 @@ namespace warpcoil
             template <class MutableBufferSequence, class CompletionToken>
             auto async_read_some(MutableBufferSequence buffers, CompletionToken &&token)
             {
-                ::beast::async_completion<CompletionToken, void(boost::system::error_code, std::size_t)> completion(
-                    token);
+                ::beast::async_completion<CompletionToken, void(boost::system::error_code,
+                                                                std::size_t)> completion(token);
                 std::size_t const read = read_from_receive_buffer(buffers);
                 if (read)
                 {
                     using boost::asio::asio_handler_invoke;
-                    asio_handler_invoke(std::bind(std::ref(completion.handler), boost::system::error_code(), read),
-                                        &completion.handler);
+                    asio_handler_invoke(
+                        std::bind(std::ref(completion.handler), boost::system::error_code(), read),
+                        &completion.handler);
                 }
                 else
                 {
-                    typedef read_operation<decltype(completion.handler), MutableBufferSequence> my_handler;
-                    m_websocket.async_read(m_received_opcode, m_receive_buffer,
-                                           my_handler{std::move(completion.handler), buffers, *this});
+                    typedef read_operation<decltype(completion.handler), MutableBufferSequence>
+                        my_handler;
+                    m_websocket.async_read(
+                        m_received_opcode, m_receive_buffer,
+                        my_handler{std::move(completion.handler), buffers, *this});
                 }
                 return completion.result.get();
             }
@@ -90,11 +95,11 @@ namespace warpcoil
             template <class ConstBufferSequence, class CompletionToken>
             auto async_write_some(ConstBufferSequence buffers, CompletionToken &&token)
             {
-                ::beast::async_completion<CompletionToken, void(boost::system::error_code, std::size_t)> completion(
-                    token);
+                ::beast::async_completion<CompletionToken, void(boost::system::error_code,
+                                                                std::size_t)> completion(token);
                 std::size_t const size = boost::asio::buffer_size(buffers);
-                m_websocket.async_write(
-                    buffers, write_operation<decltype(completion.handler)>(std::move(completion.handler), size));
+                m_websocket.async_write(buffers, write_operation<decltype(completion.handler)>(
+                                                     std::move(completion.handler), size));
                 return completion.result.get();
             }
 
@@ -110,7 +115,8 @@ namespace warpcoil
                 MutableBufferSequence buffers;
                 async_stream_adaptor &parent;
 
-                explicit read_operation(Handler handler, MutableBufferSequence buffers, async_stream_adaptor &parent)
+                explicit read_operation(Handler handler, MutableBufferSequence buffers,
+                                        async_stream_adaptor &parent)
                     : handler(std::move(handler))
                     , buffers(buffers)
                     , parent(parent)
@@ -189,7 +195,8 @@ namespace warpcoil
             template <class MutableBufferSequence>
             std::size_t read_from_receive_buffer(MutableBufferSequence buffers)
             {
-                std::size_t const copied = boost::asio::buffer_copy(buffers, m_receive_buffer.data());
+                std::size_t const copied =
+                    boost::asio::buffer_copy(buffers, m_receive_buffer.data());
                 m_receive_buffer.consume(copied);
                 return copied;
             }

@@ -16,12 +16,14 @@ int main(int argc, char **argv)
     auto interfaces_writer = Si::make_container_sink(interfaces);
     {
         indentation_level const top_level;
-        cpp::generate_serializable_interface(interfaces_writer, shared, top_level, Si::make_c_str_range("publisher"),
+        cpp::generate_serializable_interface(interfaces_writer, shared, top_level,
+                                             Si::make_c_str_range("publisher"),
                                              warpcoil::create_publisher_interface());
-        cpp::generate_serializable_interface(interfaces_writer, shared, top_level, Si::make_c_str_range("viewer"),
+        cpp::generate_serializable_interface(interfaces_writer, shared, top_level,
+                                             Si::make_c_str_range("viewer"),
                                              warpcoil::create_viewer_interface());
     }
     file.insert(file.end(), interfaces.begin(), interfaces.end());
-    return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc), std::cerr,
-                                                Si::make_contiguous_range(file));
+    return run_code_generator_command_line_tool(Si::make_iterator_range(argv, argv + argc),
+                                                std::cerr, Si::make_contiguous_range(file));
 }

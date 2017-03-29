@@ -21,9 +21,8 @@ namespace warpcoil
         template <class CompletionToken>
         auto read(CompletionToken &&token)
         {
-            using handler_type =
-                typename boost::asio::handler_type<decltype(token),
-                                                   void(Si::error_or<std::vector<std::uint8_t>>)>::type;
+            using handler_type = typename boost::asio::handler_type<
+                decltype(token), void(Si::error_or<std::vector<std::uint8_t>>)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
             if (m_buffer.empty())
@@ -53,7 +52,8 @@ namespace warpcoil
         auto write(std::vector<std::uint8_t> element, CompletionToken &&token)
         {
             using handler_type =
-                typename boost::asio::handler_type<decltype(token), void(Si::error_or<std::tuple<>>)>::type;
+                typename boost::asio::handler_type<decltype(token),
+                                                   void(Si::error_or<std::tuple<>>)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
             assert(!m_on_write);
@@ -124,7 +124,8 @@ BOOST_AUTO_TEST_CASE(asio_spawn_concurrency)
                                size_t i = 0;
                                for (; i < copying;)
                                {
-                                   std::vector<boost::uint8_t> received = transfer.read(yield).get();
+                                   std::vector<boost::uint8_t> received =
+                                       transfer.read(yield).get();
                                    BOOST_TEST(boost::algorithm::all_of_equal(received, element));
                                    i += received.size();
                                }
@@ -176,7 +177,8 @@ BOOST_AUTO_TEST_CASE(asio_spawn_future)
                                for (; i < copying; ++i)
                                {
                                    warpcoil::future<Si::error_or<std::tuple<>>> writing =
-                                       transfer.write(std::vector<boost::uint8_t>(1, element), warpcoil::use_future);
+                                       transfer.write(std::vector<boost::uint8_t>(1, element),
+                                                      warpcoil::use_future);
                                    writing.async_wait(yield);
                                }
                                BOOST_TEST(copying == i);
@@ -184,20 +186,21 @@ BOOST_AUTO_TEST_CASE(asio_spawn_future)
 
         bool ok = false;
         // consume
-        boost::asio::spawn(io, [&](boost::asio::yield_context yield)
-                           {
-                               size_t i = 0;
-                               for (; i < copying;)
-                               {
-                                   warpcoil::future<Si::error_or<std::vector<boost::uint8_t>>> reading =
-                                       transfer.read(warpcoil::use_future);
-                                   std::vector<boost::uint8_t> received = reading.async_wait(yield).get();
-                                   BOOST_TEST(boost::algorithm::all_of_equal(received, element));
-                                   i += received.size();
-                               }
-                               BOOST_TEST(copying == i);
-                               ok = true;
-                           });
+        boost::asio::spawn(
+            io, [&](boost::asio::yield_context yield)
+            {
+                size_t i = 0;
+                for (; i < copying;)
+                {
+                    warpcoil::future<Si::error_or<std::vector<boost::uint8_t>>> reading =
+                        transfer.read(warpcoil::use_future);
+                    std::vector<boost::uint8_t> received = reading.async_wait(yield).get();
+                    BOOST_TEST(boost::algorithm::all_of_equal(received, element));
+                    i += received.size();
+                }
+                BOOST_TEST(copying == i);
+                ok = true;
+            });
 
         BOOST_TEST(!ok);
         io.run();

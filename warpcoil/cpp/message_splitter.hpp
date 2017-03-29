@@ -63,7 +63,8 @@ namespace warpcoil
             void wait_for_request(RequestHandler handler)
             {
                 assert(!waiting_for_request);
-                waiting_for_request = [handler](Si::error_or<std::tuple<request_id, std::string>> request) mutable
+                waiting_for_request =
+                    [handler](Si::error_or<std::tuple<request_id, std::string>> request) mutable
                 {
                     using boost::asio::asio_handler_invoke;
                     asio_handler_invoke(
@@ -108,7 +109,8 @@ namespace warpcoil
             buffered_read_stream<AsyncReadStream> buffer;
             bool locked;
             std::function<void()> begin_parse_message;
-            std::function<void(Si::error_or<std::tuple<request_id, std::string>>)> waiting_for_request;
+            std::function<void(Si::error_or<std::tuple<request_id, std::string>>)>
+                waiting_for_request;
             std::function<void(Si::error_or<request_id>)> waiting_for_response;
             bool parsing_header;
 
@@ -118,7 +120,8 @@ namespace warpcoil
                 message_splitter &pipeline;
                 DummyHandler dummy;
 
-                explicit parse_message_type_operation(message_splitter &pipeline, DummyHandler dummy)
+                explicit parse_message_type_operation(message_splitter &pipeline,
+                                                      DummyHandler dummy)
                     : pipeline(pipeline)
                     , dummy(std::move(dummy))
                 {
@@ -139,7 +142,8 @@ namespace warpcoil
                             pipeline.on_error(make_invalid_input_error());
                             return;
                         }
-                        begin_parse_value(pipeline.buffer.input, pipeline.buffer.buffer, integer_parser<request_id>(),
+                        begin_parse_value(pipeline.buffer.input, pipeline.buffer.buffer,
+                                          integer_parser<request_id>(),
                                           parse_response_operation<DummyHandler>(pipeline, dummy));
                         break;
 
@@ -149,10 +153,10 @@ namespace warpcoil
                             pipeline.on_error(make_invalid_input_error());
                             return;
                         }
-                        begin_parse_value(
-                            pipeline.buffer.input, pipeline.buffer.buffer,
-                            tuple_parser<integer_parser<request_id>, utf8_parser<integer_parser<std::uint8_t>>>(),
-                            parse_request_operation<DummyHandler>(pipeline, dummy));
+                        begin_parse_value(pipeline.buffer.input, pipeline.buffer.buffer,
+                                          tuple_parser<integer_parser<request_id>,
+                                                       utf8_parser<integer_parser<std::uint8_t>>>(),
+                                          parse_request_operation<DummyHandler>(pipeline, dummy));
                         break;
 
                     default:
@@ -162,7 +166,8 @@ namespace warpcoil
                 }
 
                 template <class Function>
-                friend void asio_handler_invoke(Function &&f, parse_message_type_operation *operation)
+                friend void asio_handler_invoke(Function &&f,
+                                                parse_message_type_operation *operation)
                 {
                     using boost::asio::asio_handler_invoke;
                     asio_handler_invoke(f, &operation->dummy);
@@ -264,7 +269,8 @@ namespace warpcoil
                 {
                     Si::exchange(waiting_for_response, nullptr)(ec);
                 }
-                //"this" might be destroyed at this point if "waiting_for_request" was empty, so we cannot dereference
+                //"this" might be destroyed at this point if
+                //"waiting_for_request" was empty, so we cannot dereference
                 //"this" here.
                 if (is_waiting_for_request)
                 {
@@ -289,7 +295,8 @@ namespace warpcoil
                     begin_parse_message = nullptr;
 
                     parsing_header = true;
-                    begin_parse_value(buffer.input, buffer.buffer, integer_parser<message_type_int>(),
+                    begin_parse_value(buffer.input, buffer.buffer,
+                                      integer_parser<message_type_int>(),
                                       parse_message_type_operation<DummyHandler>(*this, handler));
                 };
             }
