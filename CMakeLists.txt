@@ -69,9 +69,6 @@ if(MSVC)
     add_definitions("/bigobj")
 endif()
 
-add_definitions(-DBOOST_COROUTINE_NO_DEPRECATION_WARNING)
-add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
