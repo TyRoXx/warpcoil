@@ -3,7 +3,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <iostream>
-#include <warpcoil/future.hpp>
+#include <warpcoil/then.hpp>
 
 namespace
 {
@@ -25,24 +25,24 @@ namespace
         asio::steady_timer timeout(io);
         timeout.expires_from_now(std::chrono::seconds(2));
 
-        warpcoil::all(timeout.async_wait(warpcoil::use_future)
-                          .then([&](boost::system::error_code)
-                                {
-                                    socket.cancel();
-                                }),
-                      socket.async_connect(server, warpcoil::use_future)
-                          .then([&](boost::system::error_code ec)
-                                {
-                                    timeout.cancel();
-                                    if (!!ec)
-                                    {
-                                        std::cerr << server << " Failed with error " << ec << '\n';
-                                    }
-                                    else
-                                    {
-                                        std::cerr << server << " Succeeded\n";
-                                    }
-                                }))
+        warpcoil::when_all(timeout.async_wait(warpcoil::then([&](boost::system::error_code)
+                                                             {
+                                                                 socket.cancel();
+                                                             })),
+                           socket.async_connect(server, warpcoil::then([&](boost::system::error_code ec)
+                                                                       {
+                                                                           timeout.cancel();
+                                                                           if (!!ec)
+                                                                           {
+                                                                               std::cerr << server
+                                                                                         << " Failed with error " << ec
+                                                                                         << '\n';
+                                                                           }
+                                                                           else
+                                                                           {
+                                                                               std::cerr << server << " Succeeded\n";
+                                                                           }
+                                                                       })))
             .async_wait(yield);
     }
 }

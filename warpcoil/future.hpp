@@ -112,7 +112,7 @@ namespace warpcoil
     };
 
     template <class... Futures>
-    auto all(Futures &&... futures)
+    auto when_all(Futures &&... futures)
     {
         size_t completed = 0;
         return future<void>(std::function<void(std::function<void()>)>(std::bind<void>(
