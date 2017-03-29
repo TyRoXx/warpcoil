@@ -56,6 +56,13 @@ namespace warpcoil
                 std::forward<HandleResult>(handle_result)(
                     std::forward<Transformation>(transform)(std::forward<Input>(input)));
             }
+
+            template <class Transformation, class HandleResult>
+            static void apply(Transformation &&transform, HandleResult &&handle_result)
+            {
+                std::forward<HandleResult>(handle_result)(
+                    std::forward<Transformation>(transform)());
+            }
         };
 
         template <>
@@ -66,6 +73,13 @@ namespace warpcoil
                               HandleResult &&handle_result)
             {
                 std::forward<Transformation>(transform)(std::forward<Input>(input));
+                std::forward<HandleResult>(handle_result)();
+            }
+
+            template <class Transformation, class HandleResult>
+            static void apply(Transformation &&transform, HandleResult &&handle_result)
+            {
+                std::forward<Transformation>(transform)();
                 std::forward<HandleResult>(handle_result)();
             }
         };
@@ -115,6 +129,50 @@ namespace warpcoil
 
     private:
         std::function<void(std::function<void(Result)>)> _wait;
+    };
+
+    template <>
+    struct future<void>
+    {
+        explicit future(std::function<void(std::function<void()>)> wait)
+            : _wait(std::move(wait))
+        {
+        }
+
+        template <class CompletionToken>
+        auto async_wait(CompletionToken &&token)
+        {
+            assert(_wait);
+            using handler_type = typename boost::asio::handler_type<decltype(token), void()>::type;
+            handler_type handler(std::forward<CompletionToken>(token));
+            boost::asio::async_result<handler_type> result(handler);
+            _wait(std::move(handler));
+            return result.get();
+        }
+
+        template <class Transformation>
+        auto then(Transformation &&transform)
+        {
+            using transformed_result = decltype(transform());
+            auto wait = std::move(_wait);
+            assert(!_wait);
+            return future<transformed_result>(
+                [ wait = std::move(wait), transform = std::forward<Transformation>(transform) ](
+                    std::function<void(transformed_result)> on_result) mutable
+                {
+                    wait([
+                        on_result = std::move(on_result),
+                        transform = std::forward<Transformation>(transform)
+                    ]() mutable
+                         {
+                             detail::apply_transform<transformed_result>::apply(
+                                 std::forward<Transformation>(transform), std::move(on_result));
+                         });
+                });
+        }
+
+    private:
+        std::function<void(std::function<void()>)> _wait;
     };
 
     template <class... Futures>
