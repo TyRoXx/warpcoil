@@ -12,12 +12,12 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - g++-4.9
+    - g++-5
     - valgrind
 
 env:
- - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Release CONAN="-s compiler.version=4.9 -s build_type=Release" COVERAGE=NO
- - CPP=g++-4.9 GCC=gcc-4.9 BUILD_TYPE=Debug   CONAN="-s compiler.version=4.9 -s build_type=Debug"   COVERAGE=YES
+ - CPP=g++-5 GCC=gcc-5 BUILD_TYPE=Release CONAN="-s compiler.version=5.1 -s build_type=Release" COVERAGE=NO
+ - CPP=g++-5 GCC=gcc-5 BUILD_TYPE=Debug   CONAN="-s compiler.version=5.1 -s build_type=Debug"   COVERAGE=YES
 
 install:
  - wget https://github.com/conan-io/conan/releases/download/0.21.1/conan-ubuntu-64_0_21_1.deb -O conan.deb || exit 1
