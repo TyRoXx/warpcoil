@@ -25,6 +25,8 @@ BOOST_AUTO_TEST_CASE(websocket_error)
     }
 }
 
+#ifndef _MSC_VER
+// serve_one_request in the test below takes minutes to compile with Visual C++ 2015 Update 3 for an unknown reason.
 BOOST_AUTO_TEST_CASE(websocket)
 {
     using namespace boost::asio;
@@ -104,3 +106,4 @@ BOOST_AUTO_TEST_CASE(websocket)
     tcp_connected.enable();
     io.run();
 }
+#endif
