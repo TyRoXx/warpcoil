@@ -178,21 +178,20 @@ namespace warpcoil
     template <class... Futures>
     auto when_all(Futures &&... futures)
     {
-        size_t completed = 0;
         return future<void>(std::function<void(std::function<void()>)>(std::bind<void>(
-            [completed](auto &&on_result, auto &&... futures) mutable
+            [](auto &&on_result, auto &&... futures) mutable
             {
                 static constexpr size_t future_count = sizeof...(futures);
                 using expand_type = int[];
-                expand_type{(futures.async_wait([&completed, on_result]()
-                                                {
-                                                    ++completed;
-                                                    if (completed == future_count)
-                                                    {
-                                                        on_result();
-                                                    }
-                                                }),
-                             0)...};
+                auto callback = [ completed = std::make_shared<size_t>(0), on_result ]()
+                {
+                    ++*completed;
+                    if (*completed == future_count)
+                    {
+                        on_result();
+                    }
+                };
+                expand_type{(futures.async_wait(callback), 0)...};
             },
             std::placeholders::_1, std::forward<Futures>(futures)...)));
     }
