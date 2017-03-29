@@ -120,6 +120,7 @@ option(WARPCOIL_BUILD_EXAMPLES "" ON)
 if(WARPCOIL_BUILD_EXAMPLES)
 	add_subdirectory("example")
 	add_subdirectory("example_web_site")
+	add_subdirectory("example_future")
 endif()
 
 if(WARPCOIL_USE_CLANG_FORMAT)

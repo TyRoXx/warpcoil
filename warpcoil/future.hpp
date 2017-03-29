@@ -2,12 +2,15 @@
 
 #include <silicium/variant.hpp>
 #include <boost/asio/async_result.hpp>
+#include <functional>
 
 namespace warpcoil
 {
-    constexpr struct use_future_type
+    struct use_future_type
     {
-    } use_future;
+    };
+
+    constexpr use_future_type use_future;
 
     namespace detail
     {
@@ -40,6 +43,31 @@ namespace warpcoil
         };
     }
 
+    namespace detail
+    {
+        template <class T>
+        struct apply_transform
+        {
+            template <class Transformation, class Input, class HandleResult>
+            static void apply(Transformation &&transform, Input &&input, HandleResult &&handle_result)
+            {
+                std::forward<HandleResult>(handle_result)(
+                    std::forward<Transformation>(transform)(std::forward<Input>(input)));
+            }
+        };
+
+        template <>
+        struct apply_transform<void>
+        {
+            template <class Transformation, class Input, class HandleResult>
+            static void apply(Transformation &&transform, Input &&input, HandleResult &&handle_result)
+            {
+                std::forward<Transformation>(transform)(std::forward<Input>(input));
+                std::forward<HandleResult>(handle_result)();
+            }
+        };
+    }
+
     template <class Result>
     struct future
     {
@@ -51,6 +79,7 @@ namespace warpcoil
         template <class CompletionToken>
         auto async_wait(CompletionToken &&token)
         {
+            assert(_wait);
             using handler_type = typename boost::asio::handler_type<decltype(token), void(Result)>::type;
             handler_type handler(std::forward<CompletionToken>(token));
             boost::asio::async_result<handler_type> result(handler);
@@ -58,9 +87,51 @@ namespace warpcoil
             return result.get();
         }
 
+        template <class Transformation>
+        auto then(Transformation &&transform)
+        {
+            using transformed_result = decltype(transform(std::declval<Result>()));
+            auto wait = std::move(_wait);
+            assert(!_wait);
+            return future<transformed_result>(
+                [ wait = std::move(wait), transform = std::forward<Transformation>(transform) ](
+                    std::function<void(transformed_result)> on_result) mutable
+                {
+                    wait([ on_result = std::move(on_result),
+                           transform = std::forward<Transformation>(transform) ](Result intermediate) mutable
+                         {
+                             detail::apply_transform<transformed_result>::apply(std::forward<Transformation>(transform),
+                                                                                std::forward<Result>(intermediate),
+                                                                                std::move(on_result));
+                         });
+                });
+        }
+
     private:
         std::function<void(std::function<void(Result)>)> _wait;
     };
+
+    template <class... Futures>
+    auto all(Futures &&... futures)
+    {
+        size_t completed = 0;
+        return future<void>(std::function<void(std::function<void()>)>(std::bind<void>(
+            [completed](auto &&on_result, auto &&... futures) mutable
+            {
+                static constexpr size_t future_count = sizeof...(futures);
+                using expand_type = int[];
+                expand_type{(futures.async_wait([&completed, on_result]()
+                                                {
+                                                    ++completed;
+                                                    if (completed == future_count)
+                                                    {
+                                                        on_result();
+                                                    }
+                                                }),
+                             0)...};
+            },
+            std::placeholders::_1, std::forward<Futures>(futures)...)));
+    }
 }
 
 namespace boost
@@ -70,6 +141,8 @@ namespace boost
         template <class Result>
         struct async_result<warpcoil::detail::future_handler<Result>>
         {
+            using type = warpcoil::future<Result>;
+
             explicit async_result(warpcoil::detail::future_handler<Result> const &handler)
                 : _handler(handler)
             {
